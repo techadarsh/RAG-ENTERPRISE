@@ -1,0 +1,133 @@
+services:
+  # Milvus vector database for semantic search and storage
+  milvus:
+    image: milvusdb/milvus:v2.4.3
+    container_name: milvus
+    ports:
+      - "19530:19530"   # gRPC
+      - "9091:9091"     # metrics
+    command: ["milvus", "run", "standalone"]
+    volumes:
+      - milvus_data:/var/lib/milvus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/metrics"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+    # Embedded etcd/minio for POC; not for production
+
+  # Postgres for optional metadata storage (feedback/logs)
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DB}
+    env_file:
+      - .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${PG_USER:-rag}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Ollama for running Mistral-7B LLM
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+  # Embeddings service (BGE-Large-EN v1.5)
+  embeddings:
+    build: ./embeddings
+    container_name: embeddings
+    ports:
+      - "8000:8000"
+    # For dev, mount code/weights as needed
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/encode"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI backend for RAG API
+  api:
+    build: ./api
+    container_name: api
+    env_file:
+      - .env
+    depends_on:
+      milvus:
+        condition: service_healthy
+      embeddings:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./api/app:/app/app:rw,delegated  # For development: live code reload
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8080
+      --reload
+      --reload-dir /app/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Ingestion CLI (runs via docker exec in POC)
+  ingest:
+    build: ./ingest
+    container_name: ingest
+    env_file:
+      - .env
+    depends_on:
+      milvus:
+        condition: service_healthy
+      embeddings:
+        condition: service_healthy
+    command: ["sleep", "infinity"]
+    volumes:
+      - ./ingest/pipeline:/app/pipeline  # For development: live code reload
+      - ./data:/data  # Mount data for ingestion
+
+  # Next.js frontend UI
+  ui:
+    build: ./ui
+    container_name: ui
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE=http://localhost:8080
+    volumes:
+      - ./ui/app:/app/app  # For development: live code reload
+
+volumes:
+  milvus_data:
+  pg_data:
+  ollama_data:
+

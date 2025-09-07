@@ -1,0 +1,73 @@
+# --- Global ---
+.DS_Store
+*.log
+*.pyc
+__pycache__/
+.vscode/
+.idea/
+.env
+.env.*
+.cache/
+coverage/
+*.egg-info/
+*.sqlite3
+
+# --- API (FastAPI, Python) ---
+api/__pycache__/
+api/.pytest_cache/
+api/.mypy_cache/
+api/.coverage
+api/.env
+api/.env.*
+api/coverage/
+api/.ruff_cache/
+api/.pylint.d/
+api/.tox/
+api/venv/
+api/venv*/
+api/.ipynb_checkpoints/
+api/.DS_Store
+
+# --- Ingest (Python CLI) ---
+ingest/__pycache__/
+ingest/.pytest_cache/
+ingest/.mypy_cache/
+ingest/.coverage
+ingest/.env
+ingest/.env.*
+ingest/coverage/
+ingest/.ruff_cache/
+ingest/.pylint.d/
+ingest/.tox/
+ingest/venv/
+ingest/venv*/
+ingest/.ipynb_checkpoints/
+ingest/.DS_Store
+ingest/.cache/
+
+# --- UI (Next.js, React, Node) ---
+ui/node_modules/
+ui/.next/
+ui/out/
+ui/dist/
+ui/.env
+ui/.env.*
+ui/.DS_Store
+ui/coverage/
+ui/npm-debug.log*
+ui/yarn-debug.log*
+ui/yarn-error.log*
+ui/.eslintcache
+
+# --- Docker ---
+**/tmp/
+**/logs/
+docker-compose.override.yml
+
+# --- Postgres/Milvus/Ollama/Other Data ---
+pg_data/
+milvus_data/
+ollama_data/
+vector_data/
+model_data/
+uploads/
