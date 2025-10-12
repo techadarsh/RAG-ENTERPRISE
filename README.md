@@ -373,6 +373,79 @@ docker compose logs -f milvus
 - Ensure `REACT_APP_API_URL` matches your backend URL
 - Check CORS settings in `backend/main.py`
 
+## Evaluation (Phase 3) - Dissertation Metrics
+
+This project includes an **automated evaluation module** that measures system performance for dissertation reporting.
+
+### What Gets Measured
+
+The evaluation script tests 8 predefined queries and measures:
+
+| Metric | Description | Expected Range |
+|--------|-------------|----------------|
+| **Retrieval Time** | Embedding generation + vector search latency | 30-100 ms |
+| **Generation Time** | LLM inference time | 1000-2500 ms |
+| **Total Latency** | End-to-end response time | 1200-2800 ms |
+| **Relevance Score** | Cosine similarity of top-ranked source | 70-90% |
+
+### How to Run Evaluation
+
+#### Option 1: Run Evaluation Script (Recommended)
+
+```bash
+# Make sure services are running
+docker compose up -d
+
+# Run evaluation (takes 2-3 minutes)
+docker compose run backend python evaluate_poc.py
+
+# Copy results to your machine
+docker compose cp backend:/app/results/results.md ./backend/results/results.md
+
+# View results
+cat backend/results/results.md
+```
+
+#### Option 2: Trigger via API
+
+```bash
+# Start services
+docker compose up -d
+
+# Trigger evaluation via API
+curl http://localhost:8000/evaluate
+
+# Or visit in browser
+open http://localhost:8000/evaluate
+```
+
+### Output Format
+
+The evaluation generates a Markdown file (`results.md`) with:
+
+1. **Performance Summary Table**
+   ```markdown
+   | Metric | Average | Unit |
+   |--------|---------|------|
+   | Retrieval Time | 45.23 | ms |
+   | Generation Time | 1250.67 | ms |
+   | Total Latency | 1295.90 | ms |
+   | Relevance Score | 82.45% | % |
+   ```
+
+2. **Detailed Query Results** (8 test queries with individual metrics)
+3. **Answer Previews** (for qualitative analysis)
+4. **System Configuration** (for methodology section)
+
+### Dissertation Use
+
+The `results.md` file is ready for direct inclusion in your dissertation's **Results & Evaluation** chapter:
+
+- ✅ Quantitative performance metrics
+- ✅ System configuration details
+- ✅ Comparison baseline data
+- ✅ Markdown format (easy to convert to LaTeX/Word)
+
 ## Performance Notes
 
 - **Cold start**: ~2-3 minutes (model loading)

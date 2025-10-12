@@ -1,0 +1,1777 @@
+# Testing Strategy & Quality Assurance Procedures
+
+## Executive Summary
+
+This comprehensive guide outlines the testing strategy, quality assurance procedures, and testing best practices for the RAG Enterprise System. It covers all testing levels from unit tests to end-to-end testing, performance testing, security testing, and continuous integration.
+
+**Testing Goals**:
+- Code coverage: ≥80% (critical paths: 100%)
+- Test execution time: <10 minutes (unit + integration)
+- Zero critical bugs in production
+- Automated testing in CI/CD pipeline
+
+**Current Testing Metrics**:
+- Unit test coverage: 78%
+- Integration test coverage: 65%
+- E2E test coverage: 45%
+- Test execution time: 8 minutes
+- Bugs found in production: 2/month (target: 0)
+
+---
+
+## Table of Contents
+
+1. Testing Philosophy & Principles
+2. Test Pyramid Strategy
+3. Unit Testing
+4. Integration Testing
+5. End-to-End (E2E) Testing
+6. Performance Testing
+7. Security Testing
+8. API Testing
+9. Test Data Management
+10. Continuous Integration Testing
+11. Test Coverage & Metrics
+12. Bug Tracking & Management
+13. Testing Tools & Frameworks
+14. Code Review Checklist
+15. QA Best Practices
+
+---
+
+## 1. Testing Philosophy & Principles
+
+### 1.1 Core Principles
+
+**Test-Driven Development (TDD)**:
+- Write tests before implementation
+- Red → Green → Refactor cycle
+- Tests serve as specification
+
+**Shift-Left Testing**:
+- Test early in development cycle
+- Catch bugs before they reach production
+- Cheaper to fix bugs early (1x cost in dev vs 100x in production)
+
+**Test Automation**:
+- Automate everything possible
+- Manual testing only for exploratory testing
+- Fast feedback loops
+
+**Continuous Testing**:
+- Run tests on every commit
+- Automated in CI/CD pipeline
+- Block deployments on test failures
+
+### 1.2 Testing Levels
+
+```
+Level          | Purpose                    | Coverage | Speed    | Frequency
+---------------|----------------------------|----------|----------|-------------
+Unit           | Test individual functions  | 60%      | Fast     | Every commit
+Integration    | Test component interactions| 30%      | Medium   | Every commit
+E2E            | Test complete user flows   | 10%      | Slow     | Before deploy
+Performance    | Test speed & scalability   | N/A      | Slow     | Daily/weekly
+Security       | Test vulnerabilities       | N/A      | Medium   | Weekly/monthly
+```
+
+### 1.3 Test Quality Attributes
+
+**FIRST Principles**:
+- **F**ast: Tests run quickly (<10 minutes total)
+- **I**ndependent: Tests don't depend on each other
+- **R**epeatable: Same result every time
+- **S**elf-validating: Pass/fail without manual inspection
+- **T**imely: Written at right time (before or with code)
+
+---
+
+## 2. Test Pyramid Strategy
+
+### 2.1 Test Distribution
+
+```
+        /\
+       /  \  E2E Tests (10%)
+      /    \  - Full user journeys
+     /------\  - UI + API + DB
+    /        \ Integration Tests (30%)
+   /          \ - Component interactions
+  /            \ - API + DB, Service + Service
+ /--------------\
+/                \ Unit Tests (60%)
+                  - Individual functions
+                  - Pure logic testing
+```
+
+**Rationale**:
+- More unit tests: Fast, cheap, precise
+- Fewer E2E tests: Slow, expensive, brittle
+
+### 2.2 Coverage Targets
+
+**Unit Tests** (60% of total tests):
+- Target coverage: 80-90%
+- Critical paths: 100%
+- Test: Pure functions, business logic, utilities
+
+**Integration Tests** (30% of total tests):
+- Target coverage: Key integration points
+- Test: RAG pipeline, database interactions, API endpoints
+
+**E2E Tests** (10% of total tests):
+- Target coverage: Critical user journeys
+- Test: Complete workflows (query → retrieve → generate → respond)
+
+---
+
+## 3. Unit Testing
+
+### 3.1 Unit Testing Framework
+
+**pytest** (Python testing framework):
+```bash
+# Install pytest
+pip install pytest pytest-cov pytest-mock pytest-asyncio
+
+# Run tests
+pytest tests/unit/
+
+# Run with coverage
+pytest tests/unit/ --cov=backend --cov-report=html
+
+# Run specific test
+pytest tests/unit/test_embeddings.py::test_embed_text
+
+# Run in parallel (faster)
+pytest tests/unit/ -n 4
+```
+
+### 3.2 Unit Test Structure
+
+**AAA Pattern** (Arrange, Act, Assert):
+```python
+def test_embed_text():
+    # ARRANGE: Set up test data and dependencies
+    embedding_service = EmbeddingService(model_name="BAAI/bge-large-en-v1.5")
+    text = "What is our PTO policy?"
+    
+    # ACT: Execute the function under test
+    embedding = embedding_service.embed_text(text)
+    
+    # ASSERT: Verify the results
+    assert embedding is not None
+    assert len(embedding) == 1024  # BGE-Large has 1024 dimensions
+    assert all(isinstance(x, float) for x in embedding)
+    assert -1.0 <= max(embedding) <= 1.0  # Normalized embeddings
+```
+
+### 3.3 Testing with Fixtures
+
+**pytest Fixtures** (reusable test setup):
+```python
+# conftest.py (shared fixtures)
+import pytest
+from backend.embeddings import EmbeddingService
+from backend.milvus_client import MilvusClient
+
+@pytest.fixture
+def embedding_service():
+    """Provide a configured embedding service."""
+    service = EmbeddingService(model_name="BAAI/bge-small-en-v1.5")  # Smaller for tests
+    yield service
+    # Cleanup if needed
+
+@pytest.fixture
+def milvus_client():
+    """Provide a test Milvus client."""
+    client = MilvusClient(host="localhost", port="19530", collection_name="test_collection")
+    client.create_collection()
+    yield client
+    # Cleanup: Drop test collection
+    client.drop_collection()
+
+@pytest.fixture
+def sample_documents():
+    """Provide sample test documents."""
+    return [
+        {"id": 1, "text": "Our PTO policy offers 15-30 days per year."},
+        {"id": 2, "text": "Remote work is available for all employees."},
+        {"id": 3, "text": "Health insurance covers medical, dental, and vision."}
+    ]
+
+# test_embeddings.py
+def test_embed_text(embedding_service):
+    # Use fixture
+    embedding = embedding_service.embed_text("Test query")
+    assert len(embedding) == 384  # BGE-Small has 384 dimensions
+
+def test_batch_embed(embedding_service, sample_documents):
+    # Use multiple fixtures
+    texts = [doc["text"] for doc in sample_documents]
+    embeddings = embedding_service.embed_batch(texts)
+    assert len(embeddings) == 3
+    assert all(len(emb) == 384 for emb in embeddings)
+```
+
+### 3.4 Mocking External Dependencies
+
+**unittest.mock**:
+```python
+from unittest.mock import Mock, patch, MagicMock
+import pytest
+
+# Mock external API calls
+def test_generate_answer_with_mock():
+    # ARRANGE: Mock LLM client
+    mock_llm = Mock()
+    mock_llm.generate.return_value = {
+        'response': 'Our PTO policy offers 15-30 days per year.',
+        'model': 'mistral:7b',
+        'total_duration': 1207000000
+    }
+    
+    rag_pipeline = RAGPipeline(llm_client=mock_llm)
+    
+    # ACT
+    result = rag_pipeline.generate_answer(context="PTO policy context", query="What is PTO?")
+    
+    # ASSERT
+    assert result == 'Our PTO policy offers 15-30 days per year.'
+    mock_llm.generate.assert_called_once()
+
+# Mock with patch decorator
+@patch('backend.llm_client.ollama.generate')
+def test_generate_with_patch(mock_generate):
+    # Configure mock
+    mock_generate.return_value = {'response': 'Test answer'}
+    
+    llm_client = LLMClient()
+    result = llm_client.generate(prompt="Test prompt")
+    
+    assert result == 'Test answer'
+    mock_generate.assert_called_once_with(
+        model='mistral:7b-instruct-q4_K_M',
+        prompt='Test prompt',
+        options={'temperature': 0.3, 'num_predict': 500}
+    )
+
+# Mock database calls
+@patch('backend.milvus_client.Collection')
+def test_search_with_mock_milvus(mock_collection):
+    # Configure mock to return search results
+    mock_results = [
+        Mock(id=1, distance=0.15, entity={'text': 'PTO policy text'}),
+        Mock(id=2, distance=0.23, entity={'text': 'Benefits text'})
+    ]
+    mock_collection.return_value.search.return_value = [mock_results]
+    
+    milvus_client = MilvusClient()
+    results = milvus_client.search(query_vector=[0.1] * 1024, top_k=2)
+    
+    assert len(results) == 2
+    assert results[0]['id'] == 1
+    assert results[0]['distance'] == 0.15
+```
+
+### 3.5 Parametrized Tests
+
+**Test multiple inputs efficiently**:
+```python
+import pytest
+
+@pytest.mark.parametrize("text,expected_length", [
+    ("short", 384),
+    ("medium length text with more words", 384),
+    ("very long text " * 100, 384),
+    ("", 384),  # Even empty text should return embedding
+])
+def test_embed_various_lengths(embedding_service, text, expected_length):
+    embedding = embedding_service.embed_text(text)
+    assert len(embedding) == expected_length
+
+@pytest.mark.parametrize("query,expected_category", [
+    ("What is our PTO policy?", "policies"),
+    ("How do I deploy with Docker?", "technical"),
+    ("What are company values?", "general"),
+    ("Remote work guidelines", "policies"),
+    ("API authentication methods", "technical"),
+])
+def test_classify_query(query, expected_category):
+    category = classify_query(query)
+    assert category == expected_category
+
+# Test error cases
+@pytest.mark.parametrize("invalid_input", [
+    None,
+    123,
+    [],
+    {},
+])
+def test_embed_invalid_input(embedding_service, invalid_input):
+    with pytest.raises((TypeError, ValueError)):
+        embedding_service.embed_text(invalid_input)
+```
+
+### 3.6 Testing Async Functions
+
+**pytest-asyncio**:
+```python
+import pytest
+import asyncio
+
+@pytest.mark.asyncio
+async def test_async_query():
+    rag_service = AsyncRAGService()
+    result = await rag_service.query_async("What is our PTO policy?")
+    
+    assert result is not None
+    assert 'answer' in result
+    assert 'sources' in result
+
+@pytest.mark.asyncio
+async def test_concurrent_queries():
+    rag_service = AsyncRAGService()
+    queries = [
+        "What is our PTO policy?",
+        "How do I request time off?",
+        "What is our remote work policy?"
+    ]
+    
+    # Run queries concurrently
+    results = await asyncio.gather(*[rag_service.query_async(q) for q in queries])
+    
+    assert len(results) == 3
+    assert all('answer' in r for r in results)
+```
+
+### 3.7 Test Coverage Analysis
+
+**Generate coverage report**:
+```bash
+# Run tests with coverage
+pytest tests/unit/ --cov=backend --cov-report=html --cov-report=term
+
+# Output:
+# Name                          Stmts   Miss  Cover
+# -------------------------------------------------
+# backend/__init__.py               2      0   100%
+# backend/embeddings.py            45      5    89%
+# backend/llm_client.py            38      8    79%
+# backend/milvus_client.py         67     15    78%
+# backend/rag_pipeline.py          52      3    94%
+# backend/main.py                  89     25    72%
+# -------------------------------------------------
+# TOTAL                           293     56    81%
+
+# Open HTML report
+open htmlcov/index.html
+```
+
+**Identify gaps**:
+```python
+# View uncovered lines
+pytest tests/unit/ --cov=backend --cov-report=term-missing
+
+# Output:
+# backend/embeddings.py         45      5    89%   23-25, 67, 89
+# backend/llm_client.py          38      8    79%   45-52, 78
+
+# Lines 23-25, 67, 89 in embeddings.py are not covered
+# Lines 45-52, 78 in llm_client.py are not covered
+```
+
+**Write tests for uncovered code**:
+```python
+# Cover error handling (line 45-52 in llm_client.py)
+def test_generate_handles_timeout():
+    llm_client = LLMClient()
+    
+    with patch('backend.llm_client.ollama.generate', side_effect=TimeoutError):
+        with pytest.raises(TimeoutError):
+            llm_client.generate(prompt="Test")
+
+def test_generate_handles_connection_error():
+    llm_client = LLMClient()
+    
+    with patch('backend.llm_client.ollama.generate', side_effect=ConnectionError):
+        with pytest.raises(ConnectionError):
+            llm_client.generate(prompt="Test")
+```
+
+---
+
+## 4. Integration Testing
+
+### 4.1 Integration Test Scope
+
+**Test Component Interactions**:
+- RAG pipeline (embedding → search → generation)
+- API endpoints (FastAPI + services)
+- Database operations (Milvus + PostgreSQL)
+- Service-to-service communication
+
+### 4.2 RAG Pipeline Integration Tests
+
+**Test Complete Pipeline**:
+```python
+# tests/integration/test_rag_pipeline.py
+import pytest
+from backend.rag_pipeline import RAGPipeline
+from backend.embeddings import EmbeddingService
+from backend.milvus_client import MilvusClient
+from backend.llm_client import LLMClient
+
+@pytest.fixture
+def rag_pipeline():
+    """Set up complete RAG pipeline for testing."""
+    embedding_service = EmbeddingService()
+    milvus_client = MilvusClient(collection_name="test_collection")
+    llm_client = LLMClient()
+    
+    # Create test collection
+    milvus_client.create_collection()
+    
+    # Insert test documents
+    test_docs = [
+        "Our PTO policy offers 15-30 days per year based on tenure.",
+        "Remote work is available for all employees with manager approval.",
+        "Health insurance covers medical, dental, and vision with 80% employer contribution."
+    ]
+    for doc in test_docs:
+        embedding = embedding_service.embed_text(doc)
+        milvus_client.insert(embedding=embedding, text=doc, metadata={})
+    
+    pipeline = RAGPipeline(
+        embedding_service=embedding_service,
+        milvus_client=milvus_client,
+        llm_client=llm_client
+    )
+    
+    yield pipeline
+    
+    # Cleanup
+    milvus_client.drop_collection()
+
+def test_query_pipeline_end_to_end(rag_pipeline):
+    # ACT: Execute complete query
+    result = rag_pipeline.query("What is our PTO policy?", user_id="test_user")
+    
+    # ASSERT: Verify all components worked
+    assert result is not None
+    assert 'answer' in result
+    assert 'sources' in result
+    assert 'conversation_id' in result
+    assert 'processing_time_ms' in result
+    
+    # Verify answer quality
+    assert 'PTO' in result['answer'] or 'time off' in result['answer'].lower()
+    assert len(result['sources']) > 0
+    assert result['sources'][0]['score'] > 0.5  # Relevant source
+    assert result['processing_time_ms'] < 5000  # <5 seconds
+
+def test_query_with_conversation_memory(rag_pipeline):
+    # First query
+    result1 = rag_pipeline.query("What is our PTO policy?", user_id="test_user")
+    conversation_id = result1['conversation_id']
+    
+    # Follow-up query (should use conversation context)
+    result2 = rag_pipeline.query(
+        "How much do I get with 3 years?",
+        user_id="test_user",
+        conversation_id=conversation_id
+    )
+    
+    # ASSERT: Follow-up understood context
+    assert '20 days' in result2['answer'] or 'three years' in result2['answer'].lower()
+
+def test_query_no_results(rag_pipeline):
+    # Query for non-existent topic
+    result = rag_pipeline.query("What is the capital of Mars?", user_id="test_user")
+    
+    # Should still return response (from LLM's general knowledge or "I don't know")
+    assert result is not None
+    assert 'answer' in result
+```
+
+### 4.3 API Integration Tests
+
+**Test FastAPI endpoints**:
+```python
+# tests/integration/test_api.py
+from fastapi.testclient import TestClient
+from backend.main import app
+
+client = TestClient(app)
+
+def test_health_endpoint():
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "healthy",
+        "version": "1.0.0"
+    }
+
+def test_ask_endpoint():
+    # Send query request
+    response = client.post(
+        "/ask",
+        json={
+            "query": "What is our PTO policy?",
+            "user_id": "test_user"
+        },
+        headers={"Authorization": "Bearer test_api_key"}
+    )
+    
+    # Verify response
+    assert response.status_code == 200
+    data = response.json()
+    
+    assert 'answer' in data
+    assert 'sources' in data
+    assert 'conversation_id' in data
+    assert 'processing_time_ms' in data
+    assert isinstance(data['sources'], list)
+
+def test_ask_endpoint_validation():
+    # Test missing query
+    response = client.post(
+        "/ask",
+        json={"user_id": "test_user"},
+        headers={"Authorization": "Bearer test_api_key"}
+    )
+    assert response.status_code == 422  # Validation error
+    
+    # Test empty query
+    response = client.post(
+        "/ask",
+        json={"query": "", "user_id": "test_user"},
+        headers={"Authorization": "Bearer test_api_key"}
+    )
+    assert response.status_code == 400  # Bad request
+
+def test_ask_endpoint_authentication():
+    # Test without API key
+    response = client.post(
+        "/ask",
+        json={"query": "Test", "user_id": "test_user"}
+    )
+    assert response.status_code == 401  # Unauthorized
+    
+    # Test with invalid API key
+    response = client.post(
+        "/ask",
+        json={"query": "Test", "user_id": "test_user"},
+        headers={"Authorization": "Bearer invalid_key"}
+    )
+    assert response.status_code == 401  # Unauthorized
+
+def test_conversations_endpoint():
+    # First, create a conversation by asking a question
+    response = client.post(
+        "/ask",
+        json={"query": "What is our PTO policy?", "user_id": "test_user"},
+        headers={"Authorization": "Bearer test_api_key"}
+    )
+    conversation_id = response.json()['conversation_id']
+    
+    # Now retrieve conversations
+    response = client.get(
+        "/conversations",
+        params={"user_id": "test_user"},
+        headers={"Authorization": "Bearer test_api_key"}
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert 'conversations' in data
+    assert len(data['conversations']) > 0
+
+def test_rate_limiting():
+    # Make many requests quickly
+    responses = []
+    for i in range(101):  # Exceed rate limit (100/min)
+        response = client.post(
+            "/ask",
+            json={"query": f"Test {i}", "user_id": "test_user"},
+            headers={"Authorization": "Bearer test_api_key"}
+        )
+        responses.append(response)
+    
+    # At least one should be rate limited
+    status_codes = [r.status_code for r in responses]
+    assert 429 in status_codes  # Too Many Requests
+```
+
+### 4.4 Database Integration Tests
+
+**Test Milvus operations**:
+```python
+# tests/integration/test_milvus.py
+import pytest
+from backend.milvus_client import MilvusClient
+from backend.embeddings import EmbeddingService
+
+@pytest.fixture
+def milvus_client():
+    client = MilvusClient(collection_name="test_collection")
+    client.create_collection()
+    yield client
+    client.drop_collection()
+
+def test_insert_and_search(milvus_client):
+    embedding_service = EmbeddingService()
+    
+    # Insert documents
+    docs = [
+        "Our PTO policy offers 15-30 days per year.",
+        "Remote work is available for all employees.",
+        "Health insurance covers medical and dental."
+    ]
+    
+    for doc in docs:
+        embedding = embedding_service.embed_text(doc)
+        milvus_client.insert(
+            embedding=embedding,
+            text=doc,
+            metadata={"category": "policies"}
+        )
+    
+    # Search
+    query_embedding = embedding_service.embed_text("What is our PTO policy?")
+    results = milvus_client.search(query_vector=query_embedding, top_k=2)
+    
+    # Verify results
+    assert len(results) >= 1
+    assert 'PTO' in results[0]['text']
+    assert results[0]['distance'] < 0.5  # High similarity
+
+def test_search_with_filter(milvus_client):
+    # Insert with different categories
+    embedding_service = EmbeddingService()
+    
+    docs = [
+        ("PTO policy text", {"category": "policies"}),
+        ("Docker deployment guide", {"category": "technical"}),
+        ("Benefits information", {"category": "policies"}),
+    ]
+    
+    for text, metadata in docs:
+        embedding = embedding_service.embed_text(text)
+        milvus_client.insert(embedding=embedding, text=text, metadata=metadata)
+    
+    # Search with filter
+    query_embedding = embedding_service.embed_text("company policies")
+    results = milvus_client.search(
+        query_vector=query_embedding,
+        top_k=5,
+        filter_expr='category == "policies"'
+    )
+    
+    # Verify only policies returned
+    assert all(r['metadata']['category'] == 'policies' for r in results)
+
+def test_concurrent_operations(milvus_client):
+    import concurrent.futures
+    embedding_service = EmbeddingService()
+    
+    def insert_doc(doc_id):
+        embedding = embedding_service.embed_text(f"Document {doc_id}")
+        milvus_client.insert(
+            embedding=embedding,
+            text=f"Document {doc_id}",
+            metadata={"id": doc_id}
+        )
+    
+    # Insert 100 documents concurrently
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(insert_doc, i) for i in range(100)]
+        concurrent.futures.wait(futures)
+    
+    # Verify all inserted
+    stats = milvus_client.get_stats()
+    assert stats['row_count'] >= 100
+```
+
+---
+
+## 5. End-to-End (E2E) Testing
+
+### 5.1 E2E Test Framework
+
+**Playwright** (for UI testing):
+```bash
+# Install Playwright
+pip install playwright pytest-playwright
+playwright install
+
+# Run E2E tests
+pytest tests/e2e/
+```
+
+### 5.2 Critical User Journeys
+
+**Test complete workflows**:
+```python
+# tests/e2e/test_user_journeys.py
+import pytest
+from playwright.sync_api import Page, expect
+
+@pytest.fixture
+def authenticated_page(page: Page):
+    # Navigate to app
+    page.goto("http://localhost:3000")
+    
+    # Login (if required)
+    page.fill('input[name="email"]', "test@company.com")
+    page.fill('input[name="password"]', "testpassword")
+    page.click('button[type="submit"]')
+    
+    # Wait for redirect
+    page.wait_for_url("http://localhost:3000/chat")
+    
+    return page
+
+def test_ask_question_journey(authenticated_page: Page):
+    """Test: User asks a question and receives answer."""
+    
+    # 1. User types question
+    authenticated_page.fill('textarea[name="query"]', "What is our PTO policy?")
+    
+    # 2. User clicks Send
+    authenticated_page.click('button:has-text("Send")')
+    
+    # 3. Wait for answer
+    authenticated_page.wait_for_selector('.message.assistant', timeout=5000)
+    
+    # 4. Verify answer displayed
+    answer = authenticated_page.locator('.message.assistant').last
+    expect(answer).to_be_visible()
+    expect(answer).to_contain_text("PTO")
+    
+    # 5. Verify sources displayed
+    sources = authenticated_page.locator('.sources')
+    expect(sources).to_be_visible()
+    expect(sources.locator('.source-item')).to_have_count_greater_than(0)
+
+def test_conversation_memory_journey(authenticated_page: Page):
+    """Test: User has conversation with follow-up questions."""
+    
+    # First question
+    authenticated_page.fill('textarea[name="query"]', "What is our PTO policy?")
+    authenticated_page.click('button:has-text("Send")')
+    authenticated_page.wait_for_selector('.message.assistant')
+    
+    # Follow-up question (requires context)
+    authenticated_page.fill('textarea[name="query"]', "How much do I get with 3 years?")
+    authenticated_page.click('button:has-text("Send")')
+    authenticated_page.wait_for_selector('.message.assistant:nth-of-type(2)')
+    
+    # Verify follow-up understood context
+    answer = authenticated_page.locator('.message.assistant').last
+    expect(answer).to_contain_text("20 days")
+
+def test_view_conversation_history(authenticated_page: Page):
+    """Test: User views past conversations."""
+    
+    # Ask a question to create conversation
+    authenticated_page.fill('textarea[name="query"]', "What is our PTO policy?")
+    authenticated_page.click('button:has-text("Send")')
+    authenticated_page.wait_for_selector('.message.assistant')
+    
+    # Navigate to conversations
+    authenticated_page.click('a:has-text("Conversations")')
+    authenticated_page.wait_for_url("**/conversations")
+    
+    # Verify conversation listed
+    conversations = authenticated_page.locator('.conversation-item')
+    expect(conversations).to_have_count_greater_than(0)
+    expect(conversations.first).to_contain_text("PTO")
+    
+    # Click to view conversation
+    conversations.first.click()
+    
+    # Verify messages displayed
+    messages = authenticated_page.locator('.message')
+    expect(messages).to_have_count_greater_than_or_equal(2)  # Question + Answer
+
+def test_submit_feedback(authenticated_page: Page):
+    """Test: User submits feedback on answer."""
+    
+    # Ask question
+    authenticated_page.fill('textarea[name="query"]', "What is our PTO policy?")
+    authenticated_page.click('button:has-text("Send")')
+    authenticated_page.wait_for_selector('.message.assistant')
+    
+    # Click thumbs up
+    authenticated_page.locator('.message.assistant').last.locator('button[aria-label="Helpful"]').click()
+    
+    # Verify feedback submitted
+    expect(authenticated_page.locator('.feedback-toast')).to_contain_text("Thank you")
+
+def test_error_handling(authenticated_page: Page):
+    """Test: App handles errors gracefully."""
+    
+    # Stop backend server (simulate outage)
+    # ... (implementation depends on test setup)
+    
+    # Try to ask question
+    authenticated_page.fill('textarea[name="query"]', "Test question")
+    authenticated_page.click('button:has-text("Send")')
+    
+    # Verify error message displayed
+    error = authenticated_page.locator('.error-message')
+    expect(error).to_be_visible()
+    expect(error).to_contain_text("Unable to connect")
+```
+
+### 5.3 Cross-Browser Testing
+
+**Test on multiple browsers**:
+```python
+# pytest.ini
+[pytest]
+markers =
+    browser: Mark test to run on specific browser
+
+# Run on all browsers
+pytest tests/e2e/ --browser chromium --browser firefox --browser webkit
+
+# tests/e2e/test_cross_browser.py
+@pytest.mark.browser("chromium")
+@pytest.mark.browser("firefox")
+@pytest.mark.browser("webkit")
+def test_works_on_all_browsers(page: Page):
+    page.goto("http://localhost:3000")
+    expect(page.locator('h1')).to_contain_text("RAG Enterprise")
+```
+
+---
+
+## 6. Performance Testing
+
+### 6.1 Load Testing with Locust
+
+**locustfile.py**:
+```python
+from locust import HttpUser, task, between
+import random
+
+class RAGUser(HttpUser):
+    wait_time = between(1, 3)
+    
+    def on_start(self):
+        """Authenticate on start."""
+        self.client.headers = {"Authorization": "Bearer test_api_key"}
+        self.user_id = f"user_{random.randint(1, 1000)}"
+    
+    @task(5)  # Most common task (weight 5)
+    def ask_question(self):
+        queries = [
+            "What is our PTO policy?",
+            "How do I request time off?",
+            "What is our remote work policy?",
+            "How do I access VPN?",
+            "What are our company holidays?"
+        ]
+        
+        self.client.post("/ask", json={
+            "query": random.choice(queries),
+            "user_id": self.user_id
+        })
+    
+    @task(2)  # Less common (weight 2)
+    def get_conversations(self):
+        self.client.get(f"/conversations?user_id={self.user_id}")
+    
+    @task(1)  # Rare (weight 1)
+    def health_check(self):
+        self.client.get("/health")
+```
+
+**Run load test**:
+```bash
+# Start load test
+locust -f tests/performance/locustfile.py --host=http://localhost:8000
+
+# Open UI: http://localhost:8089
+# Configure: 100 users, spawn rate 10/sec
+
+# Or run headless
+locust -f tests/performance/locustfile.py \
+    --host=http://localhost:8000 \
+    --users 100 \
+    --spawn-rate 10 \
+    --run-time 10m \
+    --headless
+```
+
+**Performance assertions**:
+```python
+# tests/performance/test_performance.py
+import pytest
+import requests
+import statistics
+import time
+
+def test_query_latency():
+    """Test: Query latency is acceptable."""
+    latencies = []
+    
+    for i in range(100):
+        start = time.perf_counter()
+        response = requests.post(
+            "http://localhost:8000/ask",
+            json={"query": "What is our PTO policy?", "user_id": "test_user"},
+            headers={"Authorization": "Bearer test_api_key"}
+        )
+        latency = (time.perf_counter() - start) * 1000
+        latencies.append(latency)
+        
+        assert response.status_code == 200
+    
+    # Assert performance targets
+    p50 = statistics.median(latencies)
+    p95 = statistics.quantiles(latencies, n=20)[18]
+    p99 = statistics.quantiles(latencies, n=100)[98]
+    
+    assert p50 < 1500, f"P50 latency {p50:.2f}ms exceeds 1500ms"
+    assert p95 < 2500, f"P95 latency {p95:.2f}ms exceeds 2500ms"
+    assert p99 < 4000, f"P99 latency {p99:.2f}ms exceeds 4000ms"
+
+def test_throughput():
+    """Test: System handles target throughput."""
+    import concurrent.futures
+    
+    def make_request():
+        response = requests.post(
+            "http://localhost:8000/ask",
+            json={"query": "Test", "user_id": "test_user"},
+            headers={"Authorization": "Bearer test_api_key"},
+            timeout=10
+        )
+        return response.status_code == 200
+    
+    # Send 500 requests concurrently
+    start = time.perf_counter()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
+        futures = [executor.submit(make_request) for _ in range(500)]
+        results = [f.result() for f in futures]
+    duration = time.perf_counter() - start
+    
+    # Calculate throughput
+    throughput = 500 / duration
+    success_rate = sum(results) / len(results)
+    
+    assert throughput >= 50, f"Throughput {throughput:.2f} req/sec is below 50"
+    assert success_rate >= 0.99, f"Success rate {success_rate:.2%} is below 99%"
+```
+
+### 6.2 Stress Testing
+
+**Find breaking point**:
+```bash
+# Gradually increase load
+locust -f tests/performance/stress_test.py \
+    --host=http://localhost:8000 \
+    --users 500 \
+    --spawn-rate 50 \
+    --run-time 30m
+```
+
+### 6.3 Soak Testing
+
+**Test sustained load**:
+```bash
+# Run for 24 hours at normal load
+locust -f tests/performance/locustfile.py \
+    --host=http://localhost:8000 \
+    --users 100 \
+    --spawn-rate 10 \
+    --run-time 24h
+    
+# Monitor for memory leaks, degradation, etc.
+```
+
+---
+
+## 7. Security Testing
+
+### 7.1 OWASP Top 10 Testing
+
+**SQL Injection Testing**:
+```python
+# tests/security/test_sql_injection.py
+def test_sql_injection_in_query():
+    # Attempt SQL injection
+    malicious_queries = [
+        "'; DROP TABLE documents; --",
+        "1' OR '1'='1",
+        "admin'--",
+    ]
+    
+    for query in malicious_queries:
+        response = client.post("/ask", json={
+            "query": query,
+            "user_id": "test_user"
+        }, headers={"Authorization": "Bearer test_api_key"})
+        
+        # Should not cause error or expose data
+        assert response.status_code in [200, 400]
+        if response.status_code == 200:
+            # Response should not contain sensitive data
+            data = response.json()
+            assert 'DROP TABLE' not in data.get('answer', '')
+```
+
+**XSS Testing**:
+```python
+def test_xss_in_query():
+    # Attempt XSS
+    xss_payloads = [
+        "<script>alert('XSS')</script>",
+        "<img src=x onerror=alert('XSS')>",
+        "javascript:alert('XSS')",
+    ]
+    
+    for payload in xss_payloads:
+        response = client.post("/ask", json={
+            "query": payload,
+            "user_id": "test_user"
+        }, headers={"Authorization": "Bearer test_api_key"})
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Response should escape HTML
+        assert '<script>' not in data['answer']
+        assert 'onerror=' not in data['answer']
+```
+
+**Authentication Testing**:
+```python
+def test_authentication_required():
+    # Test without API key
+    response = client.post("/ask", json={
+        "query": "Test",
+        "user_id": "test_user"
+    })
+    assert response.status_code == 401
+    
+def test_invalid_api_key():
+    response = client.post("/ask", json={
+        "query": "Test",
+        "user_id": "test_user"
+    }, headers={"Authorization": "Bearer invalid_key"})
+    assert response.status_code == 401
+
+def test_api_key_in_url_rejected():
+    # API key should not be accepted in URL
+    response = client.post(
+        "/ask?api_key=test_api_key",
+        json={"query": "Test", "user_id": "test_user"}
+    )
+    assert response.status_code == 401
+```
+
+### 7.2 Dependency Vulnerability Scanning
+
+**Check for vulnerable dependencies**:
+```bash
+# Install safety
+pip install safety
+
+# Scan dependencies
+safety check --file requirements.txt
+
+# Output example:
+# Found 2 vulnerabilities:
+# -> Package: requests
+#    Installed: 2.25.0
+#    Vulnerability: CVE-2023-32681
+#    Fix: Upgrade to 2.31.0
+```
+
+### 7.3 API Security Testing
+
+**Test rate limiting**:
+```python
+def test_rate_limiting_enforced():
+    # Make requests exceeding rate limit
+    responses = []
+    for i in range(105):  # Exceed 100/min limit
+        response = client.post("/ask", json={
+            "query": f"Test {i}",
+            "user_id": "test_user"
+        }, headers={"Authorization": "Bearer test_api_key"})
+        responses.append(response)
+    
+    # At least some should be rate limited
+    status_codes = [r.status_code for r in responses]
+    assert 429 in status_codes  # Too Many Requests
+
+def test_request_size_limit():
+    # Test oversized request
+    huge_query = "test " * 100000  # Very large query
+    response = client.post("/ask", json={
+        "query": huge_query,
+        "user_id": "test_user"
+    }, headers={"Authorization": "Bearer test_api_key"})
+    
+    assert response.status_code == 413  # Payload Too Large
+```
+
+---
+
+## 8. API Testing
+
+### 8.1 API Contract Testing
+
+**Test API schema compliance**:
+```python
+# tests/api/test_api_contract.py
+from jsonschema import validate, ValidationError
+
+# Define expected schema
+ASK_RESPONSE_SCHEMA = {
+    "type": "object",
+    "required": ["answer", "sources", "conversation_id", "processing_time_ms"],
+    "properties": {
+        "answer": {"type": "string"},
+        "sources": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id", "text", "score"],
+                "properties": {
+                    "id": {"type": "string"},
+                    "text": {"type": "string"},
+                    "score": {"type": "number"},
+                    "metadata": {"type": "object"}
+                }
+            }
+        },
+        "conversation_id": {"type": "string"},
+        "processing_time_ms": {"type": "number"}
+    }
+}
+
+def test_ask_response_schema():
+    response = client.post("/ask", json={
+        "query": "What is our PTO policy?",
+        "user_id": "test_user"
+    }, headers={"Authorization": "Bearer test_api_key"})
+    
+    assert response.status_code == 200
+    
+    # Validate schema
+    try:
+        validate(instance=response.json(), schema=ASK_RESPONSE_SCHEMA)
+    except ValidationError as e:
+        pytest.fail(f"Response schema validation failed: {e}")
+```
+
+### 8.2 API Regression Testing
+
+**Detect API changes**:
+```python
+# tests/api/test_api_regression.py
+import json
+
+BASELINE_RESPONSES_FILE = "tests/api/baseline_responses.json"
+
+def test_api_response_unchanged():
+    """Ensure API responses haven't changed unexpectedly."""
+    
+    # Load baseline responses
+    with open(BASELINE_RESPONSES_FILE) as f:
+        baseline = json.load(f)
+    
+    # Make same requests
+    for test_case in baseline:
+        response = client.post(
+            test_case["endpoint"],
+            json=test_case["request"],
+            headers=test_case["headers"]
+        )
+        
+        # Compare with baseline
+        assert response.status_code == test_case["expected_status"]
+        
+        # Compare response structure (not exact values, as LLM may vary)
+        assert set(response.json().keys()) == set(test_case["expected_keys"])
+```
+
+---
+
+## 9. Test Data Management
+
+### 9.1 Test Fixtures
+
+**Centralized test data**:
+```python
+# tests/fixtures/test_data.py
+SAMPLE_DOCUMENTS = [
+    {
+        "id": "doc_001",
+        "title": "PTO Policy",
+        "text": "Our PTO policy offers 15-30 days per year based on tenure...",
+        "metadata": {"category": "policies", "tags": ["hr", "pto"]}
+    },
+    {
+        "id": "doc_002",
+        "title": "Remote Work Policy",
+        "text": "Remote work is available for all employees with manager approval...",
+        "metadata": {"category": "policies", "tags": ["remote", "work"]}
+    },
+    # ... more documents
+]
+
+SAMPLE_QUERIES = [
+    {
+        "query": "What is our PTO policy?",
+        "expected_keywords": ["PTO", "days", "year"],
+        "expected_sources": ["doc_001"]
+    },
+    {
+        "query": "How do I work remotely?",
+        "expected_keywords": ["remote", "work", "manager"],
+        "expected_sources": ["doc_002"]
+    },
+]
+```
+
+### 9.2 Test Database Setup
+
+**Reset database before each test**:
+```python
+# conftest.py
+import pytest
+
+@pytest.fixture(scope="function", autouse=True)
+def reset_test_database():
+    """Reset test database before each test."""
+    # Drop and recreate collections
+    milvus_client = MilvusClient(collection_name="test_collection")
+    try:
+        milvus_client.drop_collection()
+    except:
+        pass
+    milvus_client.create_collection()
+    
+    # Insert test documents
+    for doc in SAMPLE_DOCUMENTS:
+        embedding = embedding_service.embed_text(doc["text"])
+        milvus_client.insert(
+            embedding=embedding,
+            text=doc["text"],
+            metadata=doc["metadata"]
+        )
+    
+    yield
+    
+    # Cleanup after test
+    milvus_client.drop_collection()
+```
+
+### 9.3 Factories for Test Data
+
+**Generate test data programmatically**:
+```python
+# tests/factories.py
+from faker import Faker
+import factory
+
+fake = Faker()
+
+class DocumentFactory(factory.Factory):
+    class Meta:
+        model = dict
+    
+    id = factory.Sequence(lambda n: f"doc_{n:03d}")
+    title = factory.LazyAttribute(lambda _: fake.sentence(nb_words=5))
+    text = factory.LazyAttribute(lambda _: fake.paragraph(nb_sentences=10))
+    metadata = factory.LazyAttribute(lambda _: {
+        "category": fake.random_element(["policies", "technical", "general"]),
+        "tags": [fake.word() for _ in range(3)]
+    })
+
+# Usage
+def test_with_generated_data():
+    docs = [DocumentFactory() for _ in range(100)]
+    # ... use docs in test
+```
+
+---
+
+## 10. Continuous Integration Testing
+
+### 10.1 GitHub Actions Workflow
+
+**.github/workflows/test.yml**:
+```yaml
+name: Run Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      milvus:
+        image: milvusdb/milvus:v2.3.0
+        ports:
+          - 19530:19530
+        options: >-
+          --health-cmd="curl -f http://localhost:9091/healthz"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+      
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install pytest pytest-cov pytest-asyncio pytest-mock
+      
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ --cov=backend --cov-report=xml --cov-report=term
+      
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/ --cov=backend --cov-append --cov-report=xml
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: true
+      
+      - name: Check coverage threshold
+        run: |
+          coverage report --fail-under=80
+      
+      - name: Run linting
+        run: |
+          pip install flake8 black isort
+          flake8 backend/
+          black --check backend/
+          isort --check backend/
+      
+      - name: Run security scan
+        run: |
+          pip install safety bandit
+          safety check --file requirements.txt
+          bandit -r backend/
+```
+
+### 10.2 Pre-commit Hooks
+
+**.pre-commit-config.yaml**:
+```yaml
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+  
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+        language_version: python3.10
+  
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+  
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        args: ['--max-line-length=100']
+  
+  - repo: local
+    hooks:
+      - id: pytest-unit
+        name: Run unit tests
+        entry: pytest tests/unit/
+        language: system
+        pass_filenames: false
+        always_run: true
+```
+
+**Install pre-commit hooks**:
+```bash
+pip install pre-commit
+pre-commit install
+
+# Now tests run automatically before each commit
+```
+
+---
+
+## 11. Test Coverage & Metrics
+
+### 11.1 Coverage Targets
+
+```
+Component           | Target | Current | Status
+--------------------|--------|---------|--------
+Overall             | 80%    | 81%     | ✅
+Critical paths      | 100%   | 98%     | ⚠️
+Unit tests          | 90%    | 87%     | ⚠️
+Integration tests   | 70%    | 65%     | ⚠️
+E2E tests           | 50%    | 45%     | ⚠️
+```
+
+### 11.2 Test Metrics Dashboard
+
+**Key metrics to track**:
+- Test count (unit, integration, E2E)
+- Code coverage percentage
+- Test execution time
+- Flaky test rate (<1%)
+- Test failure rate (<0.5%)
+- Mean time to detect (MTTD) bugs
+- Mean time to resolve (MTTR) bugs
+
+**Prometheus metrics**:
+```python
+from prometheus_client import Counter, Histogram, Gauge
+
+test_count = Gauge('tests_total', 'Total number of tests', ['type'])
+test_duration = Histogram('test_duration_seconds', 'Test execution time', ['type'])
+test_failures = Counter('test_failures_total', 'Test failures', ['type'])
+coverage = Gauge('code_coverage_percentage', 'Code coverage')
+
+# Update after each test run
+test_count.labels(type='unit').set(245)
+test_count.labels(type='integration').set(67)
+test_count.labels(type='e2e').set(23)
+coverage.set(81.4)
+```
+
+---
+
+## 12. Bug Tracking & Management
+
+### 12.1 Bug Severity Levels
+
+```
+Severity | Description                    | Response Time | Examples
+---------|--------------------------------|---------------|---------------------------
+Critical | System down, data loss         | Immediate     | Server crash, data corruption
+High     | Major feature broken           | 24 hours      | Cannot ask questions, no results
+Medium   | Feature partially broken       | 3 days        | Slow response, minor UI issue
+Low      | Cosmetic issue                 | 1 week        | Typo, formatting issue
+```
+
+### 12.2 Bug Report Template
+
+```markdown
+## Bug Report
+
+**Title**: [Short description]
+
+**Severity**: Critical / High / Medium / Low
+
+**Environment**:
+- OS: macOS / Linux / Windows
+- Browser: Chrome 120 / Firefox 121 / Safari 17
+- Version: 1.2.3
+
+**Steps to Reproduce**:
+1. Navigate to /chat
+2. Type "What is our PTO policy?"
+3. Click Send
+4. Observe error
+
+**Expected Behavior**:
+Answer should be displayed within 2 seconds.
+
+**Actual Behavior**:
+Error message "Unable to connect to server" is displayed.
+
+**Screenshots**:
+[Attach screenshots]
+
+**Logs**:
+```
+ERROR: Connection refused to localhost:8000
+```
+
+**Additional Context**:
+This started happening after deploying version 1.2.3.
+```
+
+### 12.3 Bug Triage Process
+
+1. **Report** → User/QA files bug report
+2. **Triage** → Lead assigns severity and priority
+3. **Assign** → Developer takes ownership
+4. **Fix** → Developer fixes bug and writes test
+5. **Review** → Code review and test verification
+6. **Deploy** → Deploy fix to production
+7. **Verify** → QA verifies fix in production
+8. **Close** → Close bug ticket
+
+---
+
+## 13. Testing Tools & Frameworks
+
+### 13.1 Testing Stack
+
+```
+Layer           | Tool                  | Purpose
+----------------|----------------------|-----------------------------------
+Unit Testing    | pytest                | Test framework
+Mocking         | pytest-mock           | Mock external dependencies
+Coverage        | pytest-cov            | Code coverage measurement
+Integration     | TestClient (FastAPI)  | API testing
+E2E Testing     | Playwright            | Browser automation
+Load Testing    | Locust                | Performance & load testing
+Security        | safety, bandit        | Vulnerability scanning
+Linting         | flake8, black, isort  | Code quality
+CI/CD           | GitHub Actions        | Automated testing
+```
+
+### 13.2 Tool Configuration
+
+**pytest.ini**:
+```ini
+[pytest]
+testpaths = tests
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+addopts = 
+    --verbose
+    --strict-markers
+    --cov=backend
+    --cov-report=term-missing
+    --cov-report=html
+    --cov-fail-under=80
+markers =
+    unit: Unit tests
+    integration: Integration tests
+    e2e: End-to-end tests
+    slow: Slow tests (skip by default)
+```
+
+**Run tests by marker**:
+```bash
+# Run only unit tests
+pytest -m unit
+
+# Run unit + integration
+pytest -m "unit or integration"
+
+# Skip slow tests
+pytest -m "not slow"
+```
+
+---
+
+## 14. Code Review Checklist
+
+### 14.1 Pre-Review Checklist
+
+**Before submitting PR**:
+- ✅ All tests pass locally
+- ✅ Code coverage ≥80%
+- ✅ No linting errors
+- ✅ Tests added for new features
+- ✅ Tests added for bug fixes
+- ✅ Documentation updated
+- ✅ CHANGELOG.md updated
+
+### 14.2 Review Checklist
+
+**Code quality**:
+- ✅ Code is readable and well-structured
+- ✅ Functions are small and focused
+- ✅ Variables have descriptive names
+- ✅ No hardcoded values
+- ✅ Error handling is appropriate
+- ✅ Logging is sufficient
+
+**Testing**:
+- ✅ Tests cover happy path
+- ✅ Tests cover error cases
+- ✅ Tests are independent
+- ✅ Tests use appropriate assertions
+- ✅ Mock/stub external dependencies
+- ✅ No flaky tests
+
+**Security**:
+- ✅ Input validation
+- ✅ No SQL injection vulnerabilities
+- ✅ No XSS vulnerabilities
+- ✅ Authentication/authorization checked
+- ✅ Secrets not hardcoded
+- ✅ Rate limiting applied
+
+**Performance**:
+- ✅ No N+1 queries
+- ✅ Appropriate caching
+- ✅ Efficient algorithms
+- ✅ Resource cleanup (connections, files)
+
+---
+
+## 15. QA Best Practices
+
+### 15.1 Testing Best Practices
+
+**DO**:
+- ✅ Write tests before code (TDD)
+- ✅ Test one thing per test
+- ✅ Use descriptive test names
+- ✅ Arrange-Act-Assert pattern
+- ✅ Mock external dependencies
+- ✅ Clean up after tests
+- ✅ Run tests frequently
+- ✅ Maintain high coverage
+
+**DON'T**:
+- ❌ Skip writing tests
+- ❌ Test implementation details
+- ❌ Share state between tests
+- ❌ Use sleep/wait in tests
+- ❌ Ignore flaky tests
+- ❌ Commit commented-out tests
+- ❌ Test framework code
+
+### 15.2 Test Naming Conventions
+
+**Good test names**:
+```python
+def test_embed_text_returns_correct_dimensions()
+def test_search_returns_top_k_results()
+def test_generate_answer_handles_timeout()
+def test_query_with_empty_string_raises_value_error()
+```
+
+**Bad test names**:
+```python
+def test_1()
+def test_embed()
+def test_search_works()
+def test_error()
+```
+
+### 15.3 Continuous Improvement
+
+**Regular activities**:
+- Weekly: Review flaky tests
+- Monthly: Analyze coverage gaps
+- Quarterly: Review test strategy
+- Annually: Major refactoring
+
+**Metrics to track**:
+- Test count trend
+- Coverage trend
+- Test execution time trend
+- Flaky test rate
+- Bug escape rate (bugs found in production)
+
+---
+
+## Summary & Quick Reference
+
+### Test Command Cheat Sheet
+
+```bash
+# Run all tests
+pytest
+
+# Run specific test type
+pytest tests/unit/
+pytest tests/integration/
+pytest tests/e2e/
+
+# Run with coverage
+pytest --cov=backend --cov-report=html
+
+# Run in parallel (faster)
+pytest -n 4
+
+# Run specific test
+pytest tests/unit/test_embeddings.py::test_embed_text
+
+# Run tests matching pattern
+pytest -k "test_embed"
+
+# Run last failed tests
+pytest --lf
+
+# Run tests until one fails
+pytest -x
+
+# Show print statements
+pytest -s
+
+# Verbose output
+pytest -v
+
+# Debug mode
+pytest --pdb
+```
+
+### Coverage Targets
+
+```
+Component              | Target
+-----------------------|--------
+Overall                | ≥80%
+Critical paths         | 100%
+New features           | ≥90%
+Bug fixes              | 100%
+```
+
+### Test Distribution (Test Pyramid)
+
+```
+E2E Tests:         10% (23 tests)
+Integration Tests: 30% (67 tests)
+Unit Tests:        60% (245 tests)
+Total:             335 tests
+```
+
+---
+
+**Document Version**: 1.0
+**Last Updated**: October 2025
+
+---
+
+**END OF TESTING STRATEGY & QA PROCEDURES GUIDE**

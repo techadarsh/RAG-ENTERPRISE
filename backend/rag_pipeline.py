@@ -119,7 +119,7 @@ class RAGPipeline:
             # Join all but last with commas, add "and" before last
             return f"{', '.join(self.document_topics[:-1])}, and {self.document_topics[-1]}"
     
-    def _chunk_text(self, text: str, max_length: int = 3000) -> List[str]:
+    def _chunk_text(self, text: str, max_length: int = 3000, overlap: int = 500) -> List[str]:
         """
         Split text into chunks if it exceeds max_length.
         Tries to split on paragraphs first, then sentences.

@@ -1,0 +1,1493 @@
+# Disaster Recovery Detailed Runbook
+
+## Executive Summary
+
+This comprehensive runbook provides step-by-step procedures for recovering the RAG Enterprise System from various disaster scenarios. It covers backup strategies, recovery procedures, failover processes, and business continuity planning.
+
+**Recovery Objectives**:
+- **RTO** (Recovery Time Objective): 4 hours
+- **RPO** (Recovery Point Objective): 1 hour
+- **Uptime Target**: 99.9% (43 minutes downtime/month allowed)
+- **Data Loss Tolerance**: Maximum 1 hour of data
+
+**Disaster Recovery Readiness**:
+- Backup frequency: Daily full + hourly incremental
+- Backup retention: 30 days
+- Backup storage: Multi-region (primary + secondary)
+- DR drills: Quarterly
+- Last DR drill: September 2025 (successful)
+
+---
+
+## Table of Contents
+
+1. Disaster Scenarios & Impact Analysis
+2. Backup Strategy & Procedures
+3. Recovery Procedures by Scenario
+4. Failover Procedures
+5. Data Restoration
+6. Service Restoration Order
+7. Verification & Testing
+8. Communication Plan
+9. Post-Recovery Actions
+10. DR Testing & Drills
+11. Appendices
+
+---
+
+## 1. Disaster Scenarios & Impact Analysis
+
+### 1.1 Scenario Classification
+
+```
+SCENARIO                    | PROBABILITY | IMPACT  | RTO   | RPO   | PRIORITY
+----------------------------|-------------|---------|-------|-------|----------
+Server/Hardware Failure     | Medium      | High    | 2h    | 1h    | P1
+Data Center Outage          | Low         | Critical| 4h    | 1h    | P1
+Ransomware Attack           | Medium      | Critical| 4h    | 24h   | P1
+Data Corruption             | Low         | High    | 3h    | 1h    | P2
+Natural Disaster            | Very Low    | Critical| 8h    | 1h    | P1
+Human Error (Accidental)    | Medium      | Medium  | 1h    | 1h    | P2
+Network Outage              | Low         | High    | 2h    | 0h    | P2
+Database Corruption         | Low         | High    | 3h    | 1h    | P2
+Application Bug             | High        | Low     | 30m   | 0h    | P3
+DDoS Attack                 | Medium      | Medium  | 1h    | 0h    | P3
+```
+
+### 1.2 Impact Assessment
+
+**P1 (Critical)**: Complete service unavailable
+- Business Impact: All users affected, revenue loss
+- Response: Immediate, 24/7 on-call engagement
+- Escalation: CTO, CEO notification
+
+**P2 (High)**: Major functionality impaired
+- Business Impact: Degraded service, some users affected
+- Response: Within 2 hours
+- Escalation: Engineering manager notification
+
+**P3 (Medium)**: Minor functionality impaired
+- Business Impact: Minor inconvenience
+- Response: Within 4 hours
+- Escalation: Team lead notification
+
+### 1.3 Disaster Declaration Criteria
+
+**Declare disaster if**:
+- Service down >30 minutes with no ETA
+- Data loss >1 hour detected
+- Security breach confirmed
+- Multiple cascading failures
+- Infrastructure completely unavailable
+
+**Who can declare**: Engineering Manager, SRE Lead, CTO
+
+**Declaration process**:
+1. Page incident commander
+2. Activate war room (#incident-war-room)
+3. Notify stakeholders
+4. Begin DR procedures
+
+---
+
+## 2. Backup Strategy & Procedures
+
+### 2.1 Backup Components
+
+**What to backup**:
+- ✅ Milvus vector database (embeddings + metadata)
+- ✅ PostgreSQL database (users, conversations, feedback)
+- ✅ Application configuration files
+- ✅ Document corpus (source documents)
+- ✅ Model files (if customized)
+- ✅ SSL certificates and keys
+- ❌ Ollama models (can be re-downloaded)
+- ❌ Logs (retained separately)
+
+### 2.2 Backup Schedule
+
+**Daily Full Backups** (2:00 AM UTC):
+```bash
+#!/bin/bash
+# /opt/rag/scripts/backup-full.sh
+
+BACKUP_DATE=$(date +%Y%m%d)
+BACKUP_DIR="/backups/full/$BACKUP_DATE"
+S3_BUCKET="s3://rag-backups-primary"
+
+echo "[$(date)] Starting full backup..."
+
+# Create backup directory
+mkdir -p $BACKUP_DIR
+
+# 1. Backup Milvus
+echo "[$(date)] Backing up Milvus..."
+docker exec milvus /opt/milvus/bin/milvus backup create \
+  --backup-dir /backups/milvus/$BACKUP_DATE
+
+tar -czf $BACKUP_DIR/milvus.tar.gz /var/lib/milvus/backup/$BACKUP_DATE/
+
+# 2. Backup PostgreSQL
+echo "[$(date)] Backing up PostgreSQL..."
+docker exec postgres pg_dump -U postgres rag_db | gzip > $BACKUP_DIR/postgres.sql.gz
+
+# 3. Backup configuration
+echo "[$(date)] Backing up configuration..."
+tar -czf $BACKUP_DIR/config.tar.gz \
+  /opt/rag/docker-compose.yml \
+  /opt/rag/.env \
+  /opt/rag/backend/config/ \
+  /opt/rag/monitoring/
+
+# 4. Backup documents
+echo "[$(date)] Backing up documents..."
+tar -czf $BACKUP_DIR/documents.tar.gz /opt/rag/data/
+
+# 5. Generate backup manifest
+echo "[$(date)] Generating manifest..."
+cat > $BACKUP_DIR/manifest.json <<EOF
+{
+  "backup_date": "$BACKUP_DATE",
+  "backup_type": "full",
+  "components": ["milvus", "postgres", "config", "documents"],
+  "milvus_records": $(docker exec milvus milvus-cli show collection -c documents | grep "Entity count" | awk '{print $3}'),
+  "postgres_tables": $(docker exec postgres psql -U postgres rag_db -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" -t | tr -d ' '),
+  "document_count": $(find /opt/rag/data/ -type f | wc -l),
+  "backup_size_mb": $(du -sm $BACKUP_DIR | awk '{print $1}')
+}
+EOF
+
+# 6. Upload to S3 (primary)
+echo "[$(date)] Uploading to S3 primary..."
+aws s3 sync $BACKUP_DIR/ $S3_BUCKET/full/$BACKUP_DATE/ --delete
+
+# 7. Upload to S3 (secondary - different region)
+echo "[$(date)] Uploading to S3 secondary..."
+aws s3 sync $BACKUP_DIR/ s3://rag-backups-secondary/full/$BACKUP_DATE/ --delete
+
+# 8. Cleanup old backups (keep 30 days)
+echo "[$(date)] Cleaning up old backups..."
+find /backups/full/ -type d -mtime +30 -exec rm -rf {} \;
+aws s3 ls $S3_BUCKET/full/ | awk '{print $2}' | \
+  while read dir; do
+    date=$(echo $dir | tr -d '/')
+    if [ $(date -d "$date" +%s) -lt $(date -d "30 days ago" +%s) ]; then
+      aws s3 rm $S3_BUCKET/full/$dir --recursive
+    fi
+  done
+
+echo "[$(date)] Full backup completed successfully!"
+```
+
+**Hourly Incremental Backups** (on the hour):
+```bash
+#!/bin/bash
+# /opt/rag/scripts/backup-incremental.sh
+
+BACKUP_TIME=$(date +%Y%m%d_%H00)
+BACKUP_DIR="/backups/incremental/$BACKUP_TIME"
+S3_BUCKET="s3://rag-backups-primary"
+
+echo "[$(date)] Starting incremental backup..."
+
+mkdir -p $BACKUP_DIR
+
+# 1. Backup PostgreSQL changes (last hour)
+docker exec postgres pg_dump -U postgres rag_db \
+  --table=conversations --table=messages --table=feedback \
+  | gzip > $BACKUP_DIR/postgres_incremental.sql.gz
+
+# 2. Backup new documents
+rsync -av --update /opt/rag/data/ $BACKUP_DIR/documents/
+
+# 3. Upload to S3
+aws s3 sync $BACKUP_DIR/ $S3_BUCKET/incremental/$BACKUP_TIME/
+
+# 4. Cleanup old incremental backups (keep 7 days)
+find /backups/incremental/ -type d -mtime +7 -exec rm -rf {} \;
+
+echo "[$(date)] Incremental backup completed!"
+```
+
+**Cron Configuration**:
+```cron
+# /etc/cron.d/rag-backups
+
+# Full backup daily at 2 AM UTC
+0 2 * * * /opt/rag/scripts/backup-full.sh >> /var/log/rag-backup-full.log 2>&1
+
+# Incremental backup every hour
+0 * * * * /opt/rag/scripts/backup-incremental.sh >> /var/log/rag-backup-incremental.log 2>&1
+
+# Test restore monthly (first Sunday of month at 3 AM)
+0 3 1-7 * * [ "$(date +\%u)" -eq 7 ] && /opt/rag/scripts/test-restore.sh >> /var/log/rag-test-restore.log 2>&1
+```
+
+### 2.3 Backup Verification
+
+**Automated Verification** (after each backup):
+```bash
+#!/bin/bash
+# /opt/rag/scripts/verify-backup.sh
+
+BACKUP_DIR=$1
+MANIFEST="$BACKUP_DIR/manifest.json"
+
+echo "[$(date)] Verifying backup in $BACKUP_DIR..."
+
+# 1. Check manifest exists
+if [ ! -f $MANIFEST ]; then
+  echo "ERROR: Manifest not found!"
+  exit 1
+fi
+
+# 2. Verify all component files exist
+for component in milvus.tar.gz postgres.sql.gz config.tar.gz documents.tar.gz; do
+  if [ ! -f "$BACKUP_DIR/$component" ]; then
+    echo "ERROR: $component not found!"
+    exit 1
+  fi
+done
+
+# 3. Verify file integrity (checksums)
+cd $BACKUP_DIR
+sha256sum -c checksums.txt || exit 1
+
+# 4. Test archive extraction
+echo "Testing archive extraction..."
+for archive in *.tar.gz; do
+  tar -tzf $archive > /dev/null || exit 1
+done
+
+# 5. Test PostgreSQL dump
+echo "Testing PostgreSQL dump..."
+gunzip -c postgres.sql.gz | head -100 | grep -q "PostgreSQL database dump" || exit 1
+
+echo "[$(date)] Backup verification PASSED!"
+```
+
+### 2.4 Backup Storage
+
+**Primary Storage** (AWS S3 us-east-1):
+```
+s3://rag-backups-primary/
+├── full/
+│   ├── 20251012/
+│   │   ├── milvus.tar.gz
+│   │   ├── postgres.sql.gz
+│   │   ├── config.tar.gz
+│   │   ├── documents.tar.gz
+│   │   └── manifest.json
+│   ├── 20251011/
+│   └── ...
+└── incremental/
+    ├── 20251012_0900/
+    ├── 20251012_1000/
+    └── ...
+```
+
+**Secondary Storage** (Azure Blob eu-west-1):
+- Same structure as primary
+- Different cloud provider (multi-cloud DR)
+- Replicates from primary every 6 hours
+
+**Offline Storage** (Monthly):
+- External encrypted drive
+- Stored in fireproof safe at secondary location
+- Updated first day of each month
+
+---
+
+## 3. Recovery Procedures by Scenario
+
+### 3.1 Server/Hardware Failure
+
+**Scenario**: Primary server hardware failure (disk, CPU, memory)
+
+**Detection**:
+- Prometheus alert: ServiceDown
+- No response on /health endpoint
+- Server ping fails
+
+**Impact**: Complete service outage
+
+**Recovery Steps**:
+
+**Step 1: Assess Damage** (0-15 minutes)
+```bash
+# Try to SSH to server
+ssh rag-server-01
+
+# If SSH works, check system
+dmesg | tail -50  # Check for hardware errors
+df -h  # Check disk space
+free -h  # Check memory
+
+# Check Docker
+docker ps
+docker stats
+```
+
+**Step 2: Decision Point**
+- If server accessible: Try service restart (Section 3.1a)
+- If server dead: Failover to backup server (Section 3.1b)
+
+**Step 3a: Service Restart** (if server accessible)
+```bash
+# Restart Docker services
+cd /opt/rag
+docker-compose restart
+
+# If doesn't help, full restart
+docker-compose down
+docker-compose up -d
+
+# Monitor logs
+docker-compose logs -f
+```
+
+**Step 3b: Failover to Backup Server** (if server dead)
+```bash
+# On backup server (rag-server-02)
+ssh rag-server-02
+
+# 1. Restore latest backup
+/opt/rag/scripts/restore-full.sh /backups/full/latest
+
+# 2. Start services
+cd /opt/rag
+docker-compose up -d
+
+# 3. Update DNS
+# - Point rag.company.com to new server IP
+# - Wait for DNS propagation (5-15 minutes)
+
+# 4. Update load balancer
+# - Remove failed server from pool
+# - Add backup server to pool
+```
+
+**Verification**:
+```bash
+# Test health endpoint
+curl https://rag.company.com/health
+
+# Test query
+curl -X POST https://rag.company.com/ask \
+  -H "Authorization: Bearer $API_KEY" \
+  -d '{"query":"What is our PTO policy?","user_id":"test"}'
+```
+
+**RTO**: 2 hours (15 min assessment + 1h restore + 45min DNS/testing)
+**RPO**: 1 hour (last hourly backup)
+
+---
+
+### 3.2 Data Center Outage
+
+**Scenario**: Complete data center outage (power, network, fire, flood)
+
+**Detection**:
+- All monitoring goes dark
+- Unable to reach any services
+- Data center provider notification
+
+**Impact**: Complete service outage for all users
+
+**Recovery Steps**:
+
+**Step 1: Activate DR Site** (0-30 minutes)
+```bash
+# Connect to DR site (different geographic location)
+ssh rag-dr-site
+
+# 1. Verify DR environment ready
+cd /opt/rag-dr
+./scripts/check-dr-readiness.sh
+
+# Expected output:
+# ✓ Docker installed
+# ✓ Network configured
+# ✓ Storage mounted
+# ✓ Backups accessible
+# ✓ SSL certificates present
+# ✓ DNS can be updated
+```
+
+**Step 2: Restore from Backup** (30 minutes - 2 hours)
+```bash
+# 1. Download latest backup from S3
+LATEST_BACKUP=$(aws s3 ls s3://rag-backups-primary/full/ | sort | tail -1 | awk '{print $2}')
+aws s3 sync s3://rag-backups-primary/full/$LATEST_BACKUP /opt/rag-dr/backups/
+
+# 2. Restore all components
+/opt/rag-dr/scripts/restore-full.sh /opt/rag-dr/backups/$LATEST_BACKUP
+
+# 3. Verify data integrity
+/opt/rag-dr/scripts/verify-restore.sh
+```
+
+**Step 3: Start Services** (2-3 hours)
+```bash
+# 1. Start all Docker services
+cd /opt/rag-dr
+docker-compose up -d
+
+# 2. Wait for services to be ready
+./scripts/wait-for-services.sh
+
+# 3. Verify all components healthy
+curl http://localhost:8000/health
+```
+
+**Step 4: Failover DNS** (3-4 hours)
+```bash
+# 1. Update DNS records
+# Route 53 / CloudFlare / Your DNS provider
+# Change A record: rag.company.com → DR site IP
+
+# 2. Update load balancer health checks
+# Point health checks to DR site
+
+# 3. Wait for DNS propagation (typically 5-15 minutes)
+# Test from different locations:
+dig rag.company.com
+nslookup rag.company.com 8.8.8.8
+```
+
+**Step 5: Notify Stakeholders**
+```
+Subject: RAG System Failover Complete
+
+The RAG system has been successfully failed over to the disaster recovery site following a data center outage.
+
+Status: OPERATIONAL
+Location: DR Site (us-west-2)
+Data Loss: ~1 hour (last backup: 13:00 UTC)
+User Impact: Service was unavailable for 4 hours
+
+Users can continue using the system normally. All data since last backup will need to be re-entered.
+
+Incident Report: [Link]
+```
+
+**RTO**: 4 hours
+**RPO**: 1 hour
+
+---
+
+### 3.3 Ransomware Attack
+
+**Scenario**: Ransomware encrypts production data
+
+**Detection**:
+- Files become inaccessible / encrypted
+- Ransom note appears
+- Unusual file modifications detected
+- Antivirus alerts
+
+**Impact**: Data potentially compromised, service down
+
+**Recovery Steps**:
+
+**Step 1: Immediate Response** (0-15 minutes)
+```bash
+# DO NOT PAY RANSOM!
+
+# 1. Isolate infected systems
+# - Disconnect from network
+# - Shutdown infected servers
+iptables -A INPUT -j DROP
+iptables -A OUTPUT -j DROP
+shutdown -h now
+
+# 2. Notify security team
+# - security@company.com
+# - Security incident hotline
+
+# 3. Preserve evidence
+# - Take disk snapshots
+# - Capture network logs
+# - Document timeline
+```
+
+**Step 2: Assess Damage** (15-60 minutes)
+```bash
+# 1. Identify encrypted files
+find /var/lib/milvus -type f -name "*.encrypted"
+find /opt/rag/data -type f -name "*.locked"
+
+# 2. Check backup integrity
+# Verify backups are NOT encrypted
+aws s3 ls s3://rag-backups-primary/full/latest/
+./scripts/verify-backup.sh /backups/full/latest
+
+# 3. Determine infection source
+# - Review logs
+# - Check for malware signatures
+# - Identify patient zero
+```
+
+**Step 3: Clean Recovery** (1-4 hours)
+```bash
+# 1. Provision clean environment
+# - New servers from clean images
+# - Updated security patches
+# - Enhanced security controls
+
+# 2. Restore from clean backup
+# Use backup from BEFORE ransomware infection
+# Typically 24-48 hours ago
+
+# Find last known good backup
+LAST_GOOD_BACKUP="20251010"  # Verified clean
+aws s3 sync s3://rag-backups-primary/full/$LAST_GOOD_BACKUP /tmp/restore/
+
+# 3. Restore on clean servers
+/opt/rag/scripts/restore-full.sh /tmp/restore
+
+# 4. Apply security hardening
+./scripts/security-hardening.sh
+
+# 5. Test thoroughly before going live
+./scripts/security-scan.sh
+./scripts/integrity-check.sh
+```
+
+**Step 4: Post-Recovery Security** (4+ hours)
+```bash
+# 1. Change all credentials
+# - API keys
+# - Database passwords
+# - SSH keys
+# - SSL certificates
+
+# 2. Enable additional security
+# - MFA for all admin accounts
+# - IP whitelisting
+# - Enhanced monitoring
+# - Increased backup frequency
+
+# 3. Security audit
+# - Vulnerability scan
+# - Penetration testing
+# - Log analysis
+```
+
+**RTO**: 4 hours (clean recovery)
+**RPO**: 24 hours (restore from last known clean backup)
+
+**CRITICAL**: Do NOT restore from most recent backup if it may be infected!
+
+---
+
+### 3.4 Data Corruption
+
+**Scenario**: Database corruption, bad deployment, or data integrity issue
+
+**Detection**:
+- Database errors
+- Inconsistent query results
+- Checksum failures
+- User reports of wrong data
+
+**Impact**: Service degraded, data may be incorrect
+
+**Recovery Steps**:
+
+**Step 1: Stop Writes** (0-5 minutes)
+```bash
+# 1. Enable read-only mode
+# Add to docker-compose.yml temporarily:
+environment:
+  - READ_ONLY_MODE=true
+
+docker-compose up -d backend
+
+# 2. Notify users
+# Post status page update:
+# "System in read-only mode for maintenance"
+```
+
+**Step 2: Assess Corruption** (5-30 minutes)
+```bash
+# 1. Check Milvus integrity
+docker exec milvus milvus-cli check collection -c documents
+
+# 2. Check PostgreSQL integrity
+docker exec postgres pg_dump -U postgres rag_db --test | grep -i error
+
+# 3. Compare with backup
+# Download latest good backup
+aws s3 sync s3://rag-backups-primary/full/latest /tmp/backup/
+
+# Extract and compare
+tar -xzf /tmp/backup/milvus.tar.gz -C /tmp/backup/
+# Compare record counts, checksums, etc.
+```
+
+**Step 3: Point-in-Time Recovery** (30 minutes - 2 hours)
+```bash
+# 1. Identify last known good state
+# Review backup manifest
+cat /tmp/backup/20251012/manifest.json
+
+# 2. Restore from specific backup
+RESTORE_BACKUP="20251012_0900"  # Last known good
+/opt/rag/scripts/restore-full.sh /backups/full/$RESTORE_BACKUP
+
+# 3. Apply incremental backups up to corruption point
+for backup in incremental/20251012_{10,11,12}00; do
+  /opt/rag/scripts/restore-incremental.sh /backups/$backup
+done
+
+# 4. Verify data integrity
+/opt/rag/scripts/verify-data-integrity.sh
+```
+
+**Step 4: Resume Service** (2-3 hours)
+```bash
+# 1. Disable read-only mode
+# Remove READ_ONLY_MODE from docker-compose.yml
+docker-compose up -d backend
+
+# 2. Test thoroughly
+curl http://localhost:8000/health
+./scripts/smoke-test.sh
+
+# 3. Monitor closely
+# Watch for any anomalies in next 24 hours
+```
+
+**RTO**: 3 hours
+**RPO**: 1 hour
+
+---
+
+### 3.5 Natural Disaster
+
+**Scenario**: Earthquake, hurricane, flood affecting primary data center
+
+**Detection**:
+- Weather alerts
+- Data center provider notification
+- All services unreachable
+
+**Impact**: Complete service outage, potential for extended recovery
+
+**Recovery Steps**:
+
+Similar to **Section 3.2 (Data Center Outage)** but with additional considerations:
+
+**Additional Steps**:
+
+1. **Personnel Safety First**
+   - Ensure all team members safe
+   - Establish communication channels
+   - Activate remote work protocols
+
+2. **Extended Timeline**
+   - May take days/weeks to restore primary site
+   - Plan for extended operation from DR site
+   - Consider permanent migration if needed
+
+3. **Stakeholder Communication**
+   - Daily status updates
+   - Expected timeline
+   - Alternative arrangements
+
+4. **Insurance Claims**
+   - Document all damages
+   - Preserve evidence
+   - Coordinate with insurance
+
+**RTO**: 8 hours (DR site activation)
+**RPO**: 1 hour
+
+---
+
+## 4. Failover Procedures
+
+### 4.1 Automatic Failover (Health Check Based)
+
+**Load Balancer Configuration** (HAProxy):
+```haproxy
+# /etc/haproxy/haproxy.cfg
+
+frontend http_front
+  bind *:80
+  bind *:443 ssl crt /etc/ssl/certs/rag.pem
+  default_backend http_back
+
+backend http_back
+  balance roundrobin
+  option httpchk GET /health
+  http-check expect status 200
+  
+  # Primary server
+  server rag-primary 10.0.1.10:8000 check inter 10s fall 3 rise 2
+  
+  # Backup server (standby)
+  server rag-backup 10.0.2.10:8000 check inter 10s fall 3 rise 2 backup
+```
+
+**How it works**:
+- Load balancer checks /health every 10 seconds
+- If primary fails 3 consecutive checks (30 seconds), mark as down
+- Automatically route traffic to backup server
+- When primary recovers and passes 2 checks, restore traffic
+
+### 4.2 Manual Failover
+
+**When to use manual failover**:
+- Planned maintenance
+- Performance issues on primary
+- Suspected but unconfirmed issues
+- Testing DR procedures
+
+**Procedure**:
+```bash
+# 1. Prepare backup server
+ssh rag-backup
+/opt/rag/scripts/sync-from-primary.sh  # Sync latest data
+
+# 2. Update DNS
+# Change A record: rag.company.com → backup server IP
+aws route53 change-resource-record-sets --hosted-zone-id Z123456 --change-batch '{
+  "Changes": [{
+    "Action": "UPSERT",
+    "ResourceRecordSet": {
+      "Name": "rag.company.com",
+      "Type": "A",
+      "TTL": 300,
+      "ResourceRecords": [{"Value": "10.0.2.10"}]
+    }
+  }]
+}'
+
+# 3. Update load balancer
+# Drain primary server
+echo "disable server http_back/rag-primary" | socat stdio /var/run/haproxy.sock
+
+# 4. Monitor traffic shift
+watch -n 1 'curl -s http://localhost:9000/haproxy?stats;csv | grep http_back'
+
+# 5. Notify team
+# Post in Slack: "Failover to backup server complete"
+```
+
+### 4.3 Failback Procedures
+
+**After fixing primary**:
+```bash
+# 1. Verify primary fully recovered
+ssh rag-primary
+/opt/rag/scripts/health-check-full.sh
+
+# 2. Sync data from backup (if needed)
+/opt/rag/scripts/sync-from-backup.sh
+
+# 3. Enable primary in load balancer
+echo "enable server http_back/rag-primary" | socat stdio /var/run/haproxy.sock
+
+# 4. Gradual traffic shift
+# Increase weight slowly: 10% → 50% → 100%
+echo "set server http_back/rag-primary weight 10" | socat stdio /var/run/haproxy.sock
+# Wait 10 minutes, monitor
+echo "set server http_back/rag-primary weight 50" | socat stdio /var/run/haproxy.sock
+# Wait 10 minutes, monitor
+echo "set server http_back/rag-primary weight 100" | socat stdio /var/run/haproxy.sock
+
+# 5. Return backup to standby
+echo "enable server http_back/rag-backup" | socat stdio /var/run/haproxy.sock
+echo "set server http_back/rag-backup weight 0" | socat stdio /var/run/haproxy.sock
+```
+
+---
+
+## 5. Data Restoration
+
+### 5.1 Restore Milvus Vector Database
+
+```bash
+#!/bin/bash
+# /opt/rag/scripts/restore-milvus.sh
+
+BACKUP_FILE=$1  # /backups/full/20251012/milvus.tar.gz
+
+echo "[$(date)] Restoring Milvus from $BACKUP_FILE..."
+
+# 1. Stop Milvus
+docker-compose stop milvus
+
+# 2. Backup current data (just in case)
+mv /var/lib/milvus /var/lib/milvus.old.$(date +%Y%m%d_%H%M%S)
+
+# 3. Extract backup
+mkdir -p /var/lib/milvus
+tar -xzf $BACKUP_FILE -C /var/lib/milvus/
+
+# 4. Set permissions
+chown -R 999:999 /var/lib/milvus
+
+# 5. Start Milvus
+docker-compose start milvus
+
+# 6. Wait for Milvus ready
+echo "Waiting for Milvus to be ready..."
+for i in {1..60}; do
+  if docker exec milvus curl -s http://localhost:9091/healthz | grep -q "OK"; then
+    echo "Milvus is ready!"
+    break
+  fi
+  sleep 5
+done
+
+# 7. Verify collection
+docker exec milvus milvus-cli show collection -c documents
+
+echo "[$(date)] Milvus restore complete!"
+```
+
+### 5.2 Restore PostgreSQL Database
+
+```bash
+#!/bin/bash
+# /opt/rag/scripts/restore-postgres.sh
+
+BACKUP_FILE=$1  # /backups/full/20251012/postgres.sql.gz
+
+echo "[$(date)] Restoring PostgreSQL from $BACKUP_FILE..."
+
+# 1. Stop backend (prevent writes)
+docker-compose stop backend
+
+# 2. Backup current database
+docker exec postgres pg_dump -U postgres rag_db | gzip > /tmp/postgres_pre_restore_$(date +%Y%m%d_%H%M%S).sql.gz
+
+# 3. Drop and recreate database
+docker exec postgres psql -U postgres -c "DROP DATABASE IF EXISTS rag_db;"
+docker exec postgres psql -U postgres -c "CREATE DATABASE rag_db;"
+
+# 4. Restore from backup
+gunzip -c $BACKUP_FILE | docker exec -i postgres psql -U postgres rag_db
+
+# 5. Verify restore
+RECORD_COUNT=$(docker exec postgres psql -U postgres rag_db -c "SELECT COUNT(*) FROM conversations;" -t | tr -d ' ')
+echo "Restored $RECORD_COUNT conversations"
+
+# 6. Restart backend
+docker-compose start backend
+
+echo "[$(date)] PostgreSQL restore complete!"
+```
+
+### 5.3 Restore Configuration
+
+```bash
+#!/bin/bash
+# /opt/rag/scripts/restore-config.sh
+
+BACKUP_FILE=$1  # /backups/full/20251012/config.tar.gz
+
+echo "[$(date)] Restoring configuration from $BACKUP_FILE..."
+
+# 1. Backup current config
+tar -czf /tmp/config_backup_$(date +%Y%m%d_%H%M%S).tar.gz /opt/rag/*.yml /opt/rag/.env /opt/rag/backend/config/
+
+# 2. Extract backup
+tar -xzf $BACKUP_FILE -C /
+
+# 3. Verify critical files
+for file in docker-compose.yml .env backend/config/settings.py; do
+  if [ ! -f "/opt/rag/$file" ]; then
+    echo "ERROR: $file not found after restore!"
+    exit 1
+  fi
+done
+
+echo "[$(date)] Configuration restore complete!"
+```
+
+### 5.4 Full Restore Script
+
+```bash
+#!/bin/bash
+# /opt/rag/scripts/restore-full.sh
+
+BACKUP_DIR=$1  # /backups/full/20251012
+
+if [ ! -d "$BACKUP_DIR" ]; then
+  echo "ERROR: Backup directory not found: $BACKUP_DIR"
+  exit 1
+fi
+
+echo "========================================="
+echo "FULL RESTORE FROM: $BACKUP_DIR"
+echo "========================================="
+echo ""
+read -p "This will overwrite all data. Are you sure? (type 'yes'): " confirm
+
+if [ "$confirm" != "yes" ]; then
+  echo "Restore cancelled."
+  exit 0
+fi
+
+# Stop all services
+echo "[$(date)] Stopping all services..."
+cd /opt/rag
+docker-compose down
+
+# Restore components
+/opt/rag/scripts/restore-config.sh $BACKUP_DIR/config.tar.gz
+/opt/rag/scripts/restore-milvus.sh $BACKUP_DIR/milvus.tar.gz
+/opt/rag/scripts/restore-postgres.sh $BACKUP_DIR/postgres.sql.gz
+/opt/rag/scripts/restore-documents.sh $BACKUP_DIR/documents.tar.gz
+
+# Start all services
+echo "[$(date)] Starting all services..."
+docker-compose up -d
+
+# Wait for services
+/opt/rag/scripts/wait-for-services.sh
+
+# Verify restore
+/opt/rag/scripts/verify-restore.sh
+
+echo ""
+echo "========================================="
+echo "FULL RESTORE COMPLETE!"
+echo "========================================="
+```
+
+---
+
+## 6. Service Restoration Order
+
+### 6.1 Dependency Order
+
+```
+Start Order:
+1. Infrastructure (network, storage)
+2. Milvus (vector database)
+3. PostgreSQL (relational database)
+4. Redis (cache)
+5. Ollama (LLM service)
+6. Backend API (application)
+7. Frontend (UI)
+8. Load Balancer
+9. Monitoring (Prometheus, Grafana)
+
+Stop Order:
+Reverse of start order
+```
+
+### 6.2 Service Start Script
+
+```bash
+#!/bin/bash
+# /opt/rag/scripts/start-services-ordered.sh
+
+echo "[$(date)] Starting services in correct order..."
+
+# 1. Start infrastructure services
+docker-compose up -d milvus postgres redis
+
+# Wait for databases ready
+echo "Waiting for Milvus..."
+until docker exec milvus curl -s http://localhost:9091/healthz | grep -q "OK"; do
+  sleep 5
+done
+echo "✓ Milvus ready"
+
+echo "Waiting for PostgreSQL..."
+until docker exec postgres pg_isready -U postgres; do
+  sleep 5
+done
+echo "✓ PostgreSQL ready"
+
+echo "Waiting for Redis..."
+until docker exec redis redis-cli ping | grep -q "PONG"; do
+  sleep 5
+done
+echo "✓ Redis ready"
+
+# 2. Start LLM service
+docker-compose up -d ollama
+
+echo "Waiting for Ollama..."
+until curl -s http://localhost:11434/api/tags; do
+  sleep 5
+done
+echo "✓ Ollama ready"
+
+# 3. Start application
+docker-compose up -d backend
+
+echo "Waiting for Backend..."
+until curl -s http://localhost:8000/health | grep -q "healthy"; do
+  sleep 5
+done
+echo "✓ Backend ready"
+
+# 4. Start frontend
+docker-compose up -d frontend
+
+echo "Waiting for Frontend..."
+until curl -s http://localhost:3000; do
+  sleep 5
+done
+echo "✓ Frontend ready"
+
+# 5. Start monitoring
+docker-compose up -d prometheus grafana
+
+echo ""
+echo "All services started successfully!"
+```
+
+---
+
+## 7. Verification & Testing
+
+### 7.1 Post-Restore Verification Checklist
+
+```bash
+#!/bin/bash
+# /opt/rag/scripts/verify-restore.sh
+
+echo "========================================="
+echo "POST-RESTORE VERIFICATION"
+echo "========================================="
+echo ""
+
+PASSED=0
+FAILED=0
+
+# Test 1: Health endpoints
+echo "Test 1: Health Endpoints"
+if curl -s http://localhost:8000/health | grep -q "healthy"; then
+  echo "✓ PASSED"
+  ((PASSED++))
+else
+  echo "✗ FAILED"
+  ((FAILED++))
+fi
+
+# Test 2: Database connectivity
+echo "Test 2: Database Connectivity"
+MILVUS_STATUS=$(docker exec milvus curl -s http://localhost:9091/healthz)
+PG_STATUS=$(docker exec postgres pg_isready -U postgres)
+if [[ "$MILVUS_STATUS" == *"OK"* ]] && [[ "$PG_STATUS" == *"accepting connections"* ]]; then
+  echo "✓ PASSED"
+  ((PASSED++))
+else
+  echo "✗ FAILED"
+  ((FAILED++))
+fi
+
+# Test 3: Data integrity
+echo "Test 3: Data Integrity"
+MILVUS_COUNT=$(docker exec milvus milvus-cli show collection -c documents | grep "Entity count" | awk '{print $3}')
+if [ "$MILVUS_COUNT" -gt 0 ]; then
+  echo "✓ PASSED (Found $MILVUS_COUNT documents)"
+  ((PASSED++))
+else
+  echo "✗ FAILED (No documents found)"
+  ((FAILED++))
+fi
+
+# Test 4: Query functionality
+echo "Test 4: Query Functionality"
+QUERY_RESPONSE=$(curl -s -X POST http://localhost:8000/ask \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer test_key" \
+  -d '{"query":"What is our PTO policy?","user_id":"test"}')
+if echo "$QUERY_RESPONSE" | grep -q "answer"; then
+  echo "✓ PASSED"
+  ((PASSED++))
+else
+  echo "✗ FAILED"
+  ((FAILED++))
+fi
+
+# Test 5: LLM availability
+echo "Test 5: LLM Availability"
+if curl -s http://localhost:11434/api/tags | grep -q "mistral"; then
+  echo "✓ PASSED"
+  ((PASSED++))
+else
+  echo "✗ FAILED"
+  ((FAILED++))
+fi
+
+# Test 6: Cache connectivity
+echo "Test 6: Cache Connectivity"
+if docker exec redis redis-cli ping | grep -q "PONG"; then
+  echo "✓ PASSED"
+  ((PASSED++))
+else
+  echo "✗ FAILED"
+  ((FAILED++))
+fi
+
+# Summary
+echo ""
+echo "========================================="
+echo "RESULTS: $PASSED passed, $FAILED failed"
+echo "========================================="
+
+if [ $FAILED -eq 0 ]; then
+  echo "✓ All tests passed! System is operational."
+  exit 0
+else
+  echo "✗ Some tests failed. Review and fix issues."
+  exit 1
+fi
+```
+
+### 7.2 Smoke Test Suite
+
+```bash
+#!/bin/bash
+# /opt/rag/scripts/smoke-test.sh
+
+echo "Running smoke tests..."
+
+# Test 1: Ask query
+echo "1. Testing query..."
+curl -X POST http://localhost:8000/ask \
+  -H "Authorization: Bearer test_key" \
+  -d '{"query":"What is our PTO policy?","user_id":"test"}' \
+  | jq .
+
+# Test 2: Get conversations
+echo "2. Testing conversations..."
+curl http://localhost:8000/conversations?user_id=test \
+  -H "Authorization: Bearer test_key" \
+  | jq .
+
+# Test 3: Submit feedback
+echo "3. Testing feedback..."
+curl -X POST http://localhost:8000/feedback \
+  -H "Authorization: Bearer test_key" \
+  -d '{"message_id":"test","rating":5,"helpful":true}' \
+  | jq .
+
+echo "Smoke tests complete!"
+```
+
+---
+
+## 8. Communication Plan
+
+### 8.1 Stakeholder Contact List
+
+```
+ROLE                | NAME             | CONTACT
+--------------------|------------------|---------------------------
+Incident Commander  | Engineering Mgr  | +1-555-0101, mgr@company.com
+CTO                 | Jane Smith       | +1-555-0102, cto@company.com
+SRE Lead            | John Doe         | +1-555-0103, sre@company.com
+Security Lead       | Alice Brown      | +1-555-0104, security@company.com
+Support Lead        | Bob Johnson      | +1-555-0105, support@company.com
+Communications      | Carol White      | +1-555-0106, pr@company.com
+```
+
+### 8.2 Communication Templates
+
+**Initial Incident Notification**:
+```
+To: stakeholders@company.com
+Subject: [INCIDENT] RAG System Outage
+
+We are currently experiencing an outage affecting the RAG Enterprise System.
+
+Incident ID: INC-2025-10-12-001
+Severity: P1 (Critical)
+Status: Investigating
+Started: 2025-10-12 14:30 UTC
+Impact: Complete service unavailable for all users
+
+We are actively investigating and will provide updates every 30 minutes.
+
+Status Page: https://status.company.com
+War Room: #incident-2025-10-12
+
+Incident Commander: John Doe (sre@company.com, +1-555-0103)
+```
+
+**Status Update** (every 30 minutes):
+```
+UPDATE #3: RAG System Outage
+
+Status: Recovery in progress
+Time: 2025-10-12 16:00 UTC (1h 30m since start)
+
+Progress:
+- Root cause identified: Data center power failure
+- DR site activated
+- Data restore 75% complete
+- ETA for service restoration: 17:00 UTC (1 hour)
+
+Next update: 16:30 UTC
+```
+
+**Resolution Notification**:
+```
+RESOLVED: RAG System Outage
+
+The RAG Enterprise System has been fully restored and is operational.
+
+Incident ID: INC-2025-10-12-001
+Duration: 2 hours 30 minutes (14:30 - 17:00 UTC)
+Root Cause: Data center power failure
+Resolution: Failover to DR site
+
+Impact:
+- Complete service unavailable for 2.5 hours
+- ~1,250 affected users
+- No data loss
+
+Next Steps:
+- Post-mortem scheduled for 2025-10-13 10:00 UTC
+- Preventive measures will be implemented
+
+Thank you for your patience.
+```
+
+---
+
+## 9. Post-Recovery Actions
+
+### 9.1 Post-Mortem Template
+
+**Incident Post-Mortem Report**
+
+**Incident Details**:
+- Incident ID: INC-2025-10-12-001
+- Date: October 12, 2025
+- Duration: 2 hours 30 minutes
+- Severity: P1 (Critical)
+- Services Affected: RAG Enterprise System (complete outage)
+
+**Timeline**:
+```
+14:30 - Incident detected (monitoring alerts)
+14:35 - Incident commander paged
+14:40 - War room activated
+14:45 - Root cause identified (data center power failure)
+15:00 - DR plan activated
+15:30 - Data restore initiated
+16:30 - Services started at DR site
+17:00 - DNS updated, service restored
+17:15 - Verification complete
+17:30 - All-clear declared
+```
+
+**Root Cause**:
+Data center experienced complete power failure due to [reason]. UPS failed to activate properly. Backup generator did not start automatically.
+
+**Impact**:
+- Users affected: ~1,250 (100% of active users)
+- Queries lost: ~500 (during outage)
+- Data loss: None (last backup 14:00 UTC, 30 min before incident)
+- Revenue impact: $5,000 (estimated)
+
+**What Went Well**:
+- ✅ Monitoring detected incident immediately
+- ✅ DR plan executed successfully
+- ✅ No data loss
+- ✅ Communication was timely and clear
+- ✅ Team responded quickly
+
+**What Went Wrong**:
+- ❌ UPS failure was unexpected
+- ❌ Automatic failover not configured
+- ❌ DR drill was 3 months old (need more frequent)
+- ❌ Some runbook steps were outdated
+
+**Action Items**:
+1. [P0] Configure automatic failover (Owner: SRE Lead, Due: 2025-10-19)
+2. [P0] Replace UPS in data center (Owner: Infrastructure, Due: 2025-10-15)
+3. [P1] Increase DR drill frequency (quarterly → monthly) (Owner: SRE Lead, Due: 2025-11-01)
+4. [P1] Update all runbooks (Owner: SRE Team, Due: 2025-10-26)
+5. [P2] Implement redundant power supplies (Owner: Infrastructure, Due: 2025-11-30)
+
+**Lessons Learned**:
+- DR plan works, but automation is critical
+- Need more frequent DR drills
+- Backup power infrastructure needs redundancy
+
+---
+
+## 10. DR Testing & Drills
+
+### 10.1 DR Drill Schedule
+
+```
+DRILL TYPE              | FREQUENCY | SCOPE              | DURATION
+------------------------|-----------|--------------------|-----------
+Tabletop Exercise       | Monthly   | Team walkthrough   | 1 hour
+Partial Failover Drill  | Quarterly | Non-prod failover  | 4 hours
+Full DR Drill           | Annually  | Prod-like failover | 8 hours
+```
+
+### 10.2 DR Drill Procedure
+
+**Tabletop Exercise** (Monthly):
+1. Gather DR team
+2. Present disaster scenario
+3. Walk through recovery steps
+4. Identify gaps in procedures
+5. Update runbooks
+
+**Partial Failover Drill** (Quarterly):
+```bash
+# Perform failover in non-production environment
+# Test Date: First Saturday of quarter at 2 AM UTC
+
+# 1. Announce drill
+# Post in Slack: "DR DRILL starting now (non-prod)"
+
+# 2. Simulate disaster
+# Shutdown non-prod servers
+
+# 3. Execute recovery
+# Follow DR runbook exactly
+# Document any issues
+
+# 4. Verify recovery
+# Run full test suite
+
+# 5. Failback
+# Return to normal operations
+
+# 6. Document results
+# What worked, what didn't
+# Update runbooks
+```
+
+**Full DR Drill** (Annually):
+```bash
+# Full production-like drill
+# Test Date: First Sunday of December at 2 AM UTC (low usage)
+
+# 1. Announce maintenance window
+# Email users 2 weeks in advance
+# Post on status page
+
+# 2. Execute failover
+# Simulate disaster
+# Failover to DR site
+# Users experience brief outage (<5 min)
+
+# 3. Operate from DR site
+# Keep system on DR site for 4 hours
+# Monitor for issues
+
+# 4. Failback to primary
+# Return to primary site
+# Verify data sync
+
+# 5. Post-drill review
+# Full team retrospective
+# Update DR plan
+```
+
+### 10.3 DR Drill Checklist
+
+**Pre-Drill**:
+- [ ] Schedule drill date & time
+- [ ] Notify team (2 weeks advance)
+- [ ] Notify stakeholders if production drill
+- [ ] Prepare war room (#dr-drill)
+- [ ] Verify backups are current
+- [ ] Verify DR site is ready
+- [ ] Print/download runbooks
+
+**During Drill**:
+- [ ] Document start time
+- [ ] Follow runbook step-by-step
+- [ ] Note any deviations
+- [ ] Document issues encountered
+- [ ] Time each major step
+- [ ] Screenshot key actions
+
+**Post-Drill**:
+- [ ] Document end time
+- [ ] Calculate RTO/RPO achieved
+- [ ] Hold debrief meeting
+- [ ] Update runbooks
+- [ ] File action items
+- [ ] Share results with stakeholders
+- [ ] Update DR plan
+
+---
+
+## 11. Appendices
+
+### Appendix A: Quick Reference Commands
+
+```bash
+# Health checks
+curl http://localhost:8000/health
+docker ps
+docker-compose logs -f
+
+# Backups
+/opt/rag/scripts/backup-full.sh
+/opt/rag/scripts/backup-incremental.sh
+
+# Restore
+/opt/rag/scripts/restore-full.sh /backups/full/20251012
+/opt/rag/scripts/restore-milvus.sh /backups/full/20251012/milvus.tar.gz
+
+# Start/Stop
+docker-compose up -d
+docker-compose down
+docker-compose restart backend
+
+# Failover
+/opt/rag/scripts/failover-to-dr.sh
+/opt/rag/scripts/failback-to-primary.sh
+
+# Verification
+/opt/rag/scripts/verify-restore.sh
+/opt/rag/scripts/smoke-test.sh
+```
+
+### Appendix B: Contact Information
+
+**Emergency Contacts**:
+- On-Call Engineer: +1-555-0100
+- Incident Commander: +1-555-0101
+- Security Hotline: +1-555-0104 (24/7)
+
+**Service Providers**:
+- Data Center: +1-555-0200 (support@datacenter.com)
+- AWS Support: +1-555-0300 (enterprise support)
+- Azure Support: +1-555-0400 (premier support)
+
+### Appendix C: Recovery Time Matrix
+
+```
+SCENARIO                | DETECTION | MITIGATION | RECOVERY | TOTAL RTO
+------------------------|-----------|------------|----------|----------
+Service Restart         | 5 min     | 10 min     | 5 min    | 20 min
+Server Failure          | 5 min     | 30 min     | 1.5 h    | 2 h
+Data Center Outage      | 5 min     | 30 min     | 3.5 h    | 4 h
+Ransomware              | 30 min    | 1 h        | 3 h      | 4.5 h
+Data Corruption         | 15 min    | 45 min     | 2 h      | 3 h
+```
+
+---
+
+**Document Version**: 1.0
+**Last Updated**: October 2025
+**Last DR Drill**: September 2025 (Successful)
+**Next DR Drill**: December 2025
+
+---
+
+**END OF DISASTER RECOVERY RUNBOOK**

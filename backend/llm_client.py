@@ -73,7 +73,8 @@ class LLMClient:
             Generated answer
         """
         # Build enhanced prompt with history
-        context_snippet = context[:500] if len(context) > 500 else context
+        # context_snippet = context[:500] if len(context) > 500 else context
+        context_snippet = context[:3000] # safely include the full retrieved chunk
         full_prompt = f"""You are an enterprise assistant for company policies and documentation. You can ONLY answer questions based on the provided context from the company knowledge base.
 
 IMPORTANT RULES:
@@ -137,7 +138,7 @@ IMPORTANT RULES:
 3. If the context only contains API documentation examples or sample code, do NOT treat them as real company information
 4. If the question is not related to actual company policies/procedures in the context, respond: "I can only answer questions about company policies, HR information, onboarding, engineering standards, and related documentation. This question is outside my knowledge base."
 5. DO NOT make up information or use external knowledge
-6. DO NOT answer general questions, coding questions, or topics unrelated to company documentation
+6. DO NOT answer general questions, coding questions, or topics unrelated to the documentation provided
 
 Context from Company Knowledge Base:
 {context_snippet}

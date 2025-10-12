@@ -1,0 +1,1871 @@
+# Monitoring & Observability Guide
+
+## Executive Summary
+
+This comprehensive guide covers monitoring, observability, alerting, and incident management for the RAG Enterprise System. It provides detailed instructions for setting up monitoring infrastructure, creating dashboards, configuring alerts, and responding to incidents.
+
+**Monitoring Goals**:
+- 99.9% uptime (43 minutes downtime/month allowed)
+- <15 minutes mean time to detect (MTTD) incidents
+- <1 hour mean time to resolve (MTTR) incidents
+- Real-time visibility into system health
+- Proactive alerting before user impact
+
+**Current Monitoring Coverage**:
+- Infrastructure metrics: 100%
+- Application metrics: 95%
+- Business metrics: 80%
+- Log aggregation: 100%
+- Distributed tracing: 90%
+
+---
+
+## Table of Contents
+
+1. Observability Principles & Strategy
+2. Monitoring Architecture
+3. Prometheus Metrics Collection
+4. Grafana Dashboards
+5. Log Aggregation (ELK Stack)
+6. Distributed Tracing (OpenTelemetry)
+7. Alerting Rules & Channels
+8. Health Checks & Uptime Monitoring
+9. Performance Monitoring
+10. Business Metrics & Analytics
+11. On-Call Runbooks
+12. Incident Response Procedures
+13. Monitoring Best Practices
+14. Troubleshooting Guide
+
+---
+
+## 1. Observability Principles & Strategy
+
+### 1.1 Three Pillars of Observability
+
+**1. Metrics** (What is happening?):
+- Numerical measurements over time
+- CPU usage, memory, request rate, latency
+- Aggregated data (averages, percentiles)
+- Good for: Dashboards, alerts, trends
+
+**2. Logs** (Why is it happening?):
+- Discrete events with context
+- Error messages, stack traces, debug info
+- Searchable and filterable
+- Good for: Debugging, forensics, auditing
+
+**3. Traces** (Where is it happening?):
+- Request flow across services
+- Timing breakdown by component
+- Parent-child relationships
+- Good for: Performance optimization, bottleneck identification
+
+### 1.2 Observability Strategy
+
+**Instrument Everything**:
+- Every API endpoint
+- Every database query
+- Every external service call
+- Every background job
+
+**High Cardinality Data**:
+- Track user_id, conversation_id, request_id
+- Enable filtering and correlation
+- Support ad-hoc queries
+
+**Continuous Improvement**:
+- Add metrics when debugging
+- Refine alerts based on false positives
+- Update dashboards based on usage
+
+### 1.3 Key Performance Indicators (KPIs)
+
+**System Health KPIs**:
+```
+Metric              | Target     | Critical Threshold
+--------------------|------------|--------------------
+Uptime              | 99.9%      | <99.5%
+Error Rate          | <0.5%      | >1%
+P95 Latency         | <2.5s      | >5s
+Request Rate        | >50 req/s  | <30 req/s
+CPU Utilization     | <70%       | >90%
+Memory Utilization  | <80%       | >95%
+Disk Utilization    | <70%       | >90%
+```
+
+**Business KPIs**:
+```
+Metric                    | Target      | Measurement
+--------------------------|-------------|------------------
+Queries per Day           | 10,000+     | Daily count
+Unique Users per Day      | 1,000+      | Unique user_ids
+Average Queries per User  | 10          | Queries / Users
+User Satisfaction         | >4.5/5      | Feedback ratings
+Query Success Rate        | >99%        | Successful / Total
+Cache Hit Rate            | >70%        | Cache hits / Total
+```
+
+---
+
+## 2. Monitoring Architecture
+
+### 2.1 Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Monitoring Stack                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌──────────────┐      ┌──────────────┐      ┌───────────┐ │
+│  │  Application │─────▶│  Prometheus  │─────▶│  Grafana  │ │
+│  │   (Metrics)  │      │  (Storage)   │      │(Dashboards│ │
+│  └──────────────┘      └──────────────┘      └───────────┘ │
+│         │                                           │        │
+│         │                                           ▼        │
+│         │              ┌──────────────┐      ┌───────────┐ │
+│         │              │ AlertManager │─────▶│  Slack/   │ │
+│         │              │   (Alerts)   │      │PagerDuty  │ │
+│         │              └──────────────┘      └───────────┘ │
+│         │                                                   │
+│         ▼                                                   │
+│  ┌──────────────┐      ┌──────────────┐      ┌───────────┐ │
+│  │  Application │─────▶│ Elasticsearch│─────▶│  Kibana   │ │
+│  │    (Logs)    │      │   (Storage)  │      │(Log Search│ │
+│  └──────────────┘      └──────────────┘      └───────────┘ │
+│         │                                                   │
+│         ▼                                                   │
+│  ┌──────────────┐      ┌──────────────┐      ┌───────────┐ │
+│  │  Application │─────▶│    Jaeger    │─────▶│   Jaeger  │ │
+│  │   (Traces)   │      │   (Storage)  │      │    UI     │ │
+│  └──────────────┘      └──────────────┘      └───────────┘ │
+│                                                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 Component Overview
+
+**Metrics Stack**:
+- **Prometheus**: Metric collection and storage (TSDB)
+- **Grafana**: Visualization and dashboards
+- **AlertManager**: Alert routing and deduplication
+- **Node Exporter**: System metrics (CPU, memory, disk)
+
+**Logging Stack (ELK)**:
+- **Elasticsearch**: Log storage and search
+- **Logstash**: Log processing and enrichment
+- **Kibana**: Log visualization and analysis
+- **Filebeat**: Log shipping
+
+**Tracing Stack**:
+- **OpenTelemetry**: Instrumentation SDK
+- **Jaeger**: Trace storage and visualization
+- **Jaeger Agent**: Trace collection
+
+### 2.3 Docker Compose Setup
+
+**docker-compose.monitoring.yml**:
+```yaml
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: unless-stopped
+  
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+  
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    restart: unless-stopped
+  
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+  
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+  
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.10.0
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+  
+  jaeger:
+    image: jaegertracing/all-in-one:1.50
+    container_name: jaeger
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"
+      - "14250:14250"
+      - "9411:9411"
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  elasticsearch_data:
+```
+
+**Start monitoring stack**:
+```bash
+docker-compose -f docker-compose.monitoring.yml up -d
+
+# Access UIs:
+# Prometheus: http://localhost:9090
+# Grafana: http://localhost:3001 (admin/admin)
+# Kibana: http://localhost:5601
+# Jaeger: http://localhost:16686
+```
+
+---
+
+## 3. Prometheus Metrics Collection
+
+### 3.1 Instrumenting Application
+
+**Install Prometheus client**:
+```bash
+pip install prometheus-client
+```
+
+**Define metrics** (backend/metrics.py):
+```python
+from prometheus_client import Counter, Histogram, Gauge, Summary
+import time
+
+# Request counters
+request_count = Counter(
+    'rag_requests_total',
+    'Total number of requests',
+    ['method', 'endpoint', 'status']
+)
+
+# Request duration histogram
+request_duration = Histogram(
+    'rag_request_duration_seconds',
+    'Request duration in seconds',
+    ['method', 'endpoint'],
+    buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+)
+
+# Query-specific metrics
+query_duration = Histogram(
+    'rag_query_duration_seconds',
+    'RAG query processing duration',
+    ['stage'],  # embedding, search, generation, total
+    buckets=[0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0]
+)
+
+query_success = Counter(
+    'rag_query_success_total',
+    'Successful queries'
+)
+
+query_errors = Counter(
+    'rag_query_errors_total',
+    'Failed queries',
+    ['error_type']
+)
+
+# Active requests gauge
+active_requests = Gauge(
+    'rag_active_requests',
+    'Number of requests currently being processed'
+)
+
+# Cache metrics
+cache_hits = Counter(
+    'rag_cache_hits_total',
+    'Cache hits'
+)
+
+cache_misses = Counter(
+    'rag_cache_misses_total',
+    'Cache misses'
+)
+
+# LLM metrics
+llm_tokens = Counter(
+    'rag_llm_tokens_total',
+    'Total tokens used by LLM',
+    ['type']  # prompt, completion
+)
+
+llm_generation_duration = Histogram(
+    'rag_llm_generation_duration_seconds',
+    'LLM generation duration',
+    buckets=[0.1, 0.5, 1.0, 2.0, 5.0]
+)
+
+# Database metrics
+db_query_duration = Histogram(
+    'rag_db_query_duration_seconds',
+    'Database query duration',
+    ['operation'],  # search, insert, delete
+    buckets=[0.01, 0.05, 0.1, 0.5, 1.0]
+)
+
+# System metrics
+memory_usage = Gauge(
+    'rag_memory_usage_bytes',
+    'Memory usage in bytes'
+)
+
+cpu_usage = Gauge(
+    'rag_cpu_usage_percent',
+    'CPU usage percentage'
+)
+```
+
+### 3.2 Instrumenting Code
+
+**Middleware for automatic instrumentation**:
+```python
+# backend/middleware.py
+from fastapi import Request
+import time
+from .metrics import request_count, request_duration, active_requests
+
+async def metrics_middleware(request: Request, call_next):
+    # Track active requests
+    active_requests.inc()
+    
+    # Start timer
+    start_time = time.perf_counter()
+    
+    try:
+        # Process request
+        response = await call_next(request)
+        
+        # Record metrics
+        duration = time.perf_counter() - start_time
+        request_count.labels(
+            method=request.method,
+            endpoint=request.url.path,
+            status=response.status_code
+        ).inc()
+        
+        request_duration.labels(
+            method=request.method,
+            endpoint=request.url.path
+        ).observe(duration)
+        
+        return response
+    
+    finally:
+        active_requests.dec()
+```
+
+**Manual instrumentation**:
+```python
+# backend/rag_pipeline.py
+from .metrics import query_duration, query_success, query_errors
+import time
+
+def query_rag(query: str, user_id: str):
+    start_time = time.perf_counter()
+    
+    try:
+        # Embed query
+        embed_start = time.perf_counter()
+        embedding = embed_text(query)
+        query_duration.labels(stage='embedding').observe(
+            time.perf_counter() - embed_start
+        )
+        
+        # Search
+        search_start = time.perf_counter()
+        results = search(embedding)
+        query_duration.labels(stage='search').observe(
+            time.perf_counter() - search_start
+        )
+        
+        # Generate answer
+        gen_start = time.perf_counter()
+        answer = generate_answer(results, query)
+        query_duration.labels(stage='generation').observe(
+            time.perf_counter() - gen_start
+        )
+        
+        # Record success
+        query_success.inc()
+        
+        # Record total duration
+        query_duration.labels(stage='total').observe(
+            time.perf_counter() - start_time
+        )
+        
+        return answer
+    
+    except Exception as e:
+        # Record error
+        query_errors.labels(error_type=type(e).__name__).inc()
+        raise
+```
+
+**Context manager for timing**:
+```python
+from contextlib import contextmanager
+
+@contextmanager
+def track_time(metric, **labels):
+    """Context manager to track execution time."""
+    start = time.perf_counter()
+    try:
+        yield
+    finally:
+        duration = time.perf_counter() - start
+        metric.labels(**labels).observe(duration)
+
+# Usage
+with track_time(query_duration, stage='embedding'):
+    embedding = embed_text(query)
+```
+
+### 3.3 Expose Metrics Endpoint
+
+**FastAPI metrics endpoint**:
+```python
+# backend/main.py
+from fastapi import FastAPI
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from fastapi.responses import Response
+
+app = FastAPI()
+
+@app.get("/metrics")
+def metrics():
+    """Prometheus metrics endpoint."""
+    return Response(
+        content=generate_latest(),
+        media_type=CONTENT_TYPE_LATEST
+    )
+```
+
+**Test metrics endpoint**:
+```bash
+curl http://localhost:8000/metrics
+
+# Output:
+# # HELP rag_requests_total Total number of requests
+# # TYPE rag_requests_total counter
+# rag_requests_total{endpoint="/ask",method="POST",status="200"} 1234.0
+# rag_requests_total{endpoint="/health",method="GET",status="200"} 5678.0
+# 
+# # HELP rag_query_duration_seconds RAG query processing duration
+# # TYPE rag_query_duration_seconds histogram
+# rag_query_duration_seconds_bucket{stage="embedding",le="0.05"} 987.0
+# rag_query_duration_seconds_bucket{stage="embedding",le="0.1"} 1234.0
+# ...
+```
+
+### 3.4 Prometheus Configuration
+
+**prometheus.yml**:
+```yaml
+global:
+  scrape_interval: 15s  # Scrape targets every 15 seconds
+  evaluation_interval: 15s  # Evaluate rules every 15 seconds
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+# Load rules
+rule_files:
+  - '/etc/prometheus/alerts.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+  
+  # RAG Backend
+  - job_name: 'rag-backend'
+    static_configs:
+      - targets: ['backend:8000']
+    metrics_path: '/metrics'
+  
+  # Node Exporter (system metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+  
+  # Milvus
+  - job_name: 'milvus'
+    static_configs:
+      - targets: ['milvus:9091']
+    metrics_path: '/metrics'
+  
+  # Ollama
+  - job_name: 'ollama'
+    static_configs:
+      - targets: ['ollama:11434']
+    metrics_path: '/metrics'
+```
+
+---
+
+## 4. Grafana Dashboards
+
+### 4.1 Main System Dashboard
+
+**Dashboard JSON** (monitoring/grafana/dashboards/rag-system.json):
+```json
+{
+  "dashboard": {
+    "title": "RAG System Overview",
+    "panels": [
+      {
+        "title": "Request Rate",
+        "targets": [
+          {
+            "expr": "rate(rag_requests_total[5m])"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Error Rate",
+        "targets": [
+          {
+            "expr": "rate(rag_query_errors_total[5m]) / rate(rag_requests_total[5m])"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "P95 Latency",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(rag_query_duration_seconds_bucket{stage='total'}[5m]))"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Active Requests",
+        "targets": [
+          {
+            "expr": "rag_active_requests"
+          }
+        ],
+        "type": "stat"
+      },
+      {
+        "title": "CPU Usage",
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total[1m]) * 100"
+          }
+        ],
+        "type": "gauge"
+      },
+      {
+        "title": "Memory Usage",
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes / 1024 / 1024 / 1024"
+          }
+        ],
+        "type": "gauge"
+      }
+    ]
+  }
+}
+```
+
+### 4.2 Query Performance Dashboard
+
+**Key Panels**:
+
+**1. Query Duration Breakdown**:
+```promql
+# Query PromQL
+histogram_quantile(0.95, 
+  rate(rag_query_duration_seconds_bucket{stage=~"embedding|search|generation"}[5m])
+)
+```
+
+**2. Cache Hit Rate**:
+```promql
+rate(rag_cache_hits_total[5m]) / 
+(rate(rag_cache_hits_total[5m]) + rate(rag_cache_misses_total[5m]))
+```
+
+**3. LLM Token Usage**:
+```promql
+rate(rag_llm_tokens_total[5m])
+```
+
+**4. Database Query Performance**:
+```promql
+histogram_quantile(0.95, 
+  rate(rag_db_query_duration_seconds_bucket[5m])
+)
+```
+
+### 4.3 Business Metrics Dashboard
+
+**Key Panels**:
+
+**1. Queries per Day**:
+```promql
+increase(rag_requests_total{endpoint="/ask"}[24h])
+```
+
+**2. Unique Users**:
+```promql
+count(count by (user_id) (rag_requests_total))
+```
+
+**3. Query Success Rate**:
+```promql
+rate(rag_query_success_total[5m]) / 
+rate(rag_requests_total{endpoint="/ask"}[5m])
+```
+
+**4. Average Response Time**:
+```promql
+rate(rag_query_duration_seconds_sum{stage="total"}[5m]) / 
+rate(rag_query_duration_seconds_count{stage="total"}[5m])
+```
+
+### 4.4 Infrastructure Dashboard
+
+**Panels**:
+- CPU usage per container
+- Memory usage per container
+- Disk I/O
+- Network I/O
+- Container restarts
+
+**Example queries**:
+```promql
+# CPU usage
+rate(container_cpu_usage_seconds_total[5m]) * 100
+
+# Memory usage
+container_memory_usage_bytes / container_spec_memory_limit_bytes * 100
+
+# Disk usage
+(node_filesystem_size_bytes - node_filesystem_avail_bytes) / 
+node_filesystem_size_bytes * 100
+```
+
+### 4.5 Dashboard Provisioning
+
+**Auto-provision dashboards** (monitoring/grafana/provisioning/dashboards/dashboard.yml):
+```yaml
+apiVersion: 1
+
+providers:
+  - name: 'RAG Dashboards'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+```
+
+---
+
+## 5. Log Aggregation (ELK Stack)
+
+### 5.1 Structured Logging
+
+**Configure Python logging**:
+```python
+# backend/logging_config.py
+import logging
+import json
+from datetime import datetime
+
+class JSONFormatter(logging.Formatter):
+    """Format logs as JSON for Elasticsearch."""
+    
+    def format(self, record):
+        log_data = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'level': record.levelname,
+            'logger': record.name,
+            'message': record.getMessage(),
+            'module': record.module,
+            'function': record.funcName,
+            'line': record.lineno,
+        }
+        
+        # Add exception info if present
+        if record.exc_info:
+            log_data['exception'] = self.formatException(record.exc_info)
+        
+        # Add extra fields
+        if hasattr(record, 'user_id'):
+            log_data['user_id'] = record.user_id
+        if hasattr(record, 'request_id'):
+            log_data['request_id'] = record.request_id
+        if hasattr(record, 'duration_ms'):
+            log_data['duration_ms'] = record.duration_ms
+        
+        return json.dumps(log_data)
+
+# Configure logger
+def setup_logging():
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    
+    handler = logging.StreamHandler()
+    handler.setFormatter(JSONFormatter())
+    logger.addHandler(handler)
+    
+    return logger
+
+logger = setup_logging()
+```
+
+**Usage**:
+```python
+# backend/rag_pipeline.py
+import logging
+
+logger = logging.getLogger(__name__)
+
+def query_rag(query: str, user_id: str, request_id: str):
+    logger.info(
+        "Processing query",
+        extra={
+            'user_id': user_id,
+            'request_id': request_id,
+            'query_length': len(query)
+        }
+    )
+    
+    try:
+        result = process_query(query)
+        
+        logger.info(
+            "Query completed successfully",
+            extra={
+                'user_id': user_id,
+                'request_id': request_id,
+                'duration_ms': result['processing_time_ms']
+            }
+        )
+        
+        return result
+    
+    except Exception as e:
+        logger.error(
+            "Query failed",
+            extra={
+                'user_id': user_id,
+                'request_id': request_id,
+                'error_type': type(e).__name__
+            },
+            exc_info=True
+        )
+        raise
+```
+
+### 5.2 Filebeat Configuration
+
+**filebeat.yml**:
+```yaml
+filebeat.inputs:
+  - type: container
+    paths:
+      - '/var/lib/docker/containers/*/*.log'
+    processors:
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  index: "rag-logs-%{+yyyy.MM.dd}"
+
+setup.kibana:
+  host: "kibana:5601"
+
+setup.template:
+  name: "rag-logs"
+  pattern: "rag-logs-*"
+```
+
+### 5.3 Kibana Index Pattern
+
+**Create index pattern**:
+1. Open Kibana: http://localhost:5601
+2. Navigate to Management → Stack Management → Index Patterns
+3. Create index pattern: `rag-logs-*`
+4. Select timestamp field: `@timestamp`
+
+**Common log queries**:
+```
+# Errors in last hour
+level: "ERROR" AND @timestamp >= now-1h
+
+# Specific user's queries
+user_id: "user_12345" AND message: "Processing query"
+
+# Slow queries (>3 seconds)
+duration_ms: >3000
+
+# Errors by type
+level: "ERROR" | stats count() by error_type
+```
+
+### 5.4 Log Retention Policy
+
+**Elasticsearch ILM policy**:
+```json
+{
+  "policy": {
+    "phases": {
+      "hot": {
+        "actions": {
+          "rollover": {
+            "max_size": "50GB",
+            "max_age": "1d"
+          }
+        }
+      },
+      "warm": {
+        "min_age": "7d",
+        "actions": {
+          "shrink": {
+            "number_of_shards": 1
+          }
+        }
+      },
+      "cold": {
+        "min_age": "30d",
+        "actions": {
+          "freeze": {}
+        }
+      },
+      "delete": {
+        "min_age": "90d",
+        "actions": {
+          "delete": {}
+        }
+      }
+    }
+  }
+}
+```
+
+**Retention schedule**:
+```
+Age       | Phase  | Action
+----------|--------|----------------------------------
+0-7 days  | Hot    | Active indexing, fast queries
+7-30 days | Warm   | Compressed, slower queries
+30-90 days| Cold   | Frozen, very slow queries
+>90 days  | Delete | Deleted
+```
+
+---
+
+## 6. Distributed Tracing (OpenTelemetry)
+
+### 6.1 OpenTelemetry Setup
+
+**Install OpenTelemetry**:
+```bash
+pip install opentelemetry-api opentelemetry-sdk \
+    opentelemetry-instrumentation-fastapi \
+    opentelemetry-exporter-jaeger
+```
+
+**Configure tracing** (backend/tracing.py):
+```python
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.resources import Resource
+
+def setup_tracing(app):
+    """Configure OpenTelemetry tracing."""
+    
+    # Create resource
+    resource = Resource.create({
+        "service.name": "rag-backend",
+        "service.version": "1.0.0",
+    })
+    
+    # Create tracer provider
+    provider = TracerProvider(resource=resource)
+    trace.set_tracer_provider(provider)
+    
+    # Configure Jaeger exporter
+    jaeger_exporter = JaegerExporter(
+        agent_host_name="jaeger",
+        agent_port=6831,
+    )
+    
+    # Add span processor
+    provider.add_span_processor(
+        BatchSpanProcessor(jaeger_exporter)
+    )
+    
+    # Instrument FastAPI
+    FastAPIInstrumentor.instrument_app(app)
+    
+    return trace.get_tracer(__name__)
+
+# Usage in main.py
+tracer = setup_tracing(app)
+```
+
+### 6.2 Manual Instrumentation
+
+**Add custom spans**:
+```python
+# backend/rag_pipeline.py
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
+
+def query_rag(query: str, user_id: str):
+    with tracer.start_as_current_span("query_rag") as span:
+        # Add attributes
+        span.set_attribute("user_id", user_id)
+        span.set_attribute("query_length", len(query))
+        
+        # Embed query
+        with tracer.start_as_current_span("embed_query") as embed_span:
+            embedding = embed_text(query)
+            embed_span.set_attribute("embedding_dim", len(embedding))
+        
+        # Search
+        with tracer.start_as_current_span("search") as search_span:
+            results = search(embedding)
+            search_span.set_attribute("results_count", len(results))
+            search_span.set_attribute("top_score", results[0]['score'])
+        
+        # Generate answer
+        with tracer.start_as_current_span("generate") as gen_span:
+            answer = generate_answer(results, query)
+            gen_span.set_attribute("answer_length", len(answer))
+        
+        return answer
+```
+
+### 6.3 Viewing Traces in Jaeger
+
+**Access Jaeger UI**: http://localhost:16686
+
+**Trace view shows**:
+- Complete request flow
+- Timing breakdown by span
+- Service dependencies
+- Errors and exceptions
+
+**Example trace**:
+```
+query_rag (1,287ms)
+├─ embed_query (52ms)
+│  └─ model_encode (48ms)
+├─ search (28ms)
+│  ├─ milvus_search (24ms)
+│  └─ format_results (4ms)
+└─ generate (1,207ms)
+   ├─ prepare_prompt (2ms)
+   ├─ llm_generate (1,200ms)
+   └─ format_response (5ms)
+```
+
+**Identify bottlenecks**: Visually see which spans take longest
+
+---
+
+## 7. Alerting Rules & Channels
+
+### 7.1 Alert Rules
+
+**alerts.yml**:
+```yaml
+groups:
+  - name: rag_alerts
+    interval: 30s
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          rate(rag_query_errors_total[5m]) / rate(rag_requests_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 1%)"
+          dashboard: "http://grafana:3000/d/rag-system"
+      
+      # High latency
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, rate(rag_query_duration_seconds_bucket{stage="total"}[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High query latency detected"
+          description: "P95 latency is {{ $value }}s (threshold: 5s)"
+      
+      # Low throughput
+      - alert: LowThroughput
+        expr: |
+          rate(rag_requests_total{endpoint="/ask"}[5m]) < 30
+        for: 10m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Low request throughput"
+          description: "Request rate is {{ $value }} req/s (threshold: 30)"
+      
+      # Service down
+      - alert: ServiceDown
+        expr: up{job="rag-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "RAG backend service is down"
+          description: "Backend service has been down for 1 minute"
+      
+      # High CPU
+      - alert: HighCPU
+        expr: |
+          rate(process_cpu_seconds_total{job="rag-backend"}[5m]) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% (threshold: 90%)"
+      
+      # High memory
+      - alert: HighMemory
+        expr: |
+          process_resident_memory_bytes{job="rag-backend"} / 1024 / 1024 / 1024 > 14
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}GB (threshold: 14GB)"
+      
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_size_bytes - node_filesystem_avail_bytes) / 
+          node_filesystem_size_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Low disk space"
+          description: "Disk usage is {{ $value }}% (threshold: 85%)"
+      
+      # Cache hit rate low
+      - alert: LowCacheHitRate
+        expr: |
+          rate(rag_cache_hits_total[10m]) / 
+          (rate(rag_cache_hits_total[10m]) + rate(rag_cache_misses_total[10m])) < 0.5
+        for: 15m
+        labels:
+          severity: info
+          team: backend
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (threshold: 50%)"
+```
+
+### 7.2 AlertManager Configuration
+
+**alertmanager.yml**:
+```yaml
+global:
+  resolve_timeout: 5m
+  slack_api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+
+route:
+  group_by: ['alertname', 'cluster']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'default'
+  
+  routes:
+    # Critical alerts to PagerDuty
+    - match:
+        severity: critical
+      receiver: 'pagerduty'
+      continue: true
+    
+    # All alerts to Slack
+    - match_re:
+        severity: critical|warning|info
+      receiver: 'slack'
+
+receivers:
+  - name: 'default'
+    slack_configs:
+      - channel: '#alerts'
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+  
+  - name: 'slack'
+    slack_configs:
+      - channel: '#rag-alerts'
+        title: '[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Labels.alertname }}
+          *Severity:* {{ .Labels.severity }}
+          *Description:* {{ .Annotations.description }}
+          *Dashboard:* {{ .Annotations.dashboard }}
+          {{ end }}
+        send_resolved: true
+  
+  - name: 'pagerduty'
+    pagerduty_configs:
+      - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
+        description: '{{ .GroupLabels.alertname }}: {{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+inhibit_rules:
+  # If service is down, suppress other alerts
+  - source_match:
+      alertname: 'ServiceDown'
+    target_match_re:
+      alertname: 'HighErrorRate|HighLatency|LowThroughput'
+    equal: ['job']
+```
+
+### 7.3 Alert Severity Levels
+
+```
+Severity | Response Time | Escalation    | Examples
+---------|---------------|---------------|---------------------------
+Critical | Immediate     | Page on-call  | Service down, high errors
+Warning  | 30 minutes    | Slack + email | High latency, high CPU
+Info     | Best effort   | Slack only    | Low cache hit rate
+```
+
+---
+
+## 8. Health Checks & Uptime Monitoring
+
+### 8.1 Health Check Endpoint
+
+**Comprehensive health check**:
+```python
+# backend/main.py
+from fastapi import FastAPI, status
+from typing import Dict
+
+@app.get("/health", status_code=status.HTTP_200_OK)
+async def health_check() -> Dict:
+    """
+    Comprehensive health check endpoint.
+    Returns 200 if all components healthy, 503 otherwise.
+    """
+    health_status = {
+        "status": "healthy",
+        "version": "1.0.0",
+        "timestamp": datetime.utcnow().isoformat(),
+        "components": {}
+    }
+    
+    # Check Milvus
+    try:
+        milvus_client.health_check()
+        health_status["components"]["milvus"] = "healthy"
+    except Exception as e:
+        health_status["components"]["milvus"] = f"unhealthy: {str(e)}"
+        health_status["status"] = "degraded"
+    
+    # Check Ollama
+    try:
+        response = requests.get("http://ollama:11434/api/tags", timeout=2)
+        if response.status_code == 200:
+            health_status["components"]["ollama"] = "healthy"
+        else:
+            health_status["components"]["ollama"] = "unhealthy"
+            health_status["status"] = "degraded"
+    except Exception as e:
+        health_status["components"]["ollama"] = f"unhealthy: {str(e)}"
+        health_status["status"] = "degraded"
+    
+    # Check Redis cache
+    try:
+        redis_client.ping()
+        health_status["components"]["redis"] = "healthy"
+    except Exception as e:
+        health_status["components"]["redis"] = f"unhealthy: {str(e)}"
+        health_status["status"] = "degraded"
+    
+    # Set status code based on health
+    if health_status["status"] == "healthy":
+        return health_status
+    else:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content=health_status
+        )
+
+# Liveness probe (is service running?)
+@app.get("/healthz")
+async def liveness():
+    return {"status": "alive"}
+
+# Readiness probe (is service ready to serve traffic?)
+@app.get("/ready")
+async def readiness():
+    # Check if service is ready
+    try:
+        # Verify critical components
+        milvus_client.health_check()
+        return {"status": "ready"}
+    except:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={"status": "not ready"}
+        )
+```
+
+### 8.2 External Uptime Monitoring
+
+**UptimeRobot configuration**:
+```
+Monitor Type: HTTP(s)
+URL: https://your-domain.com/health
+Monitoring Interval: 5 minutes
+Alert Contacts: email, SMS, Slack
+```
+
+**Prometheus Blackbox Exporter**:
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://backend:8000/health
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+```
+
+---
+
+## 9. Performance Monitoring
+
+### 9.1 Application Performance Monitoring (APM)
+
+**Key metrics to track**:
+- Request rate (requests/second)
+- Error rate (%)
+- Latency (P50, P95, P99)
+- Throughput (concurrent requests)
+- Resource utilization (CPU, memory, disk)
+
+**PromQL queries**:
+```promql
+# Request rate
+rate(rag_requests_total[5m])
+
+# Error rate
+rate(rag_query_errors_total[5m]) / rate(rag_requests_total[5m])
+
+# P95 latency
+histogram_quantile(0.95, rate(rag_query_duration_seconds_bucket[5m]))
+
+# Apdex score (Application Performance Index)
+(
+  sum(rate(rag_query_duration_seconds_bucket{le="2.5"}[5m]))
+  + sum(rate(rag_query_duration_seconds_bucket{le="5"}[5m])) / 2
+) / sum(rate(rag_query_duration_seconds_count[5m]))
+```
+
+### 9.2 Database Performance
+
+**Milvus metrics**:
+```promql
+# Search latency
+histogram_quantile(0.95, rate(milvus_search_latency_bucket[5m]))
+
+# Search QPS
+rate(milvus_search_count[5m])
+
+# Collection size
+milvus_collection_entity_count
+
+# Memory usage
+milvus_query_node_memory_bytes
+```
+
+### 9.3 LLM Performance
+
+**Ollama metrics**:
+```promql
+# Generation latency
+histogram_quantile(0.95, rate(ollama_generation_duration_seconds_bucket[5m]))
+
+# Tokens per second
+rate(ollama_tokens_generated_total[5m])
+
+# GPU utilization
+nvidia_smi_utilization_gpu_percent
+```
+
+---
+
+## 10. Business Metrics & Analytics
+
+### 10.1 Usage Analytics
+
+**Daily active users**:
+```promql
+count(count by (user_id) (increase(rag_requests_total[24h])))
+```
+
+**Queries per user**:
+```promql
+sum(increase(rag_requests_total{endpoint="/ask"}[24h])) /
+count(count by (user_id) (increase(rag_requests_total[24h])))
+```
+
+**Most common queries**:
+- Store in database
+- Aggregate in Elasticsearch
+- Display in Kibana dashboard
+
+### 10.2 Quality Metrics
+
+**User satisfaction** (from feedback):
+```sql
+SELECT AVG(rating) as avg_rating, COUNT(*) as total_feedback
+FROM feedback
+WHERE created_at > NOW() - INTERVAL '7 days';
+```
+
+**Answer relevance** (from evaluations):
+```sql
+SELECT 
+  AVG(relevance_score) as avg_relevance,
+  AVG(faithfulness_score) as avg_faithfulness
+FROM evaluations
+WHERE created_at > NOW() - INTERVAL '7 days';
+```
+
+### 10.3 Cost Metrics
+
+**Token usage cost**:
+```promql
+# Tokens per day
+sum(increase(rag_llm_tokens_total[24h]))
+
+# Cost per query (assuming $0.0001 per 1k tokens)
+sum(increase(rag_llm_tokens_total[24h])) / 1000 * 0.0001 /
+sum(increase(rag_requests_total{endpoint="/ask"}[24h]))
+```
+
+**Infrastructure cost**:
+- Track in cloud billing
+- Correlate with usage metrics
+- Calculate cost per query
+
+---
+
+## 11. On-Call Runbooks
+
+### 11.1 High Error Rate Runbook
+
+**Alert**: HighErrorRate
+**Severity**: Critical
+**Threshold**: Error rate >1% for 2 minutes
+
+**Investigation Steps**:
+
+1. **Check Grafana dashboard**: http://grafana:3000/d/rag-system
+   - Verify error rate spike
+   - Identify affected endpoints
+
+2. **Check recent logs** in Kibana:
+   ```
+   level: "ERROR" AND @timestamp >= now-15m | sort @timestamp desc
+   ```
+   - Look for common error patterns
+   - Identify error types
+
+3. **Check traces** in Jaeger:
+   - Find failing traces
+   - Identify which span is failing
+
+4. **Common causes**:
+   - Milvus connection issue → Check Milvus health
+   - Ollama timeout → Check Ollama status and load
+   - Database connection pool exhausted → Check active connections
+   - Invalid input → Check input validation
+
+**Resolution**:
+- If Milvus down: Restart Milvus container
+- If Ollama overloaded: Scale horizontally or add GPU
+- If connection pool exhausted: Increase pool size
+- If input validation issue: Deploy fix
+
+**Verification**:
+- Error rate returns to <0.5%
+- User queries succeed
+- No new alerts triggered
+
+---
+
+### 11.2 High Latency Runbook
+
+**Alert**: HighLatency
+**Severity**: Warning
+**Threshold**: P95 latency >5s for 5 minutes
+
+**Investigation Steps**:
+
+1. **Check latency breakdown** in Grafana:
+   ```promql
+   histogram_quantile(0.95, 
+     rate(rag_query_duration_seconds_bucket{stage=~"embedding|search|generation"}[5m])
+   )
+   ```
+   - Identify slowest stage
+
+2. **If embedding slow**:
+   - Check CPU/GPU utilization
+   - Check for batch processing issues
+   - Verify embedding cache working
+
+3. **If search slow**:
+   - Check Milvus metrics
+   - Verify index parameters
+   - Check for data growth (re-index needed?)
+
+4. **If generation slow**:
+   - Check Ollama metrics
+   - Verify no model loading delays
+   - Check for context size issues
+
+**Resolution**:
+- Scale resources (CPU/GPU)
+- Enable/optimize caching
+- Tune parameters (batch size, index settings)
+- Optimize prompts (reduce context size)
+
+---
+
+### 11.3 Service Down Runbook
+
+**Alert**: ServiceDown
+**Severity**: Critical
+**Threshold**: Service down for 1 minute
+
+**Investigation Steps**:
+
+1. **Check service status**:
+   ```bash
+   docker ps | grep backend
+   ```
+
+2. **Check logs**:
+   ```bash
+   docker logs backend --tail 100
+   ```
+
+3. **Common causes**:
+   - Container crashed → Check OOM, exceptions
+   - Port conflict → Check port bindings
+   - Dependency unavailable → Check Milvus, Ollama, Redis
+
+**Resolution**:
+
+1. **Restart service**:
+   ```bash
+   docker-compose restart backend
+   ```
+
+2. **If doesn't help, check dependencies**:
+   ```bash
+   docker-compose ps
+   docker logs milvus --tail 50
+   docker logs ollama --tail 50
+   ```
+
+3. **Restart full stack if needed**:
+   ```bash
+   docker-compose down
+   docker-compose up -d
+   ```
+
+**Verification**:
+- Service returns 200 on /health
+- Queries succeed
+- Metrics resuming
+
+---
+
+## 12. Incident Response Procedures
+
+### 12.1 Incident Severity Levels
+
+```
+SEV 1 (Critical):
+- System completely down
+- Data loss or corruption
+- Security breach
+- Response: Immediate, page on-call
+
+SEV 2 (High):
+- Major feature broken
+- High error rate (>5%)
+- Severe performance degradation
+- Response: Within 30 minutes
+
+SEV 3 (Medium):
+- Minor feature broken
+- Moderate performance issues
+- Response: Within 4 hours
+
+SEV 4 (Low):
+- Cosmetic issues
+- Non-critical bugs
+- Response: Best effort
+```
+
+### 12.2 Incident Response Process
+
+**1. Detection** (0-5 minutes):
+- Alert triggers
+- On-call engineer acknowledges
+
+**2. Triage** (5-15 minutes):
+- Assess severity
+- Determine impact
+- Identify affected users/systems
+
+**3. Mitigation** (15-60 minutes):
+- Stop bleeding (rollback, scale, disable)
+- Communicate status
+- Implement temporary fix
+
+**4. Resolution** (1-4 hours):
+- Root cause analysis
+- Permanent fix
+- Deploy fix
+- Verify resolution
+
+**5. Post-Mortem** (within 1 week):
+- Document incident
+- Identify preventions
+- Create action items
+- Update runbooks
+
+### 12.3 Communication Templates
+
+**Initial Alert** (Slack):
+```
+🚨 INCIDENT: High Error Rate (SEV 2)
+
+Status: Investigating
+Impact: 15% of queries failing
+Started: 2025-10-12 14:23 UTC
+Owner: @engineer
+
+Dashboard: http://grafana:3000/d/rag-system
+War Room: #incident-2025-10-12
+```
+
+**Status Update** (every 15 minutes):
+```
+UPDATE: High Error Rate Incident
+
+Status: Mitigated (but not resolved)
+Impact: Error rate reduced to 2%
+Actions:
+- Identified root cause: Milvus connection pool exhausted
+- Scaled Milvus horizontally (1 → 3 instances)
+- Monitoring for stability
+
+Next Update: 15:00 UTC
+```
+
+**Resolution**:
+```
+✅ RESOLVED: High Error Rate Incident
+
+Duration: 42 minutes
+Root Cause: Milvus connection pool exhausted under load
+Fix: Scaled Milvus to 3 instances, increased connection pool size
+Impact: ~2,500 queries failed (15% error rate for 40 minutes)
+
+Post-mortem: [Link to document]
+```
+
+---
+
+## 13. Monitoring Best Practices
+
+### 13.1 Dos and Don'ts
+
+**DO**:
+- ✅ Monitor what matters (user-facing metrics)
+- ✅ Set meaningful alert thresholds
+- ✅ Use SLIs (Service Level Indicators)
+- ✅ Implement error budgets
+- ✅ Review and adjust alerts regularly
+- ✅ Document runbooks
+- ✅ Practice incident response
+
+**DON'T**:
+- ❌ Alert on everything (alert fatigue)
+- ❌ Use default thresholds blindly
+- ❌ Monitor vanity metrics only
+- ❌ Ignore false positives
+- ❌ Let dashboards go stale
+- ❌ Skip post-mortems
+
+### 13.2 Golden Signals
+
+**Four Golden Signals** (SRE):
+1. **Latency**: How long requests take
+2. **Traffic**: How many requests
+3. **Errors**: How many requests fail
+4. **Saturation**: How full your service is
+
+**Monitor all four** for complete visibility
+
+### 13.3 SLIs and SLOs
+
+**Service Level Indicators (SLIs)**:
+- Request success rate
+- P95 latency
+- Uptime
+
+**Service Level Objectives (SLOs)**:
+```
+SLI                  | SLO Target | Error Budget (30 days)
+---------------------|------------|------------------------
+Success Rate         | 99.9%      | 0.1% (43 minutes)
+P95 Latency          | <2.5s      | 5% requests >2.5s
+Uptime               | 99.9%      | 43 minutes downtime
+```
+
+**Error Budget** = (1 - SLO) × time period
+- If error budget spent: Focus on reliability
+- If error budget remains: Ship new features
+
+---
+
+## 14. Troubleshooting Guide
+
+### 14.1 Common Issues
+
+**Issue**: High CPU usage
+
+**Diagnosis**:
+```bash
+# Check CPU usage
+docker stats
+
+# Profile application
+py-spy top --pid <pid>
+```
+
+**Solutions**:
+- Scale horizontally
+- Optimize hot paths
+- Enable caching
+- Use GPU for inference
+
+---
+
+**Issue**: High memory usage
+
+**Diagnosis**:
+```bash
+# Check memory usage
+docker stats
+
+# Memory profiler
+python -m memory_profiler main.py
+```
+
+**Solutions**:
+- Fix memory leaks
+- Reduce model size
+- Increase memory limit
+- Use smaller embedding model
+
+---
+
+**Issue**: Slow queries
+
+**Diagnosis**:
+- Check latency breakdown in Grafana
+- View traces in Jaeger
+- Check component-specific metrics
+
+**Solutions**:
+- Optimize embeddings (batch, GPU)
+- Optimize search (tune index, partition)
+- Optimize generation (smaller model, pruning)
+- Enable caching
+
+---
+
+**Issue**: High error rate
+
+**Diagnosis**:
+- Check logs in Kibana
+- Check traces in Jaeger
+- Identify error types
+
+**Solutions**:
+- Fix bugs
+- Improve error handling
+- Add retries
+- Increase timeouts
+
+---
+
+## Summary & Quick Reference
+
+### Monitoring URLs
+
+```
+Service     | URL                          | Purpose
+------------|------------------------------|-------------------------
+Prometheus  | http://localhost:9090        | Metrics query
+Grafana     | http://localhost:3001        | Dashboards
+Kibana      | http://localhost:5601        | Log search
+Jaeger      | http://localhost:16686       | Trace visualization
+AlertManager| http://localhost:9093        | Alert management
+```
+
+### Key Commands
+
+```bash
+# Check service health
+curl http://localhost:8000/health
+
+# View metrics
+curl http://localhost:8000/metrics
+
+# Check logs
+docker logs backend --tail 100 -f
+
+# Restart service
+docker-compose restart backend
+
+# View resource usage
+docker stats
+```
+
+### Critical Alerts
+
+```
+Alert           | Threshold | Response Time | Action
+----------------|-----------|---------------|------------------
+ServiceDown     | Down 1m   | Immediate     | Restart service
+HighErrorRate   | >1%       | 5 minutes     | Check logs/traces
+HighLatency     | P95 >5s   | 15 minutes    | Investigate cause
+HighCPU         | >90%      | 30 minutes    | Scale or optimize
+HighMemory      | >14GB     | 30 minutes    | Investigate leak
+```
+
+---
+
+**Document Version**: 1.0
+**Last Updated**: October 2025
+
+---
+
+**END OF MONITORING & OBSERVABILITY GUIDE**

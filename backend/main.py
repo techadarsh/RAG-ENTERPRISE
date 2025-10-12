@@ -212,9 +212,65 @@ async def root():
         "endpoints": {
             "health": "/health",
             "ask": "/ask (POST)",
+            "evaluate": "/evaluate (GET)",
             "docs": "/docs"
         }
     }
+
+
+@app.get("/evaluate")
+async def evaluate():
+    """
+    Run evaluation script and return results.
+    This endpoint triggers the evaluation script and returns the results.
+    """
+    import subprocess
+    import os
+    
+    try:
+        # Run evaluation script
+        result = subprocess.run(
+            ["python", "evaluate_poc.py"],
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minute timeout
+        )
+        
+        # Check if results file exists
+        results_file = "/app/results/results.md"
+        if os.path.exists(results_file):
+            with open(results_file, "r") as f:
+                results_content = f.read()
+            
+            # Extract first few lines for preview
+            preview_lines = results_content.split("\n")[:20]
+            preview = "\n".join(preview_lines)
+            
+            return {
+                "status": "success",
+                "message": "Evaluation completed successfully",
+                "results_file": results_file,
+                "stdout": result.stdout,
+                "preview": preview
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Evaluation script ran but results file not found",
+                "stdout": result.stdout,
+                "stderr": result.stderr
+            }
+    
+    except subprocess.TimeoutExpired:
+        return {
+            "status": "error",
+            "message": "Evaluation timeout after 5 minutes"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error running evaluation: {str(e)}"
+        }
 
 
 if __name__ == "__main__":

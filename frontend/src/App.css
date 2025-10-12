@@ -55,7 +55,6 @@
 
 .messages-wrapper {
   flex: 1;
-  overflow-y: auto;
   padding: 30px;
   padding-bottom: 20px;
   scroll-behavior: smooth;

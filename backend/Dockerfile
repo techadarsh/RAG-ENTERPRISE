@@ -32,6 +32,9 @@ COPY . .
 # Create .env from example if it doesn't exist
 RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
+# Create results directory for evaluation output
+RUN mkdir -p /app/results
+
 # Environment optimizations for Apple Silicon ARM64
 ENV OMP_NUM_THREADS=8
 ENV TOKENIZERS_PARALLELISM=false
