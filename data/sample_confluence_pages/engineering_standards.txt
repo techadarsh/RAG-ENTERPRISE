@@ -1,0 +1,155 @@
+ENGINEERING TEAM - CODING STANDARDS & BEST PRACTICES
+
+Last Updated: October 2025
+Owner: Engineering Team
+
+═══════════════════════════════════════════════════════════════
+
+1. CODE REVIEW PROCESS
+
+All code must be reviewed before merging to main branch.
+
+Required Approvals:
+- Minimum 2 approvals for production code
+- 1 approval for documentation changes
+- Lead engineer approval for architecture changes
+
+Review Checklist:
+✓ Code follows style guide (PEP 8 for Python, ESLint for JavaScript)
+✓ Tests included with >80% coverage
+✓ Documentation updated (README, API docs, inline comments)
+✓ No secrets or credentials in code
+✓ Performance impact considered
+
+═══════════════════════════════════════════════════════════════
+
+2. GIT WORKFLOW
+
+Branch Naming Convention:
+- feature/description-here
+- bugfix/issue-number-description
+- hotfix/critical-issue-description
+
+Commit Message Format:
+[TYPE] Short description
+
+TYPE options: feat, fix, docs, style, refactor, test, chore
+
+Example:
+[feat] Add user authentication endpoint
+[fix] Resolve memory leak in data processing
+
+═══════════════════════════════════════════════════════════════
+
+3. TESTING REQUIREMENTS
+
+Unit Tests:
+- Required for all new functions and classes
+- Mock external dependencies
+- Target: 80% code coverage minimum
+
+Integration Tests:
+- Required for API endpoints
+- Test database interactions
+- Verify error handling
+
+End-to-End Tests:
+- Required for critical user flows
+- Run in staging environment before production
+
+═══════════════════════════════════════════════════════════════
+
+4. DOCUMENTATION STANDARDS
+
+Code Documentation:
+- Docstrings for all public functions/classes
+- Include parameter types and return values
+- Add usage examples for complex functions
+
+API Documentation:
+- OpenAPI/Swagger specs required
+- Include request/response examples
+- Document error codes and messages
+
+Architecture Documentation:
+- Maintain system architecture diagrams
+- Document design decisions in ADR format
+- Update on major architectural changes
+
+═══════════════════════════════════════════════════════════════
+
+5. DEPLOYMENT PROCESS
+
+Development → Staging → Production
+
+Development:
+- Auto-deploy on merge to develop branch
+- Run automated test suite
+- Available for QA testing
+
+Staging:
+- Deploy via pull request to staging branch
+- Run full regression test suite
+- Requires QA sign-off
+
+Production:
+- Deploy via tagged release
+- Requires lead engineer approval
+- Deploy during maintenance window (2 AM UTC)
+- Rollback plan documented
+
+═══════════════════════════════════════════════════════════════
+
+6. SECURITY GUIDELINES
+
+Code Security:
+- Never commit API keys, passwords, or tokens
+- Use environment variables for sensitive data
+- Implement input validation and sanitization
+- Follow OWASP Top 10 guidelines
+
+Dependency Management:
+- Run security audits weekly (npm audit, pip-audit)
+- Update dependencies quarterly
+- Review CVE reports for critical vulnerabilities
+
+Access Control:
+- Implement least privilege principle
+- Use role-based access control (RBAC)
+- Audit access logs monthly
+
+═══════════════════════════════════════════════════════════════
+
+7. PERFORMANCE BEST PRACTICES
+
+Backend Optimization:
+- Database queries must have indexes
+- Implement caching for frequently accessed data
+- Use pagination for large datasets (max 100 items per page)
+- Monitor API response times (<500ms target)
+
+Frontend Optimization:
+- Lazy load components when possible
+- Optimize images and assets
+- Implement code splitting
+- Target Lighthouse score >90
+
+═══════════════════════════════════════════════════════════════
+
+8. MONITORING AND LOGGING
+
+Logging Standards:
+- Use structured logging (JSON format)
+- Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+- Include correlation IDs for request tracking
+- Never log sensitive data (passwords, tokens)
+
+Monitoring Requirements:
+- Set up alerts for error rates >1%
+- Monitor system resources (CPU, memory, disk)
+- Track API response times
+- Set up uptime monitoring (99.9% SLA)
+
+═══════════════════════════════════════════════════════════════
+
+For questions or updates, contact engineering@company.com

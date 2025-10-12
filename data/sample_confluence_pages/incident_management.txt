@@ -1,0 +1,286 @@
+INCIDENT MANAGEMENT & ON-CALL PROCEDURES
+
+Last Updated: October 2025
+Owner: DevOps & SRE Team
+
+═══════════════════════════════════════════════════════════════
+
+SEVERITY LEVELS
+
+SEV 1 - CRITICAL
+Impact: Complete service outage or data loss
+Response: Immediate (5 min)
+Examples:
+- Production database down
+- Complete website outage
+- Security breach detected
+- Payment processing failure
+
+SEV 2 - HIGH
+Impact: Major functionality impaired
+Response: 30 minutes
+Examples:
+- API response times >5 seconds
+- Login issues affecting >50% users
+- Email delivery failures
+- Background jobs not processing
+
+SEV 3 - MEDIUM
+Impact: Partial functionality degraded
+Response: 4 hours
+Examples:
+- Non-critical feature broken
+- Performance degradation <50% users
+- Minor UI bugs
+- Reporting delays
+
+SEV 4 - LOW
+Impact: Minor issues, workaround available
+Response: Next business day
+Examples:
+- Cosmetic UI issues
+- Documentation errors
+- Minor feature requests
+- Non-urgent improvements
+
+═══════════════════════════════════════════════════════════════
+
+ON-CALL ROTATION
+
+Schedule:
+- 7-day rotation, Monday to Monday
+- Primary and Secondary on-call engineers
+- Handoff meeting every Monday 10 AM
+
+On-Call Responsibilities:
+✓ Monitor PagerDuty alerts 24/7
+✓ Respond within SLA time
+✓ Escalate when needed
+✓ Document incidents in Jira
+✓ Update status page during outages
+
+Compensation:
+- $500 on-call stipend per week
+- Time-and-a-half for weekend incident response
+- Comp time for after-hours work >2 hours
+
+═══════════════════════════════════════════════════════════════
+
+INCIDENT RESPONSE PROCESS
+
+1. DETECTION & ALERTING
+- Monitoring system detects issue
+- PagerDuty alert sent to on-call engineer
+- Slack #incidents channel notification
+- Status page updated (if customer-facing)
+
+2. INITIAL RESPONSE
+- Acknowledge alert within 5 minutes
+- Assess severity level
+- Create incident ticket in Jira
+- Post in #incidents channel:
+  "🚨 Incident detected: [brief description]
+   Severity: [SEV X]
+   Status: Investigating
+   Owner: [your name]"
+
+3. INVESTIGATION
+- Check monitoring dashboards
+- Review recent deployments
+- Check error logs
+- Run diagnostic commands
+- Identify root cause
+
+4. MITIGATION
+- Implement immediate fix or workaround
+- Rollback recent deployment if needed
+- Scale resources if capacity issue
+- Apply hotfix if security issue
+- Update #incidents channel every 15 min
+
+5. RESOLUTION
+- Verify fix resolves issue
+- Monitor metrics return to normal
+- Close PagerDuty incident
+- Update status page to "Resolved"
+- Post resolution in #incidents:
+  "✅ Incident resolved
+   Duration: [X] minutes
+   Root cause: [brief description]
+   Next steps: Post-mortem scheduled"
+
+6. POST-MORTEM
+- Schedule within 48 hours
+- Write blameless post-mortem doc
+- Identify action items
+- Assign owners and due dates
+- Share learnings with team
+
+═══════════════════════════════════════════════════════════════
+
+INCIDENT COMMUNICATION
+
+Internal Communication:
+- #incidents Slack channel for updates
+- Tag @engineering for SEV 1/2 incidents
+- Email engineering-team@ for major incidents
+
+Customer Communication:
+- Update status.company.com immediately
+- Send email to affected customers
+- Post on Twitter for major outages
+- Schedule customer webinar if needed
+
+Communication Templates:
+
+SEV 1 Template:
+"We are investigating reports of [issue description]. 
+Our team is actively working on a resolution. 
+We will provide updates every 15 minutes.
+Timeline: Detected at [time], investigating since [time]."
+
+Resolution Template:
+"The issue affecting [service] has been resolved.
+Root cause: [brief technical explanation]
+Impact: [affected users/timeframe]
+We apologize for any inconvenience.
+Full post-mortem: [link]"
+
+═══════════════════════════════════════════════════════════════
+
+ESCALATION PROCEDURES
+
+When to Escalate:
+
+To Secondary On-Call:
+- Primary needs help with investigation
+- Incident requires multiple people
+- Primary unavailable/no response in 10 min
+
+To Engineering Manager:
+- SEV 1 incident >30 minutes
+- Multiple simultaneous incidents
+- Requires emergency code deploy approval
+
+To VP Engineering:
+- SEV 1 incident >2 hours
+- Customer data breach suspected
+- Major partner/client affected
+- Regulatory compliance issue
+
+To CEO:
+- Public relations impact
+- Legal implications
+- Multi-million dollar revenue impact
+- Company reputation at risk
+
+═══════════════════════════════════════════════════════════════
+
+COMMON INCIDENT PLAYBOOKS
+
+Database Connection Issues:
+1. Check database status
+2. Review connection pool metrics
+3. Check for long-running queries
+4. Restart application servers if needed
+5. Scale database if capacity issue
+
+API Performance Degradation:
+1. Check API response time metrics
+2. Review error rate by endpoint
+3. Check database query performance
+4. Review recent code deployments
+5. Enable rate limiting if DDoS suspected
+
+Deployment Failures:
+1. Immediately rollback to previous version
+2. Check deployment logs for errors
+3. Verify database migrations succeeded
+4. Test in staging environment
+5. Fix issue and redeploy
+
+Security Incidents:
+1. Isolate affected systems immediately
+2. Preserve logs and evidence
+3. Notify security team
+4. Change compromised credentials
+5. Conduct full security audit
+
+═══════════════════════════════════════════════════════════════
+
+POST-MORTEM TEMPLATE
+
+Incident Summary:
+- Date/Time: [when incident occurred]
+- Duration: [total downtime]
+- Severity: [SEV level]
+- Impact: [users/revenue affected]
+
+Timeline:
+- HH:MM - Issue detected
+- HH:MM - Investigation started
+- HH:MM - Root cause identified
+- HH:MM - Fix deployed
+- HH:MM - Issue resolved
+
+Root Cause:
+[Detailed technical explanation of what caused the incident]
+
+Contributing Factors:
+- Factor 1: [description]
+- Factor 2: [description]
+
+What Went Well:
+- Detection was quick
+- Communication was clear
+- Team coordinated effectively
+
+What Went Poorly:
+- Took too long to identify root cause
+- Monitoring didn't catch issue early
+- Documentation was outdated
+
+Action Items:
+1. [Action] - Owner: [Name] - Due: [Date]
+2. [Action] - Owner: [Name] - Due: [Date]
+3. [Action] - Owner: [Name] - Due: [Date]
+
+Lessons Learned:
+[Key takeaways for preventing future incidents]
+
+═══════════════════════════════════════════════════════════════
+
+USEFUL COMMANDS & TOOLS
+
+Monitoring Dashboards:
+- Datadog: https://app.datadoghq.com/dashboard
+- New Relic: https://rpm.newrelic.com
+- Grafana: https://grafana.company.com
+
+Log Analysis:
+- Splunk: https://splunk.company.com
+- kubectl logs <pod-name> -n production
+- docker logs <container-id> --tail 100
+
+Database Queries:
+- Check active connections:
+  SELECT count(*) FROM pg_stat_activity;
+- Check long-running queries:
+  SELECT * FROM pg_stat_activity WHERE state = 'active';
+
+═══════════════════════════════════════════════════════════════
+
+CONTACT INFORMATION
+
+On-Call Rotation:
+- PagerDuty schedule: https://company.pagerduty.com
+
+Key Contacts:
+- DevOps Lead: devops-lead@company.com
+- Engineering Manager: eng-manager@company.com
+- VP Engineering: vp-eng@company.com
+- Security Team: security@company.com
+
+Emergency Hotline: +1-555-INCIDENT
+
+For questions or updates, contact devops@company.com

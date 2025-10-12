@@ -1,133 +1,142 @@
+version: '3.8'
+
 services:
-  # Milvus vector database for semantic search and storage
-  milvus:
-    image: milvusdb/milvus:v2.4.3
-    container_name: milvus
-    ports:
-      - "19530:19530"   # gRPC
-      - "9091:9091"     # metrics
-    command: ["milvus", "run", "standalone"]
-    volumes:
-      - milvus_data:/var/lib/milvus
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/metrics"]
-      interval: 20s
-      timeout: 5s
-      retries: 5
-    # Embedded etcd/minio for POC; not for production
-
-  # Postgres for optional metadata storage (feedback/logs)
-  postgres:
-    image: postgres:16
-    container_name: postgres
-    ports:
-      - "5432:5432"
+  # Milvus Standalone
+  etcd:
+    container_name: milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.5
     environment:
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
-      POSTGRES_DB: ${PG_DB}
-    env_file:
-      - .env
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
     volumes:
-      - pg_data:/var/lib/postgresql/data
-    restart: unless-stopped
+      - etcd-data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    networks:
+      - rag-network
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${PG_USER:-rag}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
 
-  # Ollama for running Mistral-7B LLM
+  minio:
+    container_name: milvus-minio
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - minio-data:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  milvus:
+    container_name: milvus-standalone
+    image: milvusdb/milvus:v2.3.3
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - milvus-data:/var/lib/milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - etcd
+      - minio
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+
+  # Ollama LLM Service
   ollama:
+    container_name: rag-ollama
     image: ollama/ollama:latest
-    container_name: ollama
     ports:
       - "11434:11434"
     volumes:
-      - ollama_data:/root/.ollama
+      - ollama-data:/root/.ollama
+    networks:
+      - rag-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 20s
-      timeout: 5s
-      retries: 5
 
-  # Embeddings service (BGE-Large-EN v1.5)
-  embeddings:
-    build: ./embeddings
-    container_name: embeddings
+  # Backend Service
+  backend:
+    container_name: rag-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    # For dev, mount code/weights as needed
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/encode"]
-      interval: 20s
-      timeout: 5s
-      retries: 5
-
-  # FastAPI backend for RAG API
-  api:
-    build: ./api
-    container_name: api
-    env_file:
-      - .env
+    environment:
+      - MILVUS_HOST=milvus
+      - MILVUS_PORT=19530
+      - COLLECTION_NAME=enterprise_docs
+      - EMBEDDING_MODEL=BAAI/bge-base-en
+      - EMBEDDING_DIM=768
+      - LLM_MODE=api
+      - MISTRAL_API_URL=http://host.docker.internal:11434/api/generate
+      - MISTRAL_API_KEY=
+      - MISTRAL_MODEL=mistral
+      - DATA_DIR=/app/data
+      - CONFLUENCE_MODE=local
+      - CONFLUENCE_LOCAL_DIR=/app/data/sample_confluence_pages
+      - CONFLUENCE_BASE_URL=https://yourcompany.atlassian.net/wiki
+      - CONFLUENCE_SPACE_KEY=ENGINEERING
+    volumes:
+      - ./data:/app/data:ro
     depends_on:
       milvus:
-        condition: service_healthy
-      embeddings:
         condition: service_healthy
       ollama:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./api/app:/app/app:rw,delegated  # For development: live code reload
-    command: >
-      uvicorn app.main:app
-      --host 0.0.0.0
-      --port 8080
-      --reload
-      --reload-dir /app/app
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+        condition: service_started
+    networks:
+      - rag-network
+    restart: unless-stopped
+    # Healthcheck temporarily disabled to allow long model initialization
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
+    #   start_period: 300s  # 5 minutes for model download + embedding generation on first run
 
-  # Ingestion CLI (runs via docker exec in POC)
-  ingest:
-    build: ./ingest
-    container_name: ingest
-    env_file:
-      - .env
-    depends_on:
-      milvus:
-        condition: service_healthy
-      embeddings:
-        condition: service_healthy
-    command: ["sleep", "infinity"]
-    volumes:
-      - ./ingest/pipeline:/app/pipeline  # For development: live code reload
-      - ./data:/data  # Mount data for ingestion
-
-  # Next.js frontend UI
-  ui:
-    build: ./ui
-    container_name: ui
-    depends_on:
-      api:
-        condition: service_healthy
+  # Frontend Service
+  frontend:
+    container_name: rag-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_BASE=http://localhost:8080
-    volumes:
-      - ./ui/app:/app/app  # For development: live code reload
+      - REACT_APP_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - rag-network
+    restart: unless-stopped
+
+networks:
+  rag-network:
+    driver: bridge
 
 volumes:
-  milvus_data:
-  pg_data:
-  ollama_data:
-
+  etcd-data:
+  minio-data:
+  milvus-data:
+  ollama-data:

@@ -1,0 +1,233 @@
+PROJECT MANAGEMENT - AGILE WORKFLOW GUIDE
+
+Last Updated: October 2025
+Space: PROJECT MANAGEMENT
+
+═══════════════════════════════════════════════════════════════
+
+SPRINT PLANNING PROCESS
+
+Sprint Duration: 2 weeks
+
+Planning Meeting:
+- When: First Monday of each sprint
+- Duration: 2 hours
+- Attendees: Dev team, Product Owner, Scrum Master
+
+Planning Steps:
+1. Review previous sprint velocity
+2. Review and refine product backlog
+3. Team commits to sprint backlog
+4. Break stories into tasks
+5. Estimate tasks in hours
+
+Story Point Scale:
+1 point = Simple task (few hours)
+2 points = Medium task (1 day)
+3 points = Complex task (2-3 days)
+5 points = Very complex (requires breakdown)
+8+ points = Too large, must be split
+
+═══════════════════════════════════════════════════════════════
+
+DAILY STANDUP
+
+Format: 15 minutes, same time daily (10:00 AM)
+
+Each team member answers:
+1. What did I complete yesterday?
+2. What will I work on today?
+3. Any blockers or impediments?
+
+Rules:
+- Stand up (no sitting!)
+- No problem-solving in standup
+- Take detailed discussions offline
+- Update Jira board before standup
+
+═══════════════════════════════════════════════════════════════
+
+JIRA WORKFLOW STATES
+
+Story Lifecycle:
+BACKLOG → READY → IN PROGRESS → IN REVIEW → TESTING → DONE
+
+Backlog:
+- Stories not yet refined
+- No acceptance criteria
+
+Ready:
+- Story refined and estimated
+- Acceptance criteria defined
+- Dependencies identified
+
+In Progress:
+- Developer actively working
+- Update daily with comments
+
+In Review:
+- Code review requested
+- PR created and linked
+
+Testing:
+- Deployed to test environment
+- QA validation in progress
+
+Done:
+- All acceptance criteria met
+- Code merged to main
+- Deployed to production
+
+═══════════════════════════════════════════════════════════════
+
+STORY WRITING BEST PRACTICES
+
+User Story Template:
+As a [user type]
+I want to [action]
+So that [benefit]
+
+Acceptance Criteria:
+Given [context]
+When [action]
+Then [outcome]
+
+Example:
+As a customer
+I want to reset my password
+So that I can regain access to my account
+
+Acceptance Criteria:
+- Given I'm on the login page
+  When I click "Forgot Password"
+  Then I receive a reset email within 2 minutes
+
+- Given I have a valid reset token
+  When I submit a new password
+  Then my password is updated
+  And I can login with the new password
+
+═══════════════════════════════════════════════════════════════
+
+SPRINT RETROSPECTIVE
+
+Format: 1 hour at end of each sprint
+
+Agenda:
+1. What went well? (15 min)
+2. What didn't go well? (15 min)
+3. What can we improve? (20 min)
+4. Action items (10 min)
+
+Retrospective Techniques:
+- Mad, Sad, Glad exercise
+- Start, Stop, Continue
+- Sailboat retrospective
+- Timeline retrospective
+
+Action Items:
+- Maximum 3 improvement actions per sprint
+- Assign owner to each action
+- Review action status in next retro
+
+═══════════════════════════════════════════════════════════════
+
+DEFINITION OF DONE
+
+Code Level:
+✓ Code written and peer reviewed
+✓ Unit tests pass with >80% coverage
+✓ Integration tests pass
+✓ No critical security vulnerabilities
+✓ Code follows style guide
+
+Story Level:
+✓ All acceptance criteria met
+✓ Deployed to test environment
+✓ QA tested and approved
+✓ Documentation updated
+✓ Product Owner approved
+
+Release Level:
+✓ All stories in release are "Done"
+✓ Regression tests pass
+✓ Performance benchmarks met
+✓ Release notes written
+✓ Stakeholders notified
+
+═══════════════════════════════════════════════════════════════
+
+BACKLOG REFINEMENT
+
+Weekly refinement session: Wednesday, 1 hour
+
+Goals:
+- Ensure next 2 sprints of work are refined
+- Add acceptance criteria to upcoming stories
+- Break down large stories
+- Estimate story points
+- Identify dependencies
+
+Story Ready Checklist:
+□ Business value clear
+□ Acceptance criteria defined
+□ Dependencies identified
+□ Estimated (story points)
+□ Sized appropriately (≤5 points)
+□ Technical approach discussed
+
+═══════════════════════════════════════════════════════════════
+
+RELEASE PLANNING
+
+Release Cadence: Monthly
+
+Release Planning Meeting:
+- When: Last Friday of each month
+- Duration: 2 hours
+- Attendees: Engineering leads, Product, Stakeholders
+
+Planning Outputs:
+- Release scope and features
+- Release date confirmed
+- Risk assessment
+- Communication plan
+- Rollback strategy
+
+Release Checklist:
+□ Feature freeze 1 week before release
+□ Code freeze 3 days before release
+□ Release notes drafted
+□ Stakeholder demo scheduled
+□ Support team briefed
+□ Monitoring alerts configured
+
+═══════════════════════════════════════════════════════════════
+
+ESCALATION PATH
+
+Level 1 - Team Level:
+- Blocker affects individual developer
+- Scrum Master facilitates resolution
+- Resolution time: Same day
+
+Level 2 - Management:
+- Blocker affects entire team
+- Engineering Manager involved
+- Resolution time: 24 hours
+
+Level 3 - Executive:
+- Blocker affects company goals
+- CTO/VP Engineering involved
+- Resolution time: Immediate
+
+═══════════════════════════════════════════════════════════════
+
+USEFUL LINKS
+
+- Jira Board: https://company.atlassian.net/jira
+- Confluence Wiki: https://company.atlassian.net/wiki
+- Slack Channel: #project-management
+- Meeting Calendar: PM Team Calendar
+
+For questions, contact pm@company.com

@@ -1,0 +1,707 @@
+# RAG Enterprise Chatbot - Complete Development Workflow & Best Practices
+
+## Document Overview
+
+This document provides comprehensive guidance for developers contributing to the RAG Enterprise Chatbot project. It covers Git workflow, code review process, testing requirements, deployment procedures, and development best practices.
+
+**Target Audience**: Software Engineers, DevOps Engineers, Technical Leads
+**Last Updated**: October 2025
+**Compliance**: SOC 2, ISO 27001
+
+---
+
+## Table of Contents
+
+1. Development Environment Setup
+2. Git Workflow & Branching Strategy
+3. Code Review Process
+4. Testing Requirements  
+5. Documentation Standards
+6. Commit Message Guidelines
+7. Pull Request Best Practices
+8. Continuous Integration/Continuous Deployment
+9. Debugging & Troubleshooting Techniques
+10. Performance Optimization Guidelines
+
+---
+
+## 1. Development Environment Setup
+
+### Prerequisites
+
+**Required Software**:
+```bash
+# Check versions:
+python --version    # 3.10+ required
+node --version      # 18+ required  
+docker --version    # 20.10+ required
+git --version       # 2.30+ required
+```
+
+**Recommended Tools**:
+- **IDE**: VS Code, PyCharm Professional, or Cursor
+- **Git GUI**: GitKraken, SourceTree (optional)
+- **API Testing**: Postman, Insomnia, or HTTPie
+- **Database Client**: Attu (Milvus GUI), DBeaver
+
+### Initial Setup (New Developers)
+
+```bash
+# Step 1: Clone repository
+git clone git@github.com:company/rag-enterprise.git
+cd rag-enterprise
+
+# Step 2: Copy environment template
+cp .env.example .env
+# Edit .env with your configuration
+
+# Step 3: Install pre-commit hooks
+pip install pre-commit
+pre-commit install
+
+# Step 4: Start development environment
+docker compose up --build
+
+# Step 5: Verify setup
+curl http://localhost:8000/health
+# Should return: {"status": "healthy"}
+
+# Step 6: Run tests
+docker compose exec backend pytest
+# Should pass all tests
+
+# Step 7: Create feature branch
+git checkout -b feature/your-feature-name
+```
+
+---
+
+## 2. Git Workflow & Branching Strategy
+
+### Branch Naming Convention
+
+```
+Format: <type>/<short-description>
+
+Types:
+- feature/  : New features
+- bugfix/   : Bug fixes
+- hotfix/   : Urgent production fixes
+- refactor/ : Code refactoring
+- docs/     : Documentation only
+- test/     : Test additions/fixes
+- chore/    : Maintenance tasks
+
+Examples:
+✅ feature/add-query-caching
+✅ bugfix/fix-milvus-connection-timeout
+✅ hotfix/patch-security-vulnerability
+✅ refactor/optimize-embedding-generation
+✅ docs/update-api-documentation
+✅ test/add-integration-tests
+✅ chore/upgrade-dependencies
+
+❌ my-feature
+❌ fix-bug
+❌ update
+```
+
+### Feature Development Workflow
+
+```bash
+# 1. Start from latest develop
+git checkout develop
+git pull origin develop
+
+# 2. Create feature branch
+git checkout -b feature/add-query-caching
+
+# 3. Make changes (commit frequently)
+git add .
+git commit -m "feat: implement Redis caching layer"
+
+# 4. Keep branch updated (rebase daily)
+git fetch origin
+git rebase origin/develop
+
+# 5. Push to remote
+git push origin feature/add-query-caching
+
+# 6. Create pull request (via GitHub UI)
+
+# 7. Address review comments
+git add .
+git commit -m "refactor: address review comments"
+git push origin feature/add-query-caching
+
+# 8. After approval, squash and merge
+# (GitHub UI handles this)
+
+# 9. Delete feature branch
+git branch -d feature/add-query-caching
+git push origin --delete feature/add-query-caching
+
+# 10. Update develop
+git checkout develop
+git pull origin develop
+```
+
+---
+
+## 3. Code Review Process
+
+### Pull Request Template
+
+```markdown
+## Description
+Brief description of changes
+
+## Type of Change
+- [ ] 🎉 New feature
+- [ ] 🐛 Bug fix
+- [ ] 📝 Documentation update
+- [ ] ♻️  Refactoring
+- [ ] ✅ Test addition
+- [ ] 🔧 Configuration change
+
+## Changes Made
+- Added Redis caching layer
+- Implemented cache invalidation strategy
+- Updated API to use cache
+
+## Testing Done
+- [ ] Unit tests pass
+- [ ] Integration tests pass
+- [ ] Manual testing completed
+- [ ] Performance tested (include metrics)
+
+## Performance Impact
+Before: 1200ms average query time
+After: 300ms average query time (cached)
+
+## Documentation Updated
+- [ ] README.md updated
+- [ ] API docs updated
+- [ ] Inline code comments added
+- [ ] Architecture diagram updated (if applicable)
+
+## Checklist
+- [ ] Code follows style guidelines
+- [ ] Self-review completed
+- [ ] Comments added for complex logic
+- [ ] Tests cover new functionality
+- [ ] No new warnings introduced
+- [ ] Documentation updated
+```
+
+---
+
+## 4. Testing Requirements
+
+### Test Pyramid
+
+```
+           /\
+          /  \
+         / E2E \      10% - End-to-End Tests
+        /______\
+       /        \
+      / Integration\ 30% - Integration Tests
+     /____________\
+    /              \
+   /   Unit Tests   \ 60% - Unit Tests
+  /__________________\
+```
+
+### Unit Tests Example
+
+```python
+# backend/tests/test_embeddings.py
+
+import pytest
+from embeddings import EmbeddingModel
+
+@pytest.fixture
+def embedding_model():
+    """Fixture to create embedding model instance"""
+    return EmbeddingModel()
+
+def test_encode_single_text(embedding_model):
+    """Test encoding a single text string"""
+    text = "What is the PTO policy?"
+    embedding = embedding_model.encode([text])[0]
+    
+    assert embedding.shape == (1024,), "Should return 1024-dim vector"
+    assert -1.0 <= embedding.min() <= 1.0, "Should be normalized"
+    assert -1.0 <= embedding.max() <= 1.0, "Should be normalized"
+
+def test_semantic_similarity(embedding_model):
+    """Test that similar texts have high cosine similarity"""
+    text1 = "What is the vacation policy?"
+    text2 = "How many vacation days do I get?"
+    text3 = "What is the incident management process?"
+    
+    emb1 = embedding_model.encode([text1])[0]
+    emb2 = embedding_model.encode([text2])[0]
+    emb3 = embedding_model.encode([text3])[0]
+    
+    # Compute cosine similarity
+    sim_12 = np.dot(emb1, emb2)  # Similar queries
+    sim_13 = np.dot(emb1, emb3)  # Different topics
+    
+    assert sim_12 > 0.7, "Similar queries should have high similarity"
+    assert sim_13 < 0.5, "Different topics should have low similarity"
+```
+
+### Integration Tests Example
+
+```python
+# backend/tests/test_rag_pipeline.py
+
+import pytest
+from rag_pipeline import RAGPipeline
+
+@pytest.fixture(scope="module")
+def rag_pipeline():
+    """Create RAG pipeline with real dependencies"""
+    pipeline = RAGPipeline()
+    pipeline.ingest_documents("tests/data/test_docs")
+    yield pipeline
+
+def test_end_to_end_query(rag_pipeline):
+    """Test complete RAG pipeline"""
+    query = "What is the PTO policy?"
+    response = rag_pipeline.process_query(query)
+    
+    assert "answer" in response
+    assert "sources" in response
+    assert len(response["sources"]) == 3
+    assert response["sources"][0]["score"] > 0.5
+
+def test_conversation_memory(rag_pipeline):
+    """Test multi-turn conversation"""
+    response1 = rag_pipeline.process_query("What is the PTO policy?")
+    conv_id = response1["conversation_id"]
+    
+    response2 = rag_pipeline.process_query(
+        "How many days do I get?",
+        conversation_id=conv_id
+    )
+    
+    assert "PTO" in response2["answer"] or "vacation" in response2["answer"]
+```
+
+---
+
+## 5. Documentation Standards
+
+### Code Documentation Best Practices
+
+```python
+# ✅ Good Documentation Example:
+
+def search_similar_documents(
+    query_embedding: np.ndarray,
+    top_k: int = 3,
+    score_threshold: float = 0.7
+) -> List[Dict[str, Any]]:
+    """
+    Search for documents similar to the query embedding.
+    
+    This function performs approximate nearest neighbor (ANN) search using
+    the Milvus HNSW index to find the most semantically similar documents
+    to the input query embedding.
+    
+    Args:
+        query_embedding: 1024-dimensional normalized embedding vector
+            representing the user's query.
+        top_k: Maximum number of results to return. Must be ≥ 1.
+            Default is 3.
+        score_threshold: Minimum cosine similarity score (0-1) for
+            results to be included. Default is 0.7 (70% similarity).
+    
+    Returns:
+        List of dictionaries containing matched documents, sorted by
+        relevance (highest score first). Each dictionary contains:
+        - title: Document title
+        - content: Document text content
+        - score: Cosine similarity score (0-1)
+        - metadata: Additional document metadata
+    
+    Raises:
+        ValueError: If query_embedding dimensions ≠ 1024
+        ConnectionError: If Milvus connection fails
+        
+    Example:
+        >>> embedding = embedder.encode(["What is PTO?"])[0]
+        >>> results = search_similar_documents(embedding, top_k=5)
+        >>> print(results[0]["title"])
+        'HR Policy - Paid Time Off'
+        >>> print(f"Relevance: {results[0]['score']:.2%}")
+        'Relevance: 87.5%'
+    
+    Performance:
+        - Query time: ~30ms for 10K documents
+        - Memory: ~50MB for index (HNSW M=16)
+        - Accuracy: 95%+ recall@10
+    
+    See Also:
+        - encode_query() for generating embeddings
+        - rerank_results() for improving relevance
+    """
+    # Implementation...
+```
+
+---
+
+## 6. Commit Message Guidelines
+
+### Commit Message Format
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Types
+
+- **feat**: New feature
+- **fix**: Bug fix
+- **docs**: Documentation only changes
+- **style**: Code style changes (formatting, semicolons, etc.)
+- **refactor**: Code refactoring without functionality changes
+- **perf**: Performance improvements
+- **test**: Adding or updating tests
+- **chore**: Build process, dependencies, tooling updates
+
+### Examples
+
+```
+✅ Good commits:
+
+feat(caching): implement Redis caching layer
+
+Added Redis caching for query results to improve response time.
+Cache TTL set to 5 minutes. Implemented cache invalidation on
+document updates.
+
+Performance: Reduced average query time from 1200ms to 300ms.
+
+Closes #123
+
+---
+
+fix(milvus): handle connection timeout gracefully
+
+Added retry logic (3 attempts with exponential backoff) for Milvus
+connection failures. Prevents cascade failures during temporary
+network issues.
+
+---
+
+docs(api): update API documentation with examples
+
+Added curl examples for all endpoints. Updated response schemas.
+Added troubleshooting section.
+
+---
+
+❌ Bad commits:
+
+- "update"
+- "fix bug"
+- "wip"
+- "asdfasdf"
+- "final commit"
+- "this should work now"
+```
+
+---
+
+## 7. Pull Request Best Practices
+
+### PR Size Guidelines
+
+```
+Small PR (< 200 lines):
+✅ Easy to review
+✅ Fast feedback cycle
+✅ Lower risk
+✅ Quicker to merge
+
+Medium PR (200-400 lines):
+⚠️  Acceptable if cohesive
+⚠️  May take longer to review
+⚠️  Consider splitting if possible
+
+Large PR (> 400 lines):
+❌ Difficult to review thoroughly
+❌ Higher risk of bugs
+❌ Slower feedback cycle
+❌ Should be split into smaller PRs
+
+Exception: Large PRs okay for:
+- Database migrations
+- Dependency upgrades
+- Code generation
+- Third-party integrations
+```
+
+### PR Description Checklist
+
+```markdown
+## Good PR Description Includes:
+
+- [ ] What problem does this solve?
+- [ ] What changes were made?
+- [ ] How was it tested?
+- [ ] Performance impact (if applicable)
+- [ ] Breaking changes (if any)
+- [ ] Screenshots (for UI changes)
+- [ ] Links to related issues/docs
+- [ ] Migration guide (if needed)
+- [ ] Rollback plan (for risky changes)
+```
+
+---
+
+## 8. Continuous Integration/Continuous Deployment
+
+### CI Pipeline Stages
+
+```yaml
+# .github/workflows/ci.yml
+
+name: CI/CD Pipeline
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run linters
+        run: |
+          pip install flake8 black mypy
+          flake8 backend/
+          black --check backend/
+          mypy backend/
+  
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run unit tests
+        run: |
+          pip install pytest pytest-cov
+          pytest backend/tests/ --cov=backend
+  
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Start services
+        run: docker compose up -d
+      - name: Run integration tests
+        run: docker compose exec -T backend pytest tests/test_integration.py
+  
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Docker images
+        run: docker compose build
+  
+  deploy-staging:
+    needs: [lint, test, integration, build]
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to staging
+        run: ./scripts/deploy-staging.sh
+```
+
+---
+
+## 9. Debugging & Troubleshooting Techniques
+
+### Common Debugging Scenarios
+
+#### Scenario 1: Backend Not Starting
+
+```bash
+# Check logs
+docker compose logs backend
+
+# Common issues:
+# 1. Port 8000 already in use
+lsof -i :8000
+kill -9 <PID>
+
+# 2. Milvus not ready
+docker compose logs milvus
+docker compose restart milvus
+
+# 3. Missing dependencies
+docker compose build backend --no-cache
+
+# 4. Environment variables
+docker compose exec backend env | grep MILVUS
+```
+
+#### Scenario 2: Slow Query Performance
+
+```python
+# Add timing logs
+import time
+import logging
+
+logger = logging.getLogger(__name__)
+
+def process_query(query: str):
+    start = time.time()
+    
+    # Embedding
+    t1 = time.time()
+    embedding = embedder.encode([query])[0]
+    logger.info(f"Embedding: {(time.time() - t1) * 1000:.2f}ms")
+    
+    # Retrieval
+    t2 = time.time()
+    results = milvus.search(embedding)
+    logger.info(f"Retrieval: {(time.time() - t2) * 1000:.2f}ms")
+    
+    # Generation
+    t3 = time.time()
+    answer = llm.generate(query, results)
+    logger.info(f"Generation: {(time.time() - t3) * 1000:.2f}ms")
+    
+    logger.info(f"Total: {(time.time() - start) * 1000:.2f}ms")
+```
+
+#### Scenario 3: Memory Leaks
+
+```bash
+# Monitor memory usage
+docker stats backend
+
+# Profile Python memory
+pip install memory_profiler
+python -m memory_profiler backend/main.py
+
+# Check for unclosed connections
+# Add connection pooling for Redis, Milvus
+```
+
+---
+
+## 10. Performance Optimization Guidelines
+
+### Query Optimization
+
+```python
+# ❌ Bad: No caching
+def process_query(query: str):
+    embedding = embedder.encode([query])
+    results = milvus.search(embedding)
+    answer = llm.generate(query, results)
+    return answer
+
+# ✅ Good: With caching
+@cache(ttl=300)  # 5 minute cache
+def process_query(query: str):
+    embedding = get_cached_embedding(query)
+    results = milvus.search(embedding)
+    answer = llm.generate(query, results)
+    return answer
+
+def get_cached_embedding(query: str):
+    cache_key = f"emb:{hash(query)}"
+    cached = redis.get(cache_key)
+    if cached:
+        return np.frombuffer(cached)
+    
+    embedding = embedder.encode([query])
+    redis.setex(cache_key, 3600, embedding.tobytes())
+    return embedding
+```
+
+### Database Optimization
+
+```python
+# ❌ Bad: Sequential queries
+for doc in documents:
+    milvus.insert(doc)  # One connection per insert
+
+# ✅ Good: Batch insert
+milvus.insert_batch(documents)  # Single connection
+
+# ❌ Bad: Loading entire collection
+all_docs = milvus.query(collection_name)
+
+# ✅ Good: Pagination
+for page in range(num_pages):
+    docs = milvus.query(
+        collection_name,
+        offset=page * page_size,
+        limit=page_size
+    )
+    process(docs)
+```
+
+### Resource Management
+
+```python
+# ❌ Bad: No connection pooling
+def search(query):
+    client = MilvusClient()  # New connection each time
+    results = client.search(query)
+    client.close()
+    return results
+
+# ✅ Good: Connection pooling
+from functools import lru_cache
+
+@lru_cache(maxsize=1)
+def get_milvus_client():
+    return MilvusClient(
+        pool_size=10,
+        pool_recycle=3600
+    )
+
+def search(query):
+    client = get_milvus_client()
+    return client.search(query)
+```
+
+---
+
+## Conclusion
+
+Following these development workflows and best practices ensures:
+
+✅ **Code Quality**: Consistent, maintainable, well-tested code
+✅ **Team Collaboration**: Clear processes for reviews and merges
+✅ **Fast Development**: Efficient workflows minimize friction
+✅ **Production Readiness**: Rigorous testing and deployment practices
+✅ **Knowledge Sharing**: Comprehensive documentation
+
+**Key Takeaways**:
+- Write small, focused commits
+- Keep PRs under 400 lines
+- Aim for 80%+ test coverage
+- Document complex logic
+- Review code within 24 hours
+- Optimize for performance early
+- Monitor production metrics
+
+---
+
+**Document Version**: 1.0.0
+**Last Updated**: October 2025
+**Maintained by**: Engineering Team
+**Classification**: Internal Use
