@@ -35,26 +35,26 @@ class EmbeddingModel:
                     from sentence_transformers import SentenceTransformer
                     
                     model_path = os.getenv("EMBEDDING_MODEL", "BAAI/bge-base-en")
-                    logger.info(f"🔹 Loading embedding model from {model_path} ...")
+                    logger.info(f" Loading embedding model from {model_path} ...")
                     
                     try:
                         cls._model = SentenceTransformer(model_path)
-                        logger.info(f"✅ Successfully loaded {model_path}")
+                        logger.info(f" Successfully loaded {model_path}")
                     except Exception as e:
-                        logger.warning(f"⚠️  {model_path} failed to load ({e})")
-                        logger.warning("🔄 Falling back to lighter model: BAAI/bge-small-en-v1.5")
+                        logger.warning(f"  {model_path} failed to load ({e})")
+                        logger.warning(" Falling back to lighter model: BAAI/bge-small-en-v1.5")
                         try:
                             cls._model = SentenceTransformer("BAAI/bge-small-en-v1.5")
-                            logger.info("✅ Fallback model loaded successfully")
+                            logger.info(" Fallback model loaded successfully")
                         except Exception as fallback_error:
-                            logger.error(f"❌ Fallback model also failed: {fallback_error}")
+                            logger.error(f" Fallback model also failed: {fallback_error}")
                             raise
                     
                     # Verify dimension
                     test_vec = cls._model.encode(["test"], show_progress_bar=False, normalize_embeddings=True)
                     cls._embedding_dim = test_vec.shape[1]
                     
-                    logger.info(f"✅ Embedding model ready for use (dim={cls._embedding_dim})")
+                    logger.info(f" Embedding model ready for use (dim={cls._embedding_dim})")
         
         return cls._model
     
@@ -89,7 +89,7 @@ class EmbeddingModel:
             batch_size=8  # Smaller batch size for faster processing
         )
         
-        logger.info(f"✅ Generated {len(embeddings)} embeddings of dimension {embeddings.shape[1]}")
+        logger.info(f" Generated {len(embeddings)} embeddings of dimension {embeddings.shape[1]}")
         return embeddings
     
     def embed_query(self, query: str) -> np.ndarray:

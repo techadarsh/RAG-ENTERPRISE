@@ -1,43 +1,119 @@
-# 🤖 RAG Enterprise Chatbot
+#  RAG Enterprise Chatbot
 
-A minimal Proof-of-Concept Retrieval-Augmented Generation (RAG) chatbot system for enterprise knowledge management. Built for dissertation/demo purposes with clean, modular architecture.
+A production-ready Retrieval-Augmented Generation (RAG) chatbot system for enterprise knowledge management with on-premise LLM support, automatic document ingestion, and resilient service architecture.
 
 ## Overview
 
-This project demonstrates a complete RAG pipeline that allows users to ask questions about enterprise documents (HR policies, onboarding guides, leave policies) and receive contextual answers backed by retrieved sources.
+This project implements a complete RAG pipeline that allows users to ask questions about enterprise documents (HR policies, onboarding guides, engineering standards) and receive contextual answers backed by retrieved sources using local LLM inference.
 
 **Key Features:**
-- ✅ End-to-end RAG pipeline
-- ✅ Vector similarity search with Milvus
-- ✅ State-of-the-art embeddings (BGE-Large-En)
-- ✅ Confluence integration (POC mode with API-ready architecture)
-- ✅ **Conversational memory** — remembers last 5 turns per chat session
-- ✅ Clean, minimal React UI
-- ✅ One-command deployment with Docker Compose
-- ✅ Source attribution and latency tracking
+- [x] End-to-end RAG pipeline with resilient LLM integration
+- [x] Vector similarity search with Milvus
+- [x] Local LLM inference via Ollama (Mistral 7B)
+- [x] State-of-the-art embeddings (BGE-Base-En)
+- [x] Automatic document ingestion via folder watcher
+- [x] Confluence integration (POC mode with API-ready architecture)
+- [x] **Conversational memory** — remembers last 5 turns per chat session
+- [x] Health checks and service monitoring
+- [x] Reboot-stable architecture with automatic model loading
+- [x] Clean, minimal React UI
+- [x] One-command deployment with Docker Compose
+- [x] Source attribution and latency tracking
 
 ## Quick Start
 
 ### Prerequisites
 - Docker Desktop (with Docker Compose)
-- 8GB RAM minimum (for embedding model)
-- Ports 3000, 8000, 19530 available
+- 12GB RAM minimum (for LLM model + embeddings)
+- Ports 3000, 8000, 11434, 19530 available
 
-### Run the Application
+###  Stable Startup (Recommended)
+
+Use the development startup script for reliable initialization:
 
 ```bash
 # Clone or navigate to the project directory
 cd rag-enterprise
 
-# Start all services
-docker compose up --build
+# Run the dev startup script (handles model download, health checks)
+./scripts/dev-up.sh
 ```
 
-**That's it!** Wait 2-3 minutes for services to initialize, then:
+**What it does:**
+1. Starts all Docker services
+2. Waits for Ollama container to be ready
+3. Downloads Mistral model if not present (~4.4GB, one-time)
+4. Waits for all services to be healthy
+5. Displays access URLs and quick test commands
+
+**Expected startup time:**
+- First run: 5-10 minutes (model download + service initialization)
+- Subsequent runs: 1-2 minutes (services already configured)
+
+### Alternative: Manual Startup
+
+```bash
+# Start all services
+docker compose up -d
+
+# Manually pull Mistral model (if needed)
+docker exec rag-ollama ollama pull mistral
+
+# Check health status
+curl http://localhost:8000/health/deps
+```
+
+### Access URLs
 
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health/deps
+- **LLM Health**: http://localhost:8000/llm/health
+- **Ollama API**: http://localhost:11434
+
+### Using Host Ollama (Optional)
+
+By default, the system uses the dockerized Ollama service. To use a host-installed Ollama:
+
+1. Edit `.env`:
+   ```bash
+   LLM_HOST=host.docker.internal
+   ```
+
+2. Ensure Ollama is running on your host:
+   ```bash
+   ollama serve
+   ```
+
+3. Restart backend:
+   ```bash
+   docker compose restart backend
+   ```
+
+## Reboot-Stable Architecture
+
+This system is designed to work reliably after machine reboots:
+
+- **Dockerized Ollama**: No dependency on host services
+- **Automatic model loading**: Models persist in Docker volumes
+- **Health checks**: Services wait for dependencies before starting
+- **Fallback endpoints**: Multiple connection attempts with graceful degradation
+- **Environment-based config**: Single source of truth in `.env`
+
+### After Reboot
+
+Simply run:
+```bash
+./scripts/dev-up.sh
+```
+
+Or manually:
+```bash
+docker compose up -d
+```
+
+Services will automatically restore from persistent volumes.
 
 ### First Query Example
 
@@ -49,6 +125,87 @@ Try asking:
 - "What are the incident severity levels?"
 - "How do I create a pull request?"
 - "What is our code review process?"
+
+## Testing & Validation
+
+### Health Checks
+
+Check all service dependencies:
+```bash
+curl http://localhost:8000/health/deps
+```
+
+Expected response:
+```json
+{
+  "milvus": "ok",
+  "ollama": "ok",
+  "redis": "ok"
+}
+```
+
+### LLM Health Check
+
+Test LLM connectivity and generation:
+```bash
+curl http://localhost:8000/llm/health
+```
+
+### Query Testing
+
+Test RAG pipeline with a sample question:
+```bash
+curl -X POST http://localhost:8000/ask \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"What is the sprint duration?"}'
+```
+
+## Troubleshooting
+
+### LLM 404 Error
+
+**Symptom**: `/ask` endpoint returns 404 error or "LLM generation service appears unreachable"
+
+## Troubleshooting
+
+### rag-ollama Container Unhealthy
+
+**Symptom**: `docker compose ps` shows rag-ollama as "unhealthy"
+
+**Solution**:
+- Confirm the healthcheck uses `ollama list` (not curl) in docker-compose.yml
+- Ensure `LLM_HOST=rag-ollama` in .env matches the service name
+- Check logs: `docker compose logs rag-ollama --tail=50`
+- Restart if needed: `docker compose restart rag-ollama`
+
+### LLM 404 Error
+
+**Symptom**: `/ask` endpoint returns 404 error or "LLM generation service appears unreachable"
+
+**Solution**:
+```bash
+# 1. Check if Ollama container is running
+docker ps | grep rag-ollama
+
+# 2. Check if model is downloaded
+docker exec rag-ollama ollama list
+
+# 3. If model missing, download it
+docker exec rag-ollama ollama pull mistral
+
+# 4. Restart backend
+```
+
+### Service Dependencies Not Healthy
+
+**Solution**:
+```bash
+# Check logs
+docker compose logs <service-name> --tail=50
+
+# Full restart
+docker compose down && docker compose up -d
+```
 
 ## Project Structure
 
@@ -95,18 +252,87 @@ rag-enterprise/
 └──────┬──────┘
        │
        ▼
+```
 ┌─────────────────┐      ┌──────────────┐
-│  React Frontend │──────│   Backend    │
+│  React Frontend │◄────►│ FastAPI      │
 │   (Port 3000)   │      │  (Port 8000) │
 └─────────────────┘      └──────┬───────┘
                                 │
-                    ┌───────────┼──────────┐
-                    ▼           ▼          ▼
-              ┌──────────┐ ┌────────┐ ┌──────┐
-              │ Embedder │ │ Milvus │ │ LLM  │
-              │   BGE    │ │ Vector │ │Client│
-              │ Large-En │ │   DB   │ │      │
-              └──────────┘ └────────┘ └──────┘
+                    ┌───────────┼──────────┬──────────┐
+                    ▼           ▼          ▼          ▼
+              ┌──────────┐ ┌────────┐ ┌──────┐ ┌─────────┐
+              │ Embedder │ │ Milvus │ │ LLM  │ │  Redis  │
+              │   BGE    │ │ Vector │ │Client│ │  Queue  │
+              │ Large-En │ │   DB   │ │      │ │         │
+              └──────────┘ └────────┘ └──────┘ └────┬────┘
+                                                     │
+                                              ┌──────┴──────────┐
+                                              │   Ingestion     │
+                                              │    Workers      │
+                                              └────────┬────────┘
+                                                       │
+                              ┌────────────────────────┼────────────────────┐
+                              ▼                        ▼                    ▼
+                        ┌──────────┐           ┌─────────────┐      ┌──────────────┐
+                        │  Folder  │           │  S3/MinIO   │      │  Confluence  │
+                        │ Watcher  │           │  Listener   │      │   Webhook    │
+                        └──────────┘           └─────────────┘      └──────────────┘
+                         Local files           Bucket events     Page updates
+```
+
+### Request Flow
+
+1. **User Query** → Frontend sends query to backend `/api/query` endpoint
+2. **Embedding** → Query is embedded using BGE-Large-En model
+3. **Retrieval** → Top-3 similar documents retrieved from Milvus
+4. **Context Building** → Retrieved documents combined as context
+5. **Generation** → LLM generates answer based on context
+6. **Response** → Answer, sources, and latency returned to UI
+
+### Ingestion Flow (Phase 1: Manual API)
+
+1. **Document Upload** → User uploads file to `/api/ingest/upload`
+2. **Job Queuing** → Backend saves file and publishes job to Redis
+3. **Worker Processing** → Ingestion worker picks up job from queue
+4. **Chunking & Embedding** → Worker chunks document and generates embeddings
+5. **Storage** → Embeddings and text inserted into Milvus
+6. **Status Update** → Job status updated in Redis
+
+### Auto-Trigger Ingestion Flow (Phase 2: New!)
+
+**Three automatic trigger mechanisms:**
+
+####  Folder Watcher
+1. User drops file in `data/incoming/` directory
+2. Watcher detects new/modified file
+3. Job automatically enqueued to Redis
+4. Worker processes file → embeds → stores in Milvus
+
+####  S3/MinIO Listener
+1. File uploaded to S3/MinIO bucket (`incoming/` prefix)
+2. Listener receives bucket notification event
+3. File downloaded to temporary location
+4. Job automatically enqueued to Redis
+5. Worker processes file → embeds → stores in Milvus
+
+####  Confluence Webhook
+1. Page created/updated in Confluence
+2. Webhook POST sent to `/api/webhook/confluence`
+3. Backend extracts page URL
+4. URL ingestion job enqueued to Redis
+5. Worker fetches content → embeds → stores in Milvus
+
+**Enable auto-triggers:**
+```bash
+# Set in .env
+ENABLE_FOLDER_WATCHER=true
+ENABLE_S3_TRIGGER=true
+
+# Start trigger service
+docker compose --profile trigger up -d
+```
+
+See [TRIGGER_SERVICE_GUIDE.md](TRIGGER_SERVICE_GUIDE.md) for complete documentation.
 ```
 
 ### Request Flow
@@ -154,7 +380,7 @@ rag-enterprise/
 - Consistent environments (dev/prod)
 - Easy dependency handling
 
-## 🔧 Configuration
+##  Configuration
 
 ### Environment Variables
 
@@ -220,10 +446,10 @@ CONFLUENCE_SPACE_KEY=ENGINEERING
 - Demonstrates **enterprise-ready** design for dissertation
 
 **Why This Approach?**
-- ✅ Working POC without external dependencies
-- ✅ Architecturally sound for production extension
-- ✅ Can truthfully claim Confluence integration capability
-- ✅ Sample docs demonstrate handling of real enterprise content
+- [x] Working POC without external dependencies
+- [x] Architecturally sound for production extension
+- [x] Can truthfully claim Confluence integration capability
+- [x] Sample docs demonstrate handling of real enterprise content
 
 ### LLM Backend Options
 
@@ -233,10 +459,10 @@ The system supports **4 different LLM backends** with automatic detection. Choos
 ```bash
 LLM_MODE=mock
 ```
-- ✅ No dependencies, instant responses
-- ✅ Perfect for testing/demos
-- ✅ Returns template with context snippets
-- 📝 Emoji indicator: 📝
+- [x] No dependencies, instant responses
+- [x] Perfect for testing/demos
+- [x] Returns template with context snippets
+-  Emoji indicator: 
 
 #### 2. **Ollama** (Local Inference - Best for Privacy)
 ```bash
@@ -244,11 +470,11 @@ LLM_MODE=api
 MISTRAL_API_URL=http://host.docker.internal:11434/api/generate
 MISTRAL_MODEL=mistral
 ```
-- ✅ Fast local inference
-- ✅ Completely private, no data leaves your machine
-- ✅ Free (after initial setup)
-- 🦙 Emoji indicator: 🦙
-- 📦 Requires: [Ollama installed](https://ollama.ai)
+- [x] Fast local inference
+- [x] Completely private, no data leaves your machine
+- [x] Free (after initial setup)
+-  Emoji indicator: 
+-  Requires: [Ollama installed](https://ollama.ai)
 
 #### 3. **HuggingFace Inference API** (Cloud - Best for Quick Start)
 ```bash
@@ -257,11 +483,11 @@ MISTRAL_API_URL=https://api-inference.huggingface.co/models/mistralai/Mistral-7B
 MISTRAL_API_KEY=hf_YOUR_TOKEN_HERE
 MISTRAL_MODEL=mistralai/Mistral-7B-Instruct-v0.2
 ```
-- ✅ No local setup required
-- ✅ Free tier available
-- ✅ Access to many models
-- 🤗 Emoji indicator: 🤗
-- 🔑 Requires: [HuggingFace API token](https://huggingface.co/settings/tokens)
+- [x] No local setup required
+- [x] Free tier available
+- [x] Access to many models
+-  Emoji indicator: 
+-  Requires: [HuggingFace API token](https://huggingface.co/settings/tokens)
 
 #### 4. **Mistral AI Official API** (Cloud - Best for Production)
 ```bash
@@ -270,10 +496,10 @@ MISTRAL_API_URL=https://api.mistral.ai/v1/chat/completions
 MISTRAL_API_KEY=your_mistral_api_key
 MISTRAL_MODEL=mistral-small-latest
 ```
-- ✅ Enterprise-grade support
-- ✅ High performance
-- 🌟 Emoji indicator: 🌟
-- 💳 Requires: [Mistral API key](https://console.mistral.ai) (paid)
+- [x] Enterprise-grade support
+- [x] High performance
+-  Emoji indicator: 
+-  Requires: [Mistral API key](https://console.mistral.ai) (paid)
 
 **Backend Auto-Detection:** The system automatically detects which backend to use based on the URL pattern:
 - Contains "ollama" or ":11434" → Ollama
@@ -284,6 +510,8 @@ See `LLM_BACKEND_IMPLEMENTATION.md` for detailed configuration guide.
 
 ## API Endpoints
 
+### Core Query API
+
 ### GET `/health`
 Health check endpoint
 ```json
@@ -292,7 +520,187 @@ Health check endpoint
 }
 ```
 
+### POST `/api/query`
+Process a user query with conversational memory
+
+**Request:**
+```json
+{
+  "query": "What is the PTO policy?",
+  "session_id": "user123"  // Optional, for conversation history
+}
+```
+
+**Response:**
+```json
+{
+  "answer": "Based on the HR policies...",
+  "sources": [
+    {"title": "HR_Policies.txt", "text": "..."}
+  ],
+  "latency_ms": 1234.56,
+  "session_id": "user123"
+}
+```
+
+### Document Ingestion API
+
+The system now supports **asynchronous document ingestion** via a dedicated microservice. Upload documents through the REST API, and they'll be processed in the background by worker services.
+
+#### POST `/api/ingest/upload`
+Upload a document for asynchronous ingestion
+
+**Request:**
+```bash
+curl -X POST http://localhost:8000/api/ingest/upload \
+  -F "file=@document.txt"
+```
+
+**Response:**
+```json
+{
+  "job_id": "abc123-def456-ghi789",
+  "status": "queued",
+  "message": "Document 'document.txt' queued for ingestion",
+  "file_path": "/app/uploads/abc123_document.txt"
+}
+```
+
+#### GET `/api/ingest/status/{job_id}`
+Check the status of an ingestion job
+
+**Request:**
+```bash
+curl http://localhost:8000/api/ingest/status/abc123-def456-ghi789
+```
+
+**Response (Completed):**
+```json
+{
+  "job_id": "abc123-def456-ghi789",
+  "status": "completed",
+  "result": {
+    "status": "success",
+    "title": "document.txt",
+    "chunks": 5,
+    "total_characters": 12450,
+    "elapsed_seconds": 23.5,
+    "message": "[x] Successfully ingested: document.txt"
+  }
+}
+```
+
+**Status Values:**
+- `queued` - Job waiting in queue
+- `processing` - Worker is processing
+- `completed` - Successfully ingested
+- `failed` - Ingestion failed
+
+#### DELETE `/api/ingest/job/{job_id}`
+Cancel a pending or running ingestion job
+
+**Ingestion Architecture:**
+```
+User Upload → FastAPI Backend → Redis Queue → Ingestion Worker → Milvus
+```
+
+**Key Features:**
+- [x] Asynchronous processing (non-blocking)
+- [x] Redis queue for job management  
+- [x] Scalable workers (can run multiple)
+- [x] Job status tracking
+- [x] Automatic chunking and embedding
+- [x] Supports .txt and .md files
+
+**See [INGESTION_API_GUIDE.md](./INGESTION_API_GUIDE.md) for detailed documentation.**
+
+### Auto-Trigger Ingestion (Phase 2 - NEW!)
+
+Automatically ingest documents without manual API calls. Three trigger mechanisms available:
+
+#### POST `/api/webhook/confluence`
+Receive Confluence webhook events for automatic page ingestion
+
+**Request:**
+```json
+{
+  "event": "page_created",
+  "page": {
+    "id": "12345",
+    "title": "Engineering Guidelines",
+    "url": "https://yourcompany.atlassian.net/wiki/spaces/ENG/pages/12345"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Confluence page 'Engineering Guidelines' queued for ingestion",
+  "job_id": "abc-123-def"
+}
+```
+
+#### Folder Watcher
+
+Monitor local directory for new files and automatically enqueue for ingestion.
+
+```bash
+# Enable in .env
+ENABLE_FOLDER_WATCHER=true
+WATCH_DIR=/app/data/incoming
+
+# Start trigger service
+docker compose --profile trigger up -d
+
+# Drop files to auto-ingest
+cp document.txt data/incoming/
+```
+
+**Supported file types:** `.txt`, `.md`, `.pdf`, `.doc`, `.docx`
+
+#### S3/MinIO Listener
+
+Listen to bucket events and automatically ingest uploaded files.
+
+```bash
+# Enable in .env
+ENABLE_S3_TRIGGER=true
+MINIO_ENDPOINT=http://minio:9000
+S3_BUCKET_NAME=documents
+
+# Start trigger service
+docker compose --profile trigger up -d
+
+# Upload to bucket → automatically ingested
+```
+
+**Quick Start:**
+```bash
+# 1. Enable triggers in .env
+echo "ENABLE_FOLDER_WATCHER=true" >> .env
+
+# 2. Start services with trigger profile
+docker compose --profile trigger up -d
+
+# 3. Drop a file
+echo "Test document" > data/incoming/test.txt
+
+# 4. Watch it get processed
+docker compose logs -f trigger
+```
+
+** Complete Guide:** See [TRIGGER_SERVICE_GUIDE.md](./TRIGGER_SERVICE_GUIDE.md) for:
+- Detailed setup instructions
+- Configuration reference
+- Troubleshooting guide
+- Security best practices
+- Testing procedures
+
 ### POST `/ask`
+** Deprecated:** Use `/api/query` instead.
+
 Process a user query
 
 **Request:**
@@ -441,10 +849,10 @@ The evaluation generates a Markdown file (`results.md`) with:
 
 The `results.md` file is ready for direct inclusion in your dissertation's **Results & Evaluation** chapter:
 
-- ✅ Quantitative performance metrics
-- ✅ System configuration details
-- ✅ Comparison baseline data
-- ✅ Markdown format (easy to convert to LaTeX/Word)
+- [x] Quantitative performance metrics
+- [x] System configuration details
+- [x] Comparison baseline data
+- [x] Markdown format (easy to convert to LaTeX/Word)
 
 ## Performance Notes
 
@@ -456,13 +864,13 @@ The `results.md` file is ready for direct inclusion in your dissertation's **Res
 ## Limitations (PoC)
 
 This is a minimal proof-of-concept. For production:
-- ❌ No authentication/authorization
-- ❌ No query history or conversation memory
-- ❌ No document versioning
-- ❌ No monitoring/alerting
-- ❌ Single-node Milvus (use cluster for scale)
-- ❌ No caching layer
-- ❌ Basic error handling
+-  No authentication/authorization
+-  No query history or conversation memory
+-  No document versioning
+-  No monitoring/alerting
+-  Single-node Milvus (use cluster for scale)
+-  No caching layer
+-  Basic error handling
 
 ## Future Enhancements
 
@@ -490,6 +898,6 @@ For questions about this implementation, please refer to the code comments and d
 
 ---
 
-**Built with ❤️ for enterprise knowledge management**
+**Built with  for enterprise knowledge management**
 
 *Last updated: October 2025*

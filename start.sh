@@ -19,21 +19,21 @@ echo ""
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
-    echo -e "${RED}❌ Error: Docker is not running${NC}"
+    echo -e "${RED} Error: Docker is not running${NC}"
     echo "Please start Docker Desktop and try again"
     exit 1
 fi
 
-echo -e "${GREEN}✓${NC} Docker is running"
+echo -e "${GREEN}${NC} Docker is running"
 
 # Check if docker compose is available
 if ! docker compose version > /dev/null 2>&1; then
-    echo -e "${RED}❌ Error: docker compose not found${NC}"
+    echo -e "${RED} Error: docker compose not found${NC}"
     echo "Please install Docker Compose"
     exit 1
 fi
 
-echo -e "${GREEN}✓${NC} Docker Compose is available"
+echo -e "${GREEN}${NC} Docker Compose is available"
 echo ""
 
 # Parse command line arguments
@@ -41,7 +41,7 @@ COMMAND=${1:-up}
 
 case $COMMAND in
     up|start)
-        echo -e "${BLUE}🚀 Starting RAG Chatbot services...${NC}"
+        echo -e "${BLUE} Starting RAG Chatbot services...${NC}"
         echo ""
         echo -e "${YELLOW}This may take 2-3 minutes for first-time setup:${NC}"
         echo "  1. Downloading Docker images"
@@ -55,13 +55,13 @@ case $COMMAND in
         ;;
     
     down|stop)
-        echo -e "${BLUE}🛑 Stopping RAG Chatbot services...${NC}"
+        echo -e "${BLUE} Stopping RAG Chatbot services...${NC}"
         docker compose down
-        echo -e "${GREEN}✓${NC} Services stopped"
+        echo -e "${GREEN}${NC} Services stopped"
         ;;
     
     restart)
-        echo -e "${BLUE}🔄 Restarting RAG Chatbot services...${NC}"
+        echo -e "${BLUE} Restarting RAG Chatbot services...${NC}"
         docker compose down
         docker compose up --build
         ;;
@@ -76,22 +76,22 @@ case $COMMAND in
         ;;
     
     clean)
-        echo -e "${YELLOW}⚠️  Warning: This will remove all containers, volumes, and data${NC}"
+        echo -e "${YELLOW}  Warning: This will remove all containers, volumes, and data${NC}"
         read -p "Are you sure? (yes/no): " -r
         if [[ $REPLY =~ ^[Yy]es$ ]]; then
-            echo -e "${BLUE}🧹 Cleaning up...${NC}"
+            echo -e "${BLUE} Cleaning up...${NC}"
             docker compose down -v
-            echo -e "${GREEN}✓${NC} Cleanup complete"
+            echo -e "${GREEN}${NC} Cleanup complete"
         else
             echo "Cancelled"
         fi
         ;;
     
     status)
-        echo -e "${BLUE}📊 Service Status:${NC}"
+        echo -e "${BLUE} Service Status:${NC}"
         docker compose ps
         echo ""
-        echo -e "${BLUE}🔗 Access URLs:${NC}"
+        echo -e "${BLUE} Access URLs:${NC}"
         echo "  Frontend:  http://localhost:3000"
         echo "  Backend:   http://localhost:8000"
         echo "  API Docs:  http://localhost:8000/docs"
@@ -117,7 +117,7 @@ case $COMMAND in
         ;;
     
     *)
-        echo -e "${RED}❌ Unknown command: $COMMAND${NC}"
+        echo -e "${RED} Unknown command: $COMMAND${NC}"
         echo "Run './start.sh help' for usage information"
         exit 1
         ;;

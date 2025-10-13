@@ -1,0 +1,1 @@
+This is the second test for folder watcher. The RAG system should automatically detect, embed, and store this document in Milvus without any manual API calls.

@@ -1,0 +1,1 @@
+Third test for folder watcher auto-ingestion. This document should be automatically processed by the RAG system and stored in Milvus for semantic search.

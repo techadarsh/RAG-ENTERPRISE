@@ -15,11 +15,11 @@ Required Approvals:
 - Lead engineer approval for architecture changes
 
 Review Checklist:
-✓ Code follows style guide (PEP 8 for Python, ESLint for JavaScript)
-✓ Tests included with >80% coverage
-✓ Documentation updated (README, API docs, inline comments)
-✓ No secrets or credentials in code
-✓ Performance impact considered
+ Code follows style guide (PEP 8 for Python, ESLint for JavaScript)
+ Tests included with >80% coverage
+ Documentation updated (README, API docs, inline comments)
+ No secrets or credentials in code
+ Performance impact considered
 
 ═══════════════════════════════════════════════════════════════
 

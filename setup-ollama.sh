@@ -20,13 +20,13 @@ echo -e "${YELLOW}Step 3: Pulling Mistral model (this may take 5-10 minutes, ~4G
 docker compose exec ollama ollama pull mistral
 
 echo ""
-echo -e "${GREEN}✅ Ollama setup complete!${NC}"
+echo -e "${GREEN} Ollama setup complete!${NC}"
 echo ""
 echo "Now starting the full application..."
 docker compose up -d
 
 echo ""
-echo -e "${GREEN}🎉 All done! Your RAG chatbot is now using Ollama with real AI!${NC}"
+echo -e "${GREEN} All done! Your RAG chatbot is now using Ollama with real AI!${NC}"
 echo ""
 echo "Access your application at:"
 echo "  Frontend: http://localhost:3000"
@@ -35,5 +35,5 @@ echo ""
 echo "To check Ollama logs:"
 echo "  docker compose logs ollama"
 echo ""
-echo "To check backend logs for 🦙 emoji:"
-echo "  docker compose logs backend | grep -E '🦙|ollama'"
+echo "To check backend logs for  emoji:"
+echo "  docker compose logs backend | grep -E '|ollama'"

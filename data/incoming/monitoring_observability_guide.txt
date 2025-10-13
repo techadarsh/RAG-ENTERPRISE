@@ -1652,7 +1652,7 @@ SEV 4 (Low):
 
 **Initial Alert** (Slack):
 ```
-🚨 INCIDENT: High Error Rate (SEV 2)
+ INCIDENT: High Error Rate (SEV 2)
 
 Status: Investigating
 Impact: 15% of queries failing
@@ -1679,7 +1679,7 @@ Next Update: 15:00 UTC
 
 **Resolution**:
 ```
-✅ RESOLVED: High Error Rate Incident
+ RESOLVED: High Error Rate Incident
 
 Duration: 42 minutes
 Root Cause: Milvus connection pool exhausted under load
@@ -1696,21 +1696,21 @@ Post-mortem: [Link to document]
 ### 13.1 Dos and Don'ts
 
 **DO**:
-- ✅ Monitor what matters (user-facing metrics)
-- ✅ Set meaningful alert thresholds
-- ✅ Use SLIs (Service Level Indicators)
-- ✅ Implement error budgets
-- ✅ Review and adjust alerts regularly
-- ✅ Document runbooks
-- ✅ Practice incident response
+-  Monitor what matters (user-facing metrics)
+-  Set meaningful alert thresholds
+-  Use SLIs (Service Level Indicators)
+-  Implement error budgets
+-  Review and adjust alerts regularly
+-  Document runbooks
+-  Practice incident response
 
 **DON'T**:
-- ❌ Alert on everything (alert fatigue)
-- ❌ Use default thresholds blindly
-- ❌ Monitor vanity metrics only
-- ❌ Ignore false positives
-- ❌ Let dashboards go stale
-- ❌ Skip post-mortems
+-  Alert on everything (alert fatigue)
+-  Use default thresholds blindly
+-  Monitor vanity metrics only
+-  Ignore false positives
+-  Let dashboards go stale
+-  Skip post-mortems
 
 ### 13.2 Golden Signals
 

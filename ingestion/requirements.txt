@@ -1,0 +1,11 @@
+# Ingestion Worker Dependencies
+redis==5.0.1
+rq==1.15.1
+requests==2.31.0
+marshmallow==3.20.1
+
+# Shared dependencies (same as backend)
+sentence-transformers==2.2.2
+huggingface-hub==0.16.4
+pymilvus==2.3.3
+numpy==1.24.3

@@ -59,19 +59,19 @@ This policy provides comprehensive guidelines for remote work, hybrid arrangemen
 ### 1.2 Eligibility Criteria
 
 **Eligible for Remote/Hybrid**:
-- ✅ Completed 90-day probationary period
-- ✅ "Meets Expectations" or higher performance rating
-- ✅ Role can be performed remotely (manager determination)
-- ✅ No active performance improvement plan (PIP)
-- ✅ Demonstrated self-motivation and time management
-- ✅ Reliable internet and home office setup
+-  Completed 90-day probationary period
+-  "Meets Expectations" or higher performance rating
+-  Role can be performed remotely (manager determination)
+-  No active performance improvement plan (PIP)
+-  Demonstrated self-motivation and time management
+-  Reliable internet and home office setup
 
 **Ineligible**:
-- ❌ Probationary employees (first 90 days)
-- ❌ Roles requiring physical presence (lab work, reception, facilities)
-- ❌ Performance issues (rating <3)
-- ❌ Inadequate home office setup
-- ❌ Not meeting productivity/collaboration expectations
+-  Probationary employees (first 90 days)
+-  Roles requiring physical presence (lab work, reception, facilities)
+-  Performance issues (rating <3)
+-  Inadequate home office setup
+-  Not meeting productivity/collaboration expectations
 
 **Example Eligible Roles**:
 - Software engineers
@@ -146,12 +146,12 @@ This policy provides comprehensive guidelines for remote work, hybrid arrangemen
 ### 2.1 Workspace Requirements
 
 **Dedicated Workspace**:
-- ✅ Separate room or dedicated area (not kitchen table long-term)
-- ✅ Quiet environment (minimal background noise for calls)
-- ✅ Adequate lighting (natural + task lighting)
-- ✅ Ergonomic setup (proper desk height, chair support)
-- ✅ Professional background for video calls
-- ❌ Not shared space where frequent interruptions occur
+-  Separate room or dedicated area (not kitchen table long-term)
+-  Quiet environment (minimal background noise for calls)
+-  Adequate lighting (natural + task lighting)
+-  Ergonomic setup (proper desk height, chair support)
+-  Professional background for video calls
+-  Not shared space where frequent interruptions occur
 
 **Photos Required**:
 - Submit 2 photos of workspace during application
@@ -160,12 +160,12 @@ This policy provides comprehensive guidelines for remote work, hybrid arrangemen
 
 **Examples**:
 
-✅ **Acceptable Workspace**:
+ **Acceptable Workspace**:
 - Spare bedroom converted to office
 - Finished basement with desk area
 - Corner of living room with room divider (quiet, professional)
 
-❌ **Not Acceptable Workspace**:
+ **Not Acceptable Workspace**:
 - Kitchen table (unless dedicated office not possible + approved)
 - Bedroom with bed visible in video background
 - Hallway or high-traffic area
@@ -294,9 +294,9 @@ This policy provides comprehensive guidelines for remote work, hybrid arrangemen
 ### 3.3 Personal Equipment
 
 **Using Personal Devices**:
-- ❌ **Prohibited**: Using personal laptop for work (security risk)
-- ✅ **Allowed**: Using personal monitor, keyboard, mouse (peripherals)
-- ⚠️ **Conditional**: Personal phone for work (must install MDM if accessing work email)
+-  **Prohibited**: Using personal laptop for work (security risk)
+-  **Allowed**: Using personal monitor, keyboard, mouse (peripherals)
+-  **Conditional**: Personal phone for work (must install MDM if accessing work email)
 
 **Reimbursement for Personal Equipment**:
 - Not reimbursed if company equipment available
@@ -385,10 +385,10 @@ Remote work requires MORE communication than office:
 
 **Example Good Messages**:
 
-✅ **Good**:
+ **Good**:
 > "Hey @john, I'm working on the authentication feature and need your input on the API design. I've drafted a proposal here: [link]. Can you review by EOD tomorrow? No rush if you're busy, just ping me when you get to it. Thanks!"
 
-❌ **Bad**:
+ **Bad**:
 > "Hi"
 > (waits for response)
 > "Are you there?"
@@ -407,14 +407,14 @@ Remote work requires MORE communication than office:
 - Mute notifications (silence phone, close email)
 
 **During Meeting**:
-- ✅ Video ON (builds rapport, shows engagement)
-- ✅ Mute when not speaking (reduces background noise)
-- ✅ Look at camera when speaking (eye contact)
-- ✅ Use chat for questions (don't interrupt)
-- ✅ Raise hand feature (for turn-taking)
-- ❌ Multitasking (no email, coding, browsing)
-- ❌ Eating (unless explicitly a lunch meeting)
-- ❌ Lying in bed (unprofessional)
+-  Video ON (builds rapport, shows engagement)
+-  Mute when not speaking (reduces background noise)
+-  Look at camera when speaking (eye contact)
+-  Use chat for questions (don't interrupt)
+-  Raise hand feature (for turn-taking)
+-  Multitasking (no email, coding, browsing)
+-  Eating (unless explicitly a lunch meeting)
+-  Lying in bed (unprofessional)
 
 **After Meeting**:
 - Send summary (action items, decisions, next steps)
@@ -531,10 +531,10 @@ PARENT-FRIENDLY (broken day):
 
 **Slack Status**:
 Update status to indicate availability:
-- 🟢 Available (default during work hours)
-- 🔴 Busy (in meeting, deep work)
-- 🟡 Away (lunch, break, errands)
-- ⚪ Offline (out of office, end of day)
+-  Available (default during work hours)
+-  Busy (in meeting, deep work)
+-  Away (lunch, break, errands)
+-  Offline (out of office, end of day)
 
 **Custom Status Examples**:
 - "In meeting until 3 PM"
@@ -567,12 +567,12 @@ Include working hours in email signature:
 - Handoff: Monday 9 AM
 
 **On-Call Expectations**:
-- ✅ Must be near computer (with internet access)
-- ✅ Phone notifications enabled
-- ✅ Respond within 15 minutes (acknowledge, provide ETA)
-- ✅ Escalate if can't resolve in 1 hour
-- ❌ Cannot consume alcohol (may need to respond)
-- ❌ Cannot travel without backup coverage arranged
+-  Must be near computer (with internet access)
+-  Phone notifications enabled
+-  Respond within 15 minutes (acknowledge, provide ETA)
+-  Escalate if can't resolve in 1 hour
+-  Cannot consume alcohol (may need to respond)
+-  Cannot travel without backup coverage arranged
 
 ---
 
@@ -661,12 +661,12 @@ Include working hours in email signature:
 ### 7.1 VPN Usage
 
 **Mandatory VPN**:
-- ✅ Required when accessing:
+-  Required when accessing:
   - Company network resources
   - Internal tools (Jira, Confluence, databases)
   - Customer data
   - Code repositories (if not on GitHub.com)
-- ✅ Required when on:
+-  Required when on:
   - Public Wi-Fi (coffee shops, libraries, airports)
   - Hotel Wi-Fi
   - Any untrusted network
@@ -692,11 +692,11 @@ Include working hours in email signature:
 - **MDM**: Mobile Device Management enrolled (allows remote wipe if lost)
 
 **Physical Security**:
-- ✅ Keep laptop secure (don't leave unattended in public)
-- ✅ Lock laptop when away (even at home)
-- ✅ Don't let family/friends use work laptop
-- ✅ Store laptop safely when traveling (hotel safe)
-- ❌ Don't leave laptop in car (visible target)
+-  Keep laptop secure (don't leave unattended in public)
+-  Lock laptop when away (even at home)
+-  Don't let family/friends use work laptop
+-  Store laptop safely when traveling (hotel safe)
+-  Don't leave laptop in car (visible target)
 
 **Lost or Stolen Device**:
 1. Report immediately to security@company.com (within 1 hour)
@@ -732,39 +732,39 @@ Include working hours in email signature:
 - Access requires special authorization
 
 **Handling Guidelines**:
-- ✅ Store on company devices only (not personal)
-- ✅ Use encrypted tools (Google Drive, not Dropbox personal)
-- ✅ Delete when no longer needed (don't hoard)
-- ✅ Shred paper documents (don't throw in trash)
-- ❌ Don't email sensitive data (use secure file sharing)
-- ❌ Don't discuss confidential matters in public (cafes, elevators)
-- ❌ Don't store on USB drives (unless encrypted)
+-  Store on company devices only (not personal)
+-  Use encrypted tools (Google Drive, not Dropbox personal)
+-  Delete when no longer needed (don't hoard)
+-  Shred paper documents (don't throw in trash)
+-  Don't email sensitive data (use secure file sharing)
+-  Don't discuss confidential matters in public (cafes, elevators)
+-  Don't store on USB drives (unless encrypted)
 
 ### 7.4 Network Security
 
 **Home Network**:
-- ✅ Change router default password
-- ✅ Use WPA3 encryption (or WPA2 if router older)
-- ✅ Disable WPS (security vulnerability)
-- ✅ Update router firmware regularly
-- ✅ Use guest network for IoT devices (separate from work devices)
+-  Change router default password
+-  Use WPA3 encryption (or WPA2 if router older)
+-  Disable WPS (security vulnerability)
+-  Update router firmware regularly
+-  Use guest network for IoT devices (separate from work devices)
 
 **Public Wi-Fi**:
-- ❌ Avoid if possible (use phone hotspot instead)
-- ⚠️ If must use: Always connect via VPN
-- ❌ Don't access sensitive data (customer records, financial data)
-- ❌ Don't log into important accounts (banking, payroll)
+-  Avoid if possible (use phone hotspot instead)
+-  If must use: Always connect via VPN
+-  Don't access sensitive data (customer records, financial data)
+-  Don't log into important accounts (banking, payroll)
 
 ### 7.5 Phishing & Social Engineering
 
 **Be Vigilant**:
-- ✅ Hover over links before clicking (verify URL)
-- ✅ Check sender email carefully (look for typos)
-- ✅ Verify requests via secondary channel (if urgent wire transfer request, call person)
-- ✅ Report suspicious emails (forward to phishing@company.com)
-- ❌ Don't click links in unexpected emails
-- ❌ Don't download attachments from unknown senders
-- ❌ Don't provide passwords or sensitive info via email
+-  Hover over links before clicking (verify URL)
+-  Check sender email carefully (look for typos)
+-  Verify requests via secondary channel (if urgent wire transfer request, call person)
+-  Report suspicious emails (forward to phishing@company.com)
+-  Don't click links in unexpected emails
+-  Don't download attachments from unknown senders
+-  Don't provide passwords or sensitive info via email
 
 **Common Phishing Examples**:
 - "Your password will expire, click here to reset" → Phishing
@@ -836,13 +836,13 @@ Include working hours in email signature:
 ### 8.3 Non-Reimbursable Expenses
 
 **Not Reimbursed**:
-- ❌ Coffee, snacks, meals (except client meals)
-- ❌ Commuting costs (if hybrid, your choice to live far)
-- ❌ Home rent/mortgage (office space portion not reimbursed per IRS rules)
-- ❌ Utilities (electricity, water) except internet
-- ❌ Personal equipment (if company equipment available)
-- ❌ Home office decor (plants, artwork, rugs)
-- ❌ Ergonomic equipment beyond policy limits ($500 cap)
+-  Coffee, snacks, meals (except client meals)
+-  Commuting costs (if hybrid, your choice to live far)
+-  Home rent/mortgage (office space portion not reimbursed per IRS rules)
+-  Utilities (electricity, water) except internet
+-  Personal equipment (if company equipment available)
+-  Home office decor (plants, artwork, rugs)
+-  Ergonomic equipment beyond policy limits ($500 cap)
 
 ---
 
@@ -1141,16 +1141,16 @@ Include working hours in email signature:
 ### Appendix A: Remote Work Checklist
 
 **Before Starting Remote Work**:
-- ☐ Request approved (manager + HR)
-- ☐ Home office setup complete (desk, chair, lighting)
-- ☐ Internet speed tested (>50 Mbps down, >10 Mbps up)
-- ☐ Equipment received (laptop, monitor, headphones)
-- ☐ Software installed (VPN, Slack, Zoom)
-- ☐ Accounts provisioned (VPN, AWS, GitHub)
-- ☐ Calendar working hours set
-- ☐ Email signature updated (includes working hours)
-- ☐ Ergonomic assessment scheduled (if needed)
-- ☐ Attended remote work orientation
+-  Request approved (manager + HR)
+-  Home office setup complete (desk, chair, lighting)
+-  Internet speed tested (>50 Mbps down, >10 Mbps up)
+-  Equipment received (laptop, monitor, headphones)
+-  Software installed (VPN, Slack, Zoom)
+-  Accounts provisioned (VPN, AWS, GitHub)
+-  Calendar working hours set
+-  Email signature updated (includes working hours)
+-  Ergonomic assessment scheduled (if needed)
+-  Attended remote work orientation
 
 ### Appendix B: Home Office Setup Examples
 

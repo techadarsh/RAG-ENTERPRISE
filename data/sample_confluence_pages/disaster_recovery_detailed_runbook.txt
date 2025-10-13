@@ -95,14 +95,14 @@ DDoS Attack                 | Medium      | Medium  | 1h    | 0h    | P3
 ### 2.1 Backup Components
 
 **What to backup**:
-- ✅ Milvus vector database (embeddings + metadata)
-- ✅ PostgreSQL database (users, conversations, feedback)
-- ✅ Application configuration files
-- ✅ Document corpus (source documents)
-- ✅ Model files (if customized)
-- ✅ SSL certificates and keys
-- ❌ Ollama models (can be re-downloaded)
-- ❌ Logs (retained separately)
+-  Milvus vector database (embeddings + metadata)
+-  PostgreSQL database (users, conversations, feedback)
+-  Application configuration files
+-  Document corpus (source documents)
+-  Model files (if customized)
+-  SSL certificates and keys
+-  Ollama models (can be re-downloaded)
+-  Logs (retained separately)
 
 ### 2.2 Backup Schedule
 
@@ -406,12 +406,12 @@ cd /opt/rag-dr
 ./scripts/check-dr-readiness.sh
 
 # Expected output:
-# ✓ Docker installed
-# ✓ Network configured
-# ✓ Storage mounted
-# ✓ Backups accessible
-# ✓ SSL certificates present
-# ✓ DNS can be updated
+#  Docker installed
+#  Network configured
+#  Storage mounted
+#  Backups accessible
+#  SSL certificates present
+#  DNS can be updated
 ```
 
 **Step 2: Restore from Backup** (30 minutes - 2 hours)
@@ -998,19 +998,19 @@ echo "Waiting for Milvus..."
 until docker exec milvus curl -s http://localhost:9091/healthz | grep -q "OK"; do
   sleep 5
 done
-echo "✓ Milvus ready"
+echo " Milvus ready"
 
 echo "Waiting for PostgreSQL..."
 until docker exec postgres pg_isready -U postgres; do
   sleep 5
 done
-echo "✓ PostgreSQL ready"
+echo " PostgreSQL ready"
 
 echo "Waiting for Redis..."
 until docker exec redis redis-cli ping | grep -q "PONG"; do
   sleep 5
 done
-echo "✓ Redis ready"
+echo " Redis ready"
 
 # 2. Start LLM service
 docker-compose up -d ollama
@@ -1019,7 +1019,7 @@ echo "Waiting for Ollama..."
 until curl -s http://localhost:11434/api/tags; do
   sleep 5
 done
-echo "✓ Ollama ready"
+echo " Ollama ready"
 
 # 3. Start application
 docker-compose up -d backend
@@ -1028,7 +1028,7 @@ echo "Waiting for Backend..."
 until curl -s http://localhost:8000/health | grep -q "healthy"; do
   sleep 5
 done
-echo "✓ Backend ready"
+echo " Backend ready"
 
 # 4. Start frontend
 docker-compose up -d frontend
@@ -1037,7 +1037,7 @@ echo "Waiting for Frontend..."
 until curl -s http://localhost:3000; do
   sleep 5
 done
-echo "✓ Frontend ready"
+echo " Frontend ready"
 
 # 5. Start monitoring
 docker-compose up -d prometheus grafana
@@ -1067,10 +1067,10 @@ FAILED=0
 # Test 1: Health endpoints
 echo "Test 1: Health Endpoints"
 if curl -s http://localhost:8000/health | grep -q "healthy"; then
-  echo "✓ PASSED"
+  echo " PASSED"
   ((PASSED++))
 else
-  echo "✗ FAILED"
+  echo " FAILED"
   ((FAILED++))
 fi
 
@@ -1079,10 +1079,10 @@ echo "Test 2: Database Connectivity"
 MILVUS_STATUS=$(docker exec milvus curl -s http://localhost:9091/healthz)
 PG_STATUS=$(docker exec postgres pg_isready -U postgres)
 if [[ "$MILVUS_STATUS" == *"OK"* ]] && [[ "$PG_STATUS" == *"accepting connections"* ]]; then
-  echo "✓ PASSED"
+  echo " PASSED"
   ((PASSED++))
 else
-  echo "✗ FAILED"
+  echo " FAILED"
   ((FAILED++))
 fi
 
@@ -1090,10 +1090,10 @@ fi
 echo "Test 3: Data Integrity"
 MILVUS_COUNT=$(docker exec milvus milvus-cli show collection -c documents | grep "Entity count" | awk '{print $3}')
 if [ "$MILVUS_COUNT" -gt 0 ]; then
-  echo "✓ PASSED (Found $MILVUS_COUNT documents)"
+  echo " PASSED (Found $MILVUS_COUNT documents)"
   ((PASSED++))
 else
-  echo "✗ FAILED (No documents found)"
+  echo " FAILED (No documents found)"
   ((FAILED++))
 fi
 
@@ -1104,30 +1104,30 @@ QUERY_RESPONSE=$(curl -s -X POST http://localhost:8000/ask \
   -H "Authorization: Bearer test_key" \
   -d '{"query":"What is our PTO policy?","user_id":"test"}')
 if echo "$QUERY_RESPONSE" | grep -q "answer"; then
-  echo "✓ PASSED"
+  echo " PASSED"
   ((PASSED++))
 else
-  echo "✗ FAILED"
+  echo " FAILED"
   ((FAILED++))
 fi
 
 # Test 5: LLM availability
 echo "Test 5: LLM Availability"
 if curl -s http://localhost:11434/api/tags | grep -q "mistral"; then
-  echo "✓ PASSED"
+  echo " PASSED"
   ((PASSED++))
 else
-  echo "✗ FAILED"
+  echo " FAILED"
   ((FAILED++))
 fi
 
 # Test 6: Cache connectivity
 echo "Test 6: Cache Connectivity"
 if docker exec redis redis-cli ping | grep -q "PONG"; then
-  echo "✓ PASSED"
+  echo " PASSED"
   ((PASSED++))
 else
-  echo "✗ FAILED"
+  echo " FAILED"
   ((FAILED++))
 fi
 
@@ -1138,10 +1138,10 @@ echo "RESULTS: $PASSED passed, $FAILED failed"
 echo "========================================="
 
 if [ $FAILED -eq 0 ]; then
-  echo "✓ All tests passed! System is operational."
+  echo " All tests passed! System is operational."
   exit 0
 else
-  echo "✗ Some tests failed. Review and fix issues."
+  echo " Some tests failed. Review and fix issues."
   exit 1
 fi
 ```
@@ -1295,17 +1295,17 @@ Data center experienced complete power failure due to [reason]. UPS failed to ac
 - Revenue impact: $5,000 (estimated)
 
 **What Went Well**:
-- ✅ Monitoring detected incident immediately
-- ✅ DR plan executed successfully
-- ✅ No data loss
-- ✅ Communication was timely and clear
-- ✅ Team responded quickly
+-  Monitoring detected incident immediately
+-  DR plan executed successfully
+-  No data loss
+-  Communication was timely and clear
+-  Team responded quickly
 
 **What Went Wrong**:
-- ❌ UPS failure was unexpected
-- ❌ Automatic failover not configured
-- ❌ DR drill was 3 months old (need more frequent)
-- ❌ Some runbook steps were outdated
+-  UPS failure was unexpected
+-  Automatic failover not configured
+-  DR drill was 3 months old (need more frequent)
+-  Some runbook steps were outdated
 
 **Action Items**:
 1. [P0] Configure automatic failover (Owner: SRE Lead, Due: 2025-10-19)

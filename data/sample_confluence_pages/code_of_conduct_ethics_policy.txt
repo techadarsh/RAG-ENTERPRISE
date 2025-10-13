@@ -87,14 +87,14 @@ When facing ethical dilemmas, ask yourself:
 
 **Communication Standards**:
 
-✅ **DO**:
+ **DO**:
 - Use respectful language in all communications
 - Be clear, concise, and constructive
 - Respond to emails/messages within 24 hours (work hours)
 - Use appropriate channels (Slack for quick questions, email for formal)
 - Proofread before sending
 
-❌ **DON'T**:
+ **DON'T**:
 - Use profanity, insults, or aggressive language
 - Make personal attacks or belittling comments
 - Send messages when angry (wait, cool down, then respond)
@@ -382,13 +382,13 @@ A **conflict of interest** occurs when personal interests interfere, or appear t
 ```
 SITUATION: Your brother-in-law's company submits bid for company contract. You're on selection committee.
 
-✅ CORRECT ACTION:
+ CORRECT ACTION:
 1. Immediately disclose relationship to manager and HR
 2. Recuse yourself from selection committee
 3. Don't discuss bid with brother-in-law
 4. Document recusal in meeting notes
 
-❌ INCORRECT ACTION:
+ INCORRECT ACTION:
 1. Participate in selection without disclosure
 2. Share insider information with brother-in-law
 3. Advocate for his company's bid
@@ -413,23 +413,23 @@ Any non-public information that could harm company or provide advantage to compe
 ### 5.2 Handling Confidential Information
 
 **Protection Requirements**:
-- ✅ Store on encrypted company devices only
-- ✅ Use password-protected files (minimum 12 characters)
-- ✅ Share only with those who need to know (least privilege)
-- ✅ Mark documents as "Confidential" or "Internal"
-- ✅ Use secure channels (company email, Slack DMs, not SMS)
-- ✅ Shred paper documents (don't throw in trash)
-- ✅ Lock screen when away from desk
-- ✅ Use VPN when accessing from public networks
+-  Store on encrypted company devices only
+-  Use password-protected files (minimum 12 characters)
+-  Share only with those who need to know (least privilege)
+-  Mark documents as "Confidential" or "Internal"
+-  Use secure channels (company email, Slack DMs, not SMS)
+-  Shred paper documents (don't throw in trash)
+-  Lock screen when away from desk
+-  Use VPN when accessing from public networks
 
 **Prohibited Actions**:
-- ❌ Discussing confidential matters in public places (elevators, cafes, transportation)
-- ❌ Sending company data to personal email
-- ❌ Storing customer data on personal devices
-- ❌ Sharing login credentials
-- ❌ Taking confidential documents home (unless necessary and approved)
-- ❌ Posting confidential information on social media
-- ❌ Discussing confidential matters with family/friends
+-  Discussing confidential matters in public places (elevators, cafes, transportation)
+-  Sending company data to personal email
+-  Storing customer data on personal devices
+-  Sharing login credentials
+-  Taking confidential documents home (unless necessary and approved)
+-  Posting confidential information on social media
+-  Discussing confidential matters with family/friends
 
 ### 5.3 Data Breach Response
 
@@ -496,10 +496,10 @@ All work created during employment belongs to company:
 - Work related to company's business (even if done at home after hours)
 
 **Examples**:
-- ✅ Company Owns: Developing new feature for company's product (even if idea came on weekend)
-- ✅ Company Owns: Writing internal tool to automate task (even if during lunch break)
-- ❌ Company Does NOT Own: Personal blog about gardening (unrelated to work)
-- ❌ Company Does NOT Own: Novel written on own time without company resources
+-  Company Owns: Developing new feature for company's product (even if idea came on weekend)
+-  Company Owns: Writing internal tool to automate task (even if during lunch break)
+-  Company Does NOT Own: Personal blog about gardening (unrelated to work)
+-  Company Does NOT Own: Novel written on own time without company resources
 
 ### 6.2 Personal Projects
 
@@ -554,9 +554,9 @@ Employees may contribute to open source projects with approval.
 
 **Software Licenses**:
 Before using third-party libraries/code, verify license compatibility:
-- ✅ **Permissive Licenses** (MIT, Apache 2.0, BSD): Generally okay, minimal restrictions
-- ⚠️ **Weak Copyleft** (LGPL, MPL): Okay if used as library (not modified)
-- ❌ **Strong Copyleft** (GPL, AGPL): Prohibited for proprietary software (requires legal review)
+-  **Permissive Licenses** (MIT, Apache 2.0, BSD): Generally okay, minimal restrictions
+-  **Weak Copyleft** (LGPL, MPL): Okay if used as library (not modified)
+-  **Strong Copyleft** (GPL, AGPL): Prohibited for proprietary software (requires legal review)
 
 **License Review Process**:
 1. Check license file in repository
@@ -708,12 +708,12 @@ Cash (any amt) | Decline (always prohibited)
 
 **Examples**:
 
-✅ **Acceptable**:
+ **Acceptable**:
 - Vendor sends $50 fruit basket during holidays → Accept, report to manager
 - Client invites you to baseball game ($75 tickets) → Accept, must discuss business
 - Vendor offers coffee mug with company logo ($10) → Accept, no reporting
 
-❌ **Not Acceptable**:
+ **Not Acceptable**:
 - Vendor offers $500 gift card for choosing their product → Decline, report to compliance
 - Government official expects expensive meal for contract approval → Decline, report to legal
 - Vendor offers free vacation ($5,000 value) → Decline immediately
@@ -774,13 +774,13 @@ US law prohibiting bribing foreign government officials to obtain or retain busi
 ### 9.1 Personal Social Media Use
 
 **Guidelines**:
-- ✅ You may discuss work in general terms ("Excited about new project!")
-- ✅ You may share company's public content (retweet, share blog posts)
-- ✅ You may list company as employer on LinkedIn
-- ❌ Do NOT share confidential information (code, product roadmaps, financials)
-- ❌ Do NOT speak on behalf of company (unless authorized)
-- ❌ Do NOT post derogatory comments about company, colleagues, or customers
-- ❌ Do NOT post content that violates code of conduct (harassment, discrimination)
+-  You may discuss work in general terms ("Excited about new project!")
+-  You may share company's public content (retweet, share blog posts)
+-  You may list company as employer on LinkedIn
+-  Do NOT share confidential information (code, product roadmaps, financials)
+-  Do NOT speak on behalf of company (unless authorized)
+-  Do NOT post derogatory comments about company, colleagues, or customers
+-  Do NOT post content that violates code of conduct (harassment, discrimination)
 
 **Disclaimer Required**:
 If discussing work-related topics, include disclaimer:
@@ -795,12 +795,12 @@ If discussing work-related topics, include disclaimer:
 
 **Examples**:
 
-✅ **Acceptable**:
+ **Acceptable**:
 - "Proud of what we shipped today! Great teamwork. #productlaunch"
 - Sharing company's blog post about new feature
 - LinkedIn post: "Learned a lot about Docker this week"
 
-❌ **Not Acceptable**:
+ **Not Acceptable**:
 - Posting screenshot of internal Slack conversation
 - Tweeting about company's upcoming acquisition (confidential)
 - Complaining about manager on Facebook

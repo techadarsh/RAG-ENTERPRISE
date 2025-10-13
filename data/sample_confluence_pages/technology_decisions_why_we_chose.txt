@@ -58,11 +58,11 @@ Development Speed:
 
 | Language | Pros | Cons | Verdict |
 |----------|------|------|---------|
-| **Java** | Strong typing, enterprise standard | Verbose, slower ML ecosystem | ❌ Rejected |
-| **Node.js** | Good for APIs, async by default | Poor ML support, limited models | ❌ Rejected |
-| **Go** | Fast, concurrent, small binaries | Immature ML ecosystem | ❌ Rejected |
-| **Rust** | Blazing fast, memory safe | Steep learning curve, limited ML | ❌ Rejected |
-| **Python** | Best ML ecosystem, fast development | Slower runtime (mitigated by async) | ✅ **SELECTED** |
+| **Java** | Strong typing, enterprise standard | Verbose, slower ML ecosystem |  Rejected |
+| **Node.js** | Good for APIs, async by default | Poor ML support, limited models |  Rejected |
+| **Go** | Fast, concurrent, small binaries | Immature ML ecosystem |  Rejected |
+| **Rust** | Blazing fast, memory safe | Steep learning curve, limited ML |  Rejected |
+| **Python** | Best ML ecosystem, fast development | Slower runtime (mitigated by async) |  **SELECTED** |
 
 **Risk Mitigation**:
 - **Performance Concerns**: Mitigated by async FastAPI, caching, and optimized libraries
@@ -184,11 +184,11 @@ class QueryRequest(BaseModel):
 
 | Framework | Async | Docs | Type Safety | Performance | Verdict |
 |-----------|-------|------|-------------|-------------|---------|
-| **FastAPI** | ✅ Native | ✅ Auto | ✅ Pydantic | ⚡ Very Fast | ✅ **SELECTED** |
-| **Flask** | ⚠️ Via extensions | ❌ Manual | ⚠️ Optional | 🐢 Medium | ❌ Rejected |
-| **Django** | ⚠️ Limited | ⚠️ DRF | ⚠️ Optional | 🐢 Slow | ❌ Rejected |
-| **Sanic** | ✅ Native | ❌ Manual | ❌ No | ⚡ Fast | ❌ Less mature |
-| **Starlette** | ✅ Native | ❌ Manual | ❌ No | ⚡ Very Fast | ❌ Too low-level |
+| **FastAPI** |  Native |  Auto |  Pydantic |  Very Fast |  **SELECTED** |
+| **Flask** |  Via extensions |  Manual |  Optional |  Medium |  Rejected |
+| **Django** |  Limited |  DRF |  Optional |  Slow |  Rejected |
+| **Sanic** |  Native |  Manual |  No |  Fast |  Less mature |
+| **Starlette** |  Native |  Manual |  No |  Very Fast |  Too low-level |
 
 **Production Considerations**:
 - **ASGI Server**: Using Uvicorn (high-performance ASGI server)
@@ -321,10 +321,10 @@ index_performance = {
 }
 
 # We chose HNSW because:
-# ✅ Fastest search (critical for user experience)
-# ✅ Excellent recall (>95% accuracy)
-# ⚠️ Higher memory (acceptable with 16GB RAM)
-# ✅ Read-heavy workload (many searches, few inserts)
+#  Fastest search (critical for user experience)
+#  Excellent recall (>95% accuracy)
+#  Higher memory (acceptable with 16GB RAM)
+#  Read-heavy workload (many searches, few inserts)
 ```
 
 **Milvus Architecture**:
@@ -385,12 +385,12 @@ Stage 3: Distributed Mode (Scale)
 
 | Database | Pros | Cons | Verdict |
 |----------|------|------|---------|
-| **Milvus** | Fast, scalable, feature-rich | Complex setup | ✅ **SELECTED** |
-| **Pinecone** | Managed, easy setup | Cloud-only, expensive | ❌ Privacy concerns |
-| **Weaviate** | GraphQL, modules | Slower, less mature | ❌ Performance |
-| **Chroma** | Simple API, lightweight | Not prod-ready, limited | ❌ Too simple |
-| **Qdrant** | Rust-based, fast | Smaller community | ⚠️ Consider later |
-| **FAISS** | Very fast, proven | Just library, not DB | ❌ Lacks features |
+| **Milvus** | Fast, scalable, feature-rich | Complex setup |  **SELECTED** |
+| **Pinecone** | Managed, easy setup | Cloud-only, expensive |  Privacy concerns |
+| **Weaviate** | GraphQL, modules | Slower, less mature |  Performance |
+| **Chroma** | Simple API, lightweight | Not prod-ready, limited |  Too simple |
+| **Qdrant** | Rust-based, fast | Smaller community |  Consider later |
+| **FAISS** | Very fast, proven | Just library, not DB |  Lacks features |
 
 ---
 
@@ -470,7 +470,7 @@ dimensions = {
         "quality": "Good (61% MTEB)",
         "verdict": "Could work, but not best"
     },
-    1024: {  # Large models (BGE-Large) ✅
+    1024: {  # Large models (BGE-Large) 
         "storage": "1M docs = 4 GB",
         "search_speed": "Medium",
         "quality": "Excellent (64% MTEB)",
@@ -572,11 +572,11 @@ Output:
 
 | Model | Dims | MTEB | Speed | Verdict |
 |-------|------|------|-------|---------|
-| **BGE-Large-En** | 1024 | 64.23 | 52ms | ✅ **SELECTED** |
-| E5-Large-v2 | 1024 | 61.54 | 58ms | ⚠️ Slightly worse |
-| INSTRUCTOR-XL | 768 | 60.83 | 65ms | ❌ Needs instructions |
-| all-MiniLM-L6 | 384 | 56.26 | 25ms | ❌ Too low quality |
-| OpenAI ada-002 | 1536 | 60.99 | 200ms | ❌ Privacy concerns |
+| **BGE-Large-En** | 1024 | 64.23 | 52ms |  **SELECTED** |
+| E5-Large-v2 | 1024 | 61.54 | 58ms |  Slightly worse |
+| INSTRUCTOR-XL | 768 | 60.83 | 65ms |  Needs instructions |
+| all-MiniLM-L6 | 384 | 56.26 | 25ms |  Too low quality |
+| OpenAI ada-002 | 1536 | 60.99 | 200ms |  Privacy concerns |
 
 ---
 
@@ -596,7 +596,7 @@ Output:
 ```
 Model Performance (MMLU, GSM8K, HumanEval):
 
-Mistral 7B:           ✅ OUR CHOICE
+Mistral 7B:            OUR CHOICE
 - MMLU (knowledge): 62.5%
 - GSM8K (math): 52.2%
 - HumanEval (code): 30.5%
@@ -605,29 +605,29 @@ Mistral 7B:           ✅ OUR CHOICE
 - Speed: 25 tokens/s (CPU)
 
 Llama-2 7B:
-- MMLU: 45.3% (❌ 17% worse)
-- GSM8K: 14.6% (❌ 38% worse)
-- HumanEval: 12.8% (❌ 18% worse)
+- MMLU: 45.3% ( 17% worse)
+- GSM8K: 14.6% ( 38% worse)
+- HumanEval: 12.8% ( 18% worse)
 - Params: 7B
 - RAM: 8GB (Q4), 16GB (FP16)
 - Speed: 22 tokens/s (CPU)
 
 Llama-2 13B:
-- MMLU: 54.8% (❌ Still worse than Mistral 7B)
-- GSM8K: 28.7% (❌ 23% worse)
-- HumanEval: 18.3% (❌ 12% worse)
+- MMLU: 54.8% ( Still worse than Mistral 7B)
+- GSM8K: 28.7% ( 23% worse)
+- HumanEval: 18.3% ( 12% worse)
 - Params: 13B
 - RAM: 16GB (Q4), 32GB (FP16)
-- Speed: 12 tokens/s (❌ 2x slower)
+- Speed: 12 tokens/s ( 2x slower)
 
 GPT-3.5-turbo:
-- MMLU: 70.0% (✅ Better quality)
-- GSM8K: 57.1% (✅ Better math)
-- HumanEval: 48.1% (✅ Better code)
+- MMLU: 70.0% ( Better quality)
+- GSM8K: 57.1% ( Better math)
+- HumanEval: 48.1% ( Better code)
 - Params: Unknown (~175B estimated)
 - Cost: $0.0015/1K tokens
 - Speed: API-dependent (~50 tokens/s)
-- Privacy: ❌ Data sent to OpenAI
+- Privacy:  Data sent to OpenAI
 ```
 
 **Why Ollama?**
@@ -716,7 +716,7 @@ Response Time (500 tokens):
 - GPU Q4: 6 seconds
 
 Our Target: < 30 seconds for 500 tokens
-Solution: Use Q4 quantization on CPU ✅
+Solution: Use Q4 quantization on CPU 
 ```
 
 **Quantization Tradeoffs**:
@@ -738,7 +738,7 @@ Q8 (8-bit Quantization):
 - Speed: 18 tokens/s
 - Use: Balanced option
 
-Q4 (4-bit Quantization): ✅ OUR CHOICE
+Q4 (4-bit Quantization):  OUR CHOICE
 - Model Size: 4.4 GB
 - RAM Required: 6 GB
 - Quality: 95% (acceptable loss)
@@ -779,10 +779,10 @@ context_breakdown = {
 
 | Feature | Mistral 7B (Ollama) | GPT-3.5-turbo | GPT-4-turbo |
 |---------|---------------------|---------------|-------------|
-| **Privacy** | ✅ 100% private | ❌ Sent to OpenAI | ❌ Sent to OpenAI |
+| **Privacy** |  100% private |  Sent to OpenAI |  Sent to OpenAI |
 | **Cost** | Free (after setup) | $0.002/1K tokens | $0.01/1K tokens |
 | **Latency** | 1.2s (local) | 2-3s (API) | 3-5s (API) |
-| **Offline** | ✅ Works offline | ❌ Needs internet | ❌ Needs internet |
+| **Offline** |  Works offline |  Needs internet |  Needs internet |
 | **Rate Limits** | None | 3,500 RPM | 500 RPM |
 | **Quality** | Good (62% MMLU) | Better (70% MMLU) | Best (86% MMLU) |
 | **Control** | Full control | Limited | Limited |
@@ -793,12 +793,12 @@ context_breakdown = {
 
 | Model | Params | Quality | RAM | Speed | Verdict |
 |-------|--------|---------|-----|-------|---------|
-| **Mistral 7B** | 7B | Excellent | 8GB | 25 tok/s | ✅ **SELECTED** |
-| Llama-2 7B | 7B | Good | 8GB | 22 tok/s | ❌ Lower quality |
-| Llama-2 13B | 13B | Very Good | 16GB | 12 tok/s | ❌ Slower, more RAM |
-| Falcon 7B | 7B | Good | 8GB | 20 tok/s | ❌ Worse instruct |
-| GPT-3.5 | ~175B | Excellent | N/A | API | ❌ Privacy/cost |
-| GPT-4 | ~1.7T | Best | N/A | API | ❌ Privacy/cost |
+| **Mistral 7B** | 7B | Excellent | 8GB | 25 tok/s |  **SELECTED** |
+| Llama-2 7B | 7B | Good | 8GB | 22 tok/s |  Lower quality |
+| Llama-2 13B | 13B | Very Good | 16GB | 12 tok/s |  Slower, more RAM |
+| Falcon 7B | 7B | Good | 8GB | 20 tok/s |  Worse instruct |
+| GPT-3.5 | ~175B | Excellent | N/A | API |  Privacy/cost |
+| GPT-4 | ~1.7T | Best | N/A | API |  Privacy/cost |
 
 ---
 
@@ -822,7 +822,7 @@ context_breakdown = {
 function ChatMessage({ role, content, sources, timestamp }) {
   return (
     <div className={`message ${role}`}>
-      <div className="avatar">{role === 'user' ? '👤' : '🤖'}</div>
+      <div className="avatar">{role === 'user' ? '' : ''}</div>
       <div className="content">
         <ReactMarkdown>{content}</ReactMarkdown>
         {sources && <SourceList sources={sources} />}
@@ -833,10 +833,10 @@ function ChatMessage({ role, content, sources, timestamp }) {
 }
 
 // Why this works:
-// ✅ Encapsulation: Message logic in one place
-// ✅ Reusability: Use for user & assistant messages
-// ✅ Maintainability: Easy to update styling/behavior
-// ✅ Testing: Unit test individual components
+//  Encapsulation: Message logic in one place
+//  Reusability: Use for user & assistant messages
+//  Maintainability: Easy to update styling/behavior
+//  Testing: Unit test individual components
 ```
 
 **Performance Comparison**:
@@ -873,16 +873,16 @@ Developer Satisfaction (State of JS 2024):
 // Vue 3 is excellent, but React has advantages:
 
 Vue Advantages:
-✅ Slightly smaller bundle (34KB vs 42KB)
-✅ Simpler template syntax
-✅ Built-in state management (Pinia)
+ Slightly smaller bundle (34KB vs 42KB)
+ Simpler template syntax
+ Built-in state management (Pinia)
 
 React Advantages:
-✅ Larger ecosystem (more libraries)
-✅ More job opportunities (3x Vue)
-✅ Better TypeScript support
-✅ More learning resources
-✅ Team already knows React
+ Larger ecosystem (more libraries)
+ More job opportunities (3x Vue)
+ Better TypeScript support
+ More learning resources
+ Team already knows React
 
 Decision: React's ecosystem & hiring pool win
 ```
@@ -893,17 +893,17 @@ Decision: React's ecosystem & hiring pool win
 // Svelte is amazing for performance, but:
 
 Svelte Advantages:
-✅ Smallest bundle (7KB)
-✅ No virtual DOM (compile-time)
-✅ Simpler syntax
-✅ Fastest performance
+ Smallest bundle (7KB)
+ No virtual DOM (compile-time)
+ Simpler syntax
+ Fastest performance
 
 Svelte Disadvantages:
-❌ Smaller ecosystem
-❌ Fewer developers available
-❌ Less mature (fewer battle-tested patterns)
-❌ Smaller community
-❌ Our team doesn't know Svelte
+ Smaller ecosystem
+ Fewer developers available
+ Less mature (fewer battle-tested patterns)
+ Smaller community
+ Our team doesn't know Svelte
 
 Decision: Not worth learning curve for POC
 ```
@@ -939,10 +939,10 @@ function ChatApp() {
 }
 
 // Why hooks over Redux:
-// ✅ Less boilerplate (no actions/reducers)
-// ✅ Simpler to understand
-// ✅ Sufficient for chat app complexity
-// ✅ No extra dependencies
+//  Less boilerplate (no actions/reducers)
+//  Simpler to understand
+//  Sufficient for chat app complexity
+//  No extra dependencies
 ```
 
 **UI Libraries Used**:
@@ -962,10 +962,10 @@ function ChatApp() {
 }
 
 // Why minimal dependencies?
-// ✅ Smaller bundle size
-// ✅ Fewer security vulnerabilities
-// ✅ Easier maintenance
-// ✅ Faster npm install
+//  Smaller bundle size
+//  Fewer security vulnerabilities
+//  Easier maintenance
+//  Faster npm install
 ```
 
 **Build & Deploy**:
@@ -994,11 +994,11 @@ EXPOSE 80
 
 | Framework | Bundle | Performance | Ecosystem | Team Knowledge | Verdict |
 |-----------|--------|-------------|-----------|----------------|---------|
-| **React** | 42KB | Excellent | Huge | ✅ Yes | ✅ **SELECTED** |
-| Vue 3 | 34KB | Excellent | Large | ❌ No | ⚠️ Good alternative |
-| Svelte | 7KB | Best | Medium | ❌ No | ⚠️ Consider future |
-| Angular | 156KB | Good | Large | ❌ No | ❌ Too heavy |
-| Vanilla JS | 0KB | Best | N/A | ✅ Yes | ❌ More dev time |
+| **React** | 42KB | Excellent | Huge |  Yes |  **SELECTED** |
+| Vue 3 | 34KB | Excellent | Large |  No |  Good alternative |
+| Svelte | 7KB | Best | Medium |  No |  Consider future |
+| Angular | 156KB | Good | Large |  No |  Too heavy |
+| Vanilla JS | 0KB | Best | N/A |  Yes |  More dev time |
 
 ---
 
@@ -1007,8 +1007,8 @@ EXPOSE 80
 ## Summary So Far
 
 I've created detailed documentation for:
-1. ✅ System Architecture (Complete)
-2. ✅ Technology Decisions (Python, FastAPI, Milvus, BGE, Mistral, React)
+1.  System Architecture (Complete)
+2.  Technology Decisions (Python, FastAPI, Milvus, BGE, Mistral, React)
 
 Would you like me to continue with the remaining sections and create more documents? I'll create:
 - Docker & Deployment decisions

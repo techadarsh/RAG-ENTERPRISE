@@ -1,10 +1,10 @@
 # Phase 3: Evaluation & Results Module - Implementation Summary
 
-## 🎯 Overview
+##  Overview
 
 Successfully implemented an automated evaluation system that measures RAG chatbot performance and exports results in dissertation-ready format.
 
-## ✅ What Was Implemented
+## [x] What Was Implemented
 
 ### 1. **Evaluation Script** (`backend/evaluate_poc.py`)
 
@@ -65,7 +65,7 @@ async def evaluate():
 - Output format explained
 - Dissertation integration guidance
 
-## 📊 Output Format
+##  Output Format
 
 The evaluation generates `/app/results/results.md` with:
 
@@ -83,7 +83,7 @@ The evaluation generates `/app/results/results.md` with:
 ```markdown
 | # | Query | Retrieval (ms) | Generation (ms) | Total (ms) | Top Source | Score | Status |
 |---|-------|----------------|-----------------|------------|------------|-------|--------|
-| 1 | What is the sprint duration? | 35.0 | 1200.0 | 1235.0 | Agile Workflow (Part 1/2) | 83.09% | ✅ Success |
+| 1 | What is the sprint duration? | 35.0 | 1200.0 | 1235.0 | Agile Workflow (Part 1/2) | 83.09% | [x] Success |
 ```
 
 ### Answer Previews
@@ -92,7 +92,7 @@ Shows first 100 characters of each answer for qualitative analysis.
 ### System Configuration
 Documents embedding model, LLM, vector DB, and platform.
 
-## 🚀 How to Use
+##  How to Use
 
 ### Method 1: Direct Script Execution (Recommended)
 
@@ -101,7 +101,7 @@ Documents embedding model, LLM, vector DB, and platform.
 docker compose up -d
 
 # 2. Wait for initialization (check logs)
-docker compose logs backend | grep "✅"
+docker compose logs backend | grep "[x]"
 
 # 3. Run evaluation
 docker compose run backend python evaluate_poc.py
@@ -124,26 +124,26 @@ Results Output: /app/results/results.md
 ======================================================================
 
 [1] Evaluating: What is the sprint duration?
-  ✓ Total: 1235ms | Top source: Agile Workflow (83.09%)
+   Total: 1235ms | Top source: Agile Workflow (83.09%)
 
 [2] Evaluating: Explain the agile workflow.
-  ✓ Total: 1198ms | Top source: Agile Workflow (88.42%)
+   Total: 1198ms | Top source: Agile Workflow (88.42%)
 
 ... (6 more queries)
 
 ======================================================================
 EVALUATION SUMMARY
 ======================================================================
-✅ Successful queries: 8/8
+[x] Successful queries: 8/8
 
-📊 Average Metrics:
+ Average Metrics:
    Retrieval Time:  45.23 ms
    Generation Time: 1250.67 ms
    Total Latency:   1295.90 ms
    Relevance Score: 82.45%
 
 ======================================================================
-📄 Detailed results: /app/results/results.md
+ Detailed results: /app/results/results.md
 ======================================================================
 ```
 
@@ -160,7 +160,7 @@ curl http://localhost:8000/evaluate | jq
 open http://localhost:8000/evaluate
 ```
 
-## 🎓 Dissertation Integration
+##  Dissertation Integration
 
 ### Where to Use the Results
 
@@ -185,7 +185,7 @@ open http://localhost:8000/evaluate
 3. **Export to Word** - Copy-paste tables work perfectly
 4. **Create charts** - Use metrics for performance graphs
 
-## 📈 Expected Results
+##  Expected Results
 
 Based on the current system configuration:
 
@@ -196,7 +196,7 @@ Based on the current system configuration:
 | Total Latency | 1200-2800 ms | "Sub-3-second response times achieved" |
 | Relevance Score | 70-90% | "High semantic similarity validates RAG approach" |
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Issue: "Connection refused"
 ```bash
@@ -208,7 +208,7 @@ docker compose up -d backend
 
 # Wait for model loading
 docker compose logs backend -f
-# Look for: "✅ Background data loading complete"
+# Look for: "[x] Background data loading complete"
 ```
 
 ### Issue: "Mistral not responding"
@@ -231,7 +231,7 @@ docker compose build backend
 docker compose up -d backend
 ```
 
-## 📁 Files Modified
+##  Files Modified
 
 | File | Changes | Purpose |
 |------|---------|---------|
@@ -240,18 +240,18 @@ docker compose up -d backend
 | `backend/main.py` | +60 lines | Add /evaluate endpoint |
 | `README.md` | +75 lines | Document evaluation usage |
 
-## ✨ Key Features
+##  Key Features
 
-1. ✅ **Fully Automated** - No manual intervention needed
-2. ✅ **Docker-Ready** - Runs entirely in container
-3. ✅ **Dissertation-Formatted** - Markdown output ready to include
-4. ✅ **Comprehensive** - Tests all document types
-5. ✅ **Quantitative** - Precise millisecond measurements
-6. ✅ **Qualitative** - Answer previews for analysis
-7. ✅ **Reproducible** - Consistent test queries
-8. ✅ **Well-Documented** - Complete usage guide
+1. [x] **Fully Automated** - No manual intervention needed
+2. [x] **Docker-Ready** - Runs entirely in container
+3. [x] **Dissertation-Formatted** - Markdown output ready to include
+4. [x] **Comprehensive** - Tests all document types
+5. [x] **Quantitative** - Precise millisecond measurements
+6. [x] **Qualitative** - Answer previews for analysis
+7. [x] **Reproducible** - Consistent test queries
+8. [x] **Well-Documented** - Complete usage guide
 
-## 🎉 Next Steps
+##  Next Steps
 
 1. **Run the evaluation** to collect your metrics
 2. **Review results.md** for any unexpected results
@@ -259,7 +259,7 @@ docker compose up -d backend
 4. **Create visualizations** (optional charts/graphs)
 5. **Analyze performance** for discussion chapter
 
-## 📞 Quick Reference
+##  Quick Reference
 
 ```bash
 # Complete workflow
@@ -275,6 +275,6 @@ cat backend/results/results.md                          # View results
 
 ---
 
-**Status:** ✅ Implementation Complete - Ready for Testing
+**Status:** [x] Implementation Complete - Ready for Testing
 
 **Action:** Run evaluation to generate dissertation metrics!

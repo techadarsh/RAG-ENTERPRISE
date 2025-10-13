@@ -53,11 +53,11 @@ Schedule:
 - Handoff meeting every Monday 10 AM
 
 On-Call Responsibilities:
-✓ Monitor PagerDuty alerts 24/7
-✓ Respond within SLA time
-✓ Escalate when needed
-✓ Document incidents in Jira
-✓ Update status page during outages
+ Monitor PagerDuty alerts 24/7
+ Respond within SLA time
+ Escalate when needed
+ Document incidents in Jira
+ Update status page during outages
 
 Compensation:
 - $500 on-call stipend per week
@@ -79,7 +79,7 @@ INCIDENT RESPONSE PROCESS
 - Assess severity level
 - Create incident ticket in Jira
 - Post in #incidents channel:
-  "🚨 Incident detected: [brief description]
+  " Incident detected: [brief description]
    Severity: [SEV X]
    Status: Investigating
    Owner: [your name]"
@@ -104,7 +104,7 @@ INCIDENT RESPONSE PROCESS
 - Close PagerDuty incident
 - Update status page to "Resolved"
 - Post resolution in #incidents:
-  "✅ Incident resolved
+  " Incident resolved
    Duration: [X] minutes
    Root cause: [brief description]
    Next steps: Post-mortem scheduled"

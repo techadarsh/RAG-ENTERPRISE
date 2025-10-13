@@ -1,6 +1,6 @@
-# 📋 Project Checklist
+#  Project Checklist
 
-## ✅ Setup Complete
+## [x] Setup Complete
 
 ### Backend Components
 - [x] FastAPI main application (`backend/main.py`)
@@ -128,7 +128,7 @@ Try these sample queries:
 }
 ```
 
-## 🔍 Troubleshooting
+##  Troubleshooting
 
 ### Issue: Services won't start
 - Check Docker is running
@@ -150,7 +150,7 @@ Try these sample queries:
 - Close other memory-intensive applications
 - BGE model requires ~4GB RAM
 
-## 📊 Project Statistics
+##  Project Statistics
 
 ### Backend
 - Python files: 5
@@ -181,29 +181,29 @@ Try these sample queries:
 ### Features to Highlight
 
 1. **End-to-End RAG Implementation**
-   - ✅ Query embedding
-   - ✅ Vector similarity search
-   - ✅ Context retrieval
-   - ✅ Answer generation
-   - ✅ Source attribution
+   - [x] Query embedding
+   - [x] Vector similarity search
+   - [x] Context retrieval
+   - [x] Answer generation
+   - [x] Source attribution
 
 2. **Technology Stack**
-   - ✅ Modern Python (FastAPI)
-   - ✅ State-of-the-art embeddings (BGE)
-   - ✅ Production-ready vector DB (Milvus)
-   - ✅ Clean React UI
-   - ✅ Docker orchestration
+   - [x] Modern Python (FastAPI)
+   - [x] State-of-the-art embeddings (BGE)
+   - [x] Production-ready vector DB (Milvus)
+   - [x] Clean React UI
+   - [x] Docker orchestration
 
 3. **Performance Metrics**
-   - ✅ Latency tracking
-   - ✅ Similarity scores
-   - ✅ Source ranking
+   - [x] Latency tracking
+   - [x] Similarity scores
+   - [x] Source ranking
 
 4. **Scalability Considerations**
-   - ✅ Modular architecture
-   - ✅ Containerized deployment
-   - ✅ Async API design
-   - ✅ Vector indexing
+   - [x] Modular architecture
+   - [x] Containerized deployment
+   - [x] Async API design
+   - [x] Vector indexing
 
 ### Demo Script
 
@@ -228,7 +228,7 @@ Try these sample queries:
 
 5. **Q&A** (2 min)
 
-## 🎯 Next Steps
+##  Next Steps
 
 ### For Development
 - [ ] Add more sample documents
@@ -250,21 +250,21 @@ Try these sample queries:
 - [ ] Analyze retrieval quality
 - [ ] Test with larger document sets
 
-## ✨ Success Criteria
+##  Success Criteria
 
 Your RAG chatbot is working correctly if:
 
-1. ✅ Frontend loads at http://localhost:3000
-2. ✅ Backend responds to health checks
-3. ✅ Queries return relevant answers
-4. ✅ Sources are properly attributed
-5. ✅ Latency is under 500ms (mock mode)
-6. ✅ No error messages in logs
-7. ✅ All 3 sample documents are indexed
+1. [x] Frontend loads at http://localhost:3000
+2. [x] Backend responds to health checks
+3. [x] Queries return relevant answers
+4. [x] Sources are properly attributed
+5. [x] Latency is under 500ms (mock mode)
+6. [x] No error messages in logs
+7. [x] All 3 sample documents are indexed
 
 ---
 
-**Status**: ✅ READY TO DEPLOY
+**Status**: [x] READY TO DEPLOY
 
 **Command to start**:
 ```bash
@@ -273,4 +273,4 @@ docker compose up --build
 
 **Time to first query**: ~2-3 minutes
 
-**Good luck with your demo! 🚀**
+**Good luck with your demo! **
