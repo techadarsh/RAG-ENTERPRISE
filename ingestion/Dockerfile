@@ -21,7 +21,7 @@ COPY backend/milvus_client.py /app/backend/milvus_client.py
 COPY ingestion/ /app/ingestion/
 
 # Set Python path to include backend modules
-ENV PYTHONPATH=/app:$PYTHONPATH
+ENV PYTHONPATH=/app
 
 WORKDIR /app/ingestion
 

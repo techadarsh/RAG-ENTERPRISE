@@ -190,20 +190,196 @@ async def startup_event():
 
 @app.get("/health")
 async def health_check() -> Dict[str, str]:
-    """Health check endpoint"""
+    """Basic health check endpoint"""
     return {"status": "ok"}
+
+
+@app.get("/health/deps")
+async def health_check_dependencies() -> Dict[str, Any]:
+    """
+    Comprehensive dependency health check for all critical services.
+    Returns ok/fail status for: Milvus, Etcd, Minio, Redis, Ollama, Embeddings, Backend
+    """
+    results = {
+        "backend": "ok",
+        "milvus": "fail",
+        "etcd": "fail",
+        "minio": "fail",
+        "redis": "fail",
+        "ollama": "fail",
+        "embeddings": "fail"
+    }
+    
+    # Check Milvus
+    try:
+        from pymilvus import connections
+        milvus_host = os.getenv("MILVUS_HOST", "milvus")
+        milvus_port = int(os.getenv("MILVUS_PORT", "19530"))
+        connections.connect(
+            alias="health_check",
+            host=milvus_host,
+            port=milvus_port,
+            timeout=2
+        )
+        results["milvus"] = "ok"
+        connections.disconnect("health_check")
+    except Exception as e:
+        logger.warning(f"Milvus health check failed: {e}")
+        results["milvus"] = "fail"
+    
+    # Check Etcd (Milvus dependency)
+    try:
+        import httpx
+        etcd_host = os.getenv("ETCD_HOST", "etcd")
+        etcd_port = os.getenv("ETCD_PORT", "2379")
+        with httpx.Client(timeout=2.0) as client:
+            resp = client.get(f"http://{etcd_host}:{etcd_port}/health")
+            if resp.status_code == 200:
+                results["etcd"] = "ok"
+    except Exception as e:
+        logger.warning(f"Etcd health check failed: {e}")
+        results["etcd"] = "fail"
+    
+    # Check Minio (Milvus storage)
+    try:
+        import httpx
+        minio_host = os.getenv("MINIO_HOST", "minio")
+        minio_port = os.getenv("MINIO_PORT", "9000")
+        with httpx.Client(timeout=2.0) as client:
+            resp = client.get(f"http://{minio_host}:{minio_port}/minio/health/live")
+            if resp.status_code == 200:
+                results["minio"] = "ok"
+    except Exception as e:
+        logger.warning(f"Minio health check failed: {e}")
+        results["minio"] = "fail"
+    
+    # Check Ollama (try multiple endpoints with fallback)
+    llm_host = os.getenv("LLM_HOST", "ollama")
+    llm_port = os.getenv("LLM_PORT", "11434")
+    ollama_endpoints = [
+        f"http://{llm_host}:{llm_port}/api/tags",
+        f"http://host.docker.internal:{llm_port}/api/tags",
+        f"http://localhost:{llm_port}/api/tags",
+    ]
+    
+    try:
+        import httpx
+        for endpoint in ollama_endpoints:
+            try:
+                with httpx.Client(timeout=2.0) as client:
+                    resp = client.get(endpoint)
+                    if resp.status_code == 200:
+                        results["ollama"] = "ok"
+                        break
+            except Exception:
+                continue
+    except ImportError:
+        # Fallback to requests if httpx not available
+        import requests
+        for endpoint in ollama_endpoints:
+            try:
+                resp = requests.get(endpoint, timeout=2.0)
+                if resp.status_code == 200:
+                    results["ollama"] = "ok"
+                    break
+            except Exception:
+                continue
+    
+    # Check Redis
+    if redis_conn:
+        try:
+            redis_conn.ping()
+            results["redis"] = "ok"
+        except Exception as e:
+            logger.warning(f"Redis health check failed: {e}")
+            results["redis"] = "fail"
+    else:
+        results["redis"] = "unavailable"
+    
+    # Check Embeddings model
+    try:
+        if rag_pipeline and hasattr(rag_pipeline, 'embedding_model'):
+            # Try a simple embedding to verify it's working
+            test_result = rag_pipeline.embedding_model.embed_query("test")
+            if test_result is not None and len(test_result) > 0:
+                results["embeddings"] = "ok"
+        else:
+            results["embeddings"] = "not_loaded"
+    except Exception as e:
+        logger.warning(f"Embeddings health check failed: {e}")
+        results["embeddings"] = "fail"
+    
+    return results
+
+
+@app.get("/llm/health")
+async def llm_health_check() -> Dict[str, Any]:
+    """
+    Detailed LLM health check with sample generation test.
+    Returns model name, reachability, and a test sample.
+    """
+    llm_model = os.getenv("LLM_MODEL", "mistral")
+    llm_host = os.getenv("LLM_HOST", "ollama")
+    llm_port = os.getenv("LLM_PORT", "11434")
+    
+    result = {
+        "model": llm_model,
+        "host": llm_host,
+        "port": llm_port,
+        "reachable": False,
+        "sample": None,
+        "error": None
+    }
+    
+    # Try endpoints
+    endpoints = [
+        f"http://{llm_host}:{llm_port}/api/generate",
+        f"http://host.docker.internal:{llm_port}/api/generate",
+    ]
+    
+    try:
+        import httpx
+        use_httpx = True
+    except ImportError:
+        import requests
+        use_httpx = False
+    
+    for endpoint in endpoints:
+        try:
+            payload = {
+                "model": llm_model,
+                "prompt": "ping",
+                "options": {"num_predict": 10},
+                "stream": False
+            }
+            
+            if use_httpx:
+                with httpx.Client(timeout=5.0) as client:
+                    resp = client.post(endpoint, json=payload)
+                    resp.raise_for_status()
+                    data = resp.json()
+            else:
+                resp = requests.post(endpoint, json=payload, timeout=5.0)
+                resp.raise_for_status()
+                data = resp.json()
+            
+            sample_text = data.get("response", "")[:50]
+            result["reachable"] = True
+            result["sample"] = sample_text
+            result["endpoint"] = endpoint
+            break
+            
+        except Exception as e:
+            result["error"] = f"{type(e).__name__}: {str(e)[:100]}"
+            continue
+    
+    return result
 
 
 @app.post("/ask", response_model=QueryResponse)
 async def ask_question(request: QueryRequest) -> QueryResponse:
     """
     Process a user query through the RAG pipeline with conversational memory
-    
-    Args:
-        request: QueryRequest with user query and optional session_id
-        
-    Returns:
-        QueryResponse with answer, sources, latency, and session_id
     """
     if not rag_pipeline:
         raise HTTPException(status_code=503, detail="RAG pipeline not initialized")

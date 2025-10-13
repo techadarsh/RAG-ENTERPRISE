@@ -77,6 +77,19 @@ class RAGPipeline:
             self.needs_data_loading = False
             logger.info("✅ Background data loading complete")
     
+    def _clean_title_for_display(self, title: str) -> str:
+        """
+        Clean document title for user-friendly display
+        - Remove chunk numbers like (Part 11/11)
+        - Remove [Confluence] prefix
+        - Remove file extensions
+        """
+        clean_title = title.replace('.txt', '').replace('[Confluence] ', '')
+        # Remove "Part X/Y" suffix
+        if ' (Part ' in clean_title:
+            clean_title = clean_title.split(' (Part ')[0]
+        return clean_title.strip()
+    
     def _extract_document_topics(self):
         """
         Extract unique document topics/titles from the knowledge base
@@ -98,10 +111,7 @@ class RAGPipeline:
             for doc in all_docs:
                 title = doc.get('title', '')
                 if title:
-                    # Remove file extensions and clean up
-                    clean_title = title.replace('.txt', '').replace('[Confluence] ', '')
-                    # Remove "Part X/Y" suffix
-                    clean_title = clean_title.split(' (Part ')[0]
+                    clean_title = self._clean_title_for_display(title)
                     titles.add(clean_title)
             
             # Sort and store
@@ -261,28 +271,32 @@ class RAGPipeline:
         self.milvus_client.insert(titles, texts, embeddings)
         logger.info(f"✅ Loaded {len(texts)} document chunks into Milvus")
     
-    def query(self, query: str, top_k: int = 3) -> Dict[str, Any]:
+    def query(self, query: str, top_k: int = None) -> Dict[str, Any]:
         """
         Process a query through the RAG pipeline
         
         Args:
             query: User query string
-            top_k: Number of documents to retrieve
+            top_k: Number of documents to retrieve (defaults to RETRIEVAL_TOP_K env var)
             
         Returns:
             Dictionary with answer, sources, and metadata
         """
+        # Read top_k from environment if not provided
+        if top_k is None:
+            top_k = int(os.getenv("RETRIEVAL_TOP_K", "3"))
+        
         logger.info(f"Processing query: {query}")
         
         # 1. Embed query
         query_vector = self.embedding_model.embed_query(query)
         
-        # 2. Search in Milvus
+        # 2. Search in Milvus (fetch top_k for context, show top 3 in response)
         results = self.milvus_client.search(query_vector, top_k=top_k)
         
         if not results:
             return {
-                "answer": "I couldn't find any relevant information to answer your query.",
+                "answer": "I don't have information about that in my knowledge base. Please try rephrasing your question or ask about our available documentation.",
                 "sources": [],
                 "context": ""
             }
@@ -295,57 +309,86 @@ class RAGPipeline:
             logger.info(f"Query relevance too low (score: {top_score:.4f}). Rejecting out-of-scope question.")
             scope = self.get_scope_description()
             return {
-                "answer": f"I can only answer questions about {scope}. This question appears to be outside my knowledge base. Please ask about topics covered in our documentation.",
+                "answer": f"I can only answer questions about {scope}. Please ask about topics covered in our documentation.",
                 "sources": [],
                 "context": ""
             }
         
-        # 4. Combine retrieved texts as context
+        # 4. Combine retrieved texts as context (use all for LLM, show only top 3 in response)
         context_parts = []
         sources = []
+        sources_for_display = []  # Only top 3 for user
+        
+        # Context compression settings
+        MAX_CONTEXT_CHARS = int(os.getenv("MAX_CONTEXT_CHARS", "2000"))  # ~500 tokens
+        MAX_CHUNK_CHARS = int(os.getenv("MAX_CHUNK_CHARS", "800"))  # ~200 tokens per chunk
         
         for i, result in enumerate(results, 1):
-            context_parts.append(f"[Document {i}: {result['title']}]\n{result['text']}")
-            sources.append({
-                "title": result['title'],
+            # Trim individual chunks to prevent overly long context
+            text = result['text']
+            if len(text) > MAX_CHUNK_CHARS:
+                text = text[:MAX_CHUNK_CHARS] + "... [truncated]"
+            
+            context_parts.append(f"[Document {i}: {result['title']}]\n{text}")
+            
+            # Clean title for user-friendly display
+            display_title = self._clean_title_for_display(result['title'])
+            
+            # Collect all sources for context, but only top 3 for display
+            source_obj = {
+                "title": display_title,
                 "text": result['text'][:200] + "..." if len(result['text']) > 200 else result['text'],
                 "score": f"{float(result['score']) * 100:.2f}%"
-            })
+            }
+            sources.append(source_obj)
+            
+            # Only show top 3 sources to user
+            if i <= 3:
+                sources_for_display.append(source_obj)
         
         context = "\n\n".join(context_parts)
+        
+        # Trim total context if still too long
+        if len(context) > MAX_CONTEXT_CHARS:
+            context = context[:MAX_CONTEXT_CHARS] + "\n\n... [context truncated for performance]"
+            logger.info(f"Context trimmed to {MAX_CONTEXT_CHARS} chars for faster LLM generation")
         
         # 5. Generate answer with LLM (with strict prompt to only use context)
         answer = self.llm_client.generate_answer(query, context)
         
         return {
             "answer": answer,
-            "sources": sources,
+            "sources": sources_for_display,  # Only show top 3 to user
             "context": context
         }
     
-    def generate_with_context(self, query: str, history: List[Dict[str, str]], top_k: int = 3) -> Dict[str, Any]:
+    def generate_with_context(self, query: str, history: List[Dict[str, str]], top_k: int = None) -> Dict[str, Any]:
         """
         Process a query through the RAG pipeline with conversation history
         
         Args:
             query: Current user query string
             history: List of previous conversation turns [{"role": "user/assistant", "content": "..."}]
-            top_k: Number of documents to retrieve
+            top_k: Number of documents to retrieve (defaults to RETRIEVAL_TOP_K env var)
             
         Returns:
             Dictionary with answer, sources, and metadata
         """
-        logger.info(f"Processing query with {len(history)//2} previous turns: {query}")
+        # Read top_k from environment if not provided
+        if top_k is None:
+            top_k = int(os.getenv("RETRIEVAL_TOP_K", "3"))
+        
+        logger.info(f"Processing query with conversation context: {query}")
         
         # 1. Embed query
         query_vector = self.embedding_model.embed_query(query)
         
-        # 2. Search in Milvus
+        # 2. Search in Milvus (fetch top_k for context, show top 3 in response)
         results = self.milvus_client.search(query_vector, top_k=top_k)
         
         if not results:
             return {
-                "answer": "I couldn't find any relevant information to answer your query.",
+                "answer": "I don't have information about that in my knowledge base. Please try rephrasing your question or ask about our available documentation.",
                 "sources": [],
                 "context": ""
             }
@@ -358,22 +401,28 @@ class RAGPipeline:
             logger.info(f"Query relevance too low (score: {top_score:.4f}). Rejecting out-of-scope question.")
             scope = self.get_scope_description()
             return {
-                "answer": f"I can only answer questions about {scope}. This question appears to be outside my knowledge base. Please ask about topics covered in our documentation.",
+                "answer": f"I can only answer questions about {scope}. Please ask about topics covered in our documentation.",
                 "sources": [],
                 "context": ""
             }
         
-        # 4. Combine retrieved texts as context
+        # 4. Combine retrieved texts as context (use all for LLM, show only top 3 in response)
         context_parts = []
-        sources = []
+        sources_for_display = []  # Only top 3 for user
         
         for i, result in enumerate(results, 1):
             context_parts.append(f"[Document {i}: {result['title']}]\n{result['text']}")
-            sources.append({
-                "title": result['title'],
-                "text": result['text'][:200] + "..." if len(result['text']) > 200 else result['text'],
-                "score": f"{float(result['score']) * 100:.2f}%"
-            })
+            
+            # Clean title for user-friendly display
+            display_title = self._clean_title_for_display(result['title'])
+            
+            # Only show top 3 sources to user
+            if i <= 3:
+                sources_for_display.append({
+                    "title": display_title,
+                    "text": result['text'][:200] + "..." if len(result['text']) > 200 else result['text'],
+                    "score": f"{float(result['score']) * 100:.2f}%"
+                })
         
         context = "\n\n".join(context_parts)
         
@@ -388,6 +437,6 @@ class RAGPipeline:
         
         return {
             "answer": answer,
-            "sources": sources,
+            "sources": sources_for_display,  # Only show top 3 to user
             "context": context
         }

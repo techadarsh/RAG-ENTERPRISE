@@ -1,6 +1,6 @@
 # Backend Dockerfile for Apple Silicon (ARM64)
-# Force ARM64 platform to ensure compatible wheels
-FROM --platform=linux/arm64/v8 python:3.10-slim
+# Docker automatically uses the host platform (ARM64 on Apple Silicon)
+FROM python:3.10-slim
 
 WORKDIR /app
 

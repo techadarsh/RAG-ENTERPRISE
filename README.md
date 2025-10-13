@@ -1,17 +1,21 @@
 # 🤖 RAG Enterprise Chatbot
 
-A minimal Proof-of-Concept Retrieval-Augmented Generation (RAG) chatbot system for enterprise knowledge management. Built for dissertation/demo purposes with clean, modular architecture.
+A production-ready Retrieval-Augmented Generation (RAG) chatbot system for enterprise knowledge management with on-premise LLM support, automatic document ingestion, and resilient service architecture.
 
 ## Overview
 
-This project demonstrates a complete RAG pipeline that allows users to ask questions about enterprise documents (HR policies, onboarding guides, leave policies) and receive contextual answers backed by retrieved sources.
+This project implements a complete RAG pipeline that allows users to ask questions about enterprise documents (HR policies, onboarding guides, engineering standards) and receive contextual answers backed by retrieved sources using local LLM inference.
 
 **Key Features:**
-- ✅ End-to-end RAG pipeline
+- ✅ End-to-end RAG pipeline with resilient LLM integration
 - ✅ Vector similarity search with Milvus
-- ✅ State-of-the-art embeddings (BGE-Large-En)
+- ✅ Local LLM inference via Ollama (Mistral 7B)
+- ✅ State-of-the-art embeddings (BGE-Base-En)
+- ✅ Automatic document ingestion via folder watcher
 - ✅ Confluence integration (POC mode with API-ready architecture)
 - ✅ **Conversational memory** — remembers last 5 turns per chat session
+- ✅ Health checks and service monitoring
+- ✅ Reboot-stable architecture with automatic model loading
 - ✅ Clean, minimal React UI
 - ✅ One-command deployment with Docker Compose
 - ✅ Source attribution and latency tracking
@@ -20,24 +24,96 @@ This project demonstrates a complete RAG pipeline that allows users to ask quest
 
 ### Prerequisites
 - Docker Desktop (with Docker Compose)
-- 8GB RAM minimum (for embedding model)
-- Ports 3000, 8000, 19530 available
+- 12GB RAM minimum (for LLM model + embeddings)
+- Ports 3000, 8000, 11434, 19530 available
 
-### Run the Application
+### 🚀 Stable Startup (Recommended)
+
+Use the development startup script for reliable initialization:
 
 ```bash
 # Clone or navigate to the project directory
 cd rag-enterprise
 
-# Start all services
-docker compose up --build
+# Run the dev startup script (handles model download, health checks)
+./scripts/dev-up.sh
 ```
 
-**That's it!** Wait 2-3 minutes for services to initialize, then:
+**What it does:**
+1. Starts all Docker services
+2. Waits for Ollama container to be ready
+3. Downloads Mistral model if not present (~4.4GB, one-time)
+4. Waits for all services to be healthy
+5. Displays access URLs and quick test commands
+
+**Expected startup time:**
+- First run: 5-10 minutes (model download + service initialization)
+- Subsequent runs: 1-2 minutes (services already configured)
+
+### Alternative: Manual Startup
+
+```bash
+# Start all services
+docker compose up -d
+
+# Manually pull Mistral model (if needed)
+docker exec rag-ollama ollama pull mistral
+
+# Check health status
+curl http://localhost:8000/health/deps
+```
+
+### Access URLs
 
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health/deps
+- **LLM Health**: http://localhost:8000/llm/health
+- **Ollama API**: http://localhost:11434
+
+### Using Host Ollama (Optional)
+
+By default, the system uses the dockerized Ollama service. To use a host-installed Ollama:
+
+1. Edit `.env`:
+   ```bash
+   LLM_HOST=host.docker.internal
+   ```
+
+2. Ensure Ollama is running on your host:
+   ```bash
+   ollama serve
+   ```
+
+3. Restart backend:
+   ```bash
+   docker compose restart backend
+   ```
+
+## Reboot-Stable Architecture
+
+This system is designed to work reliably after machine reboots:
+
+- **Dockerized Ollama**: No dependency on host services
+- **Automatic model loading**: Models persist in Docker volumes
+- **Health checks**: Services wait for dependencies before starting
+- **Fallback endpoints**: Multiple connection attempts with graceful degradation
+- **Environment-based config**: Single source of truth in `.env`
+
+### After Reboot
+
+Simply run:
+```bash
+./scripts/dev-up.sh
+```
+
+Or manually:
+```bash
+docker compose up -d
+```
+
+Services will automatically restore from persistent volumes.
 
 ### First Query Example
 
@@ -49,6 +125,87 @@ Try asking:
 - "What are the incident severity levels?"
 - "How do I create a pull request?"
 - "What is our code review process?"
+
+## Testing & Validation
+
+### Health Checks
+
+Check all service dependencies:
+```bash
+curl http://localhost:8000/health/deps
+```
+
+Expected response:
+```json
+{
+  "milvus": "ok",
+  "ollama": "ok",
+  "redis": "ok"
+}
+```
+
+### LLM Health Check
+
+Test LLM connectivity and generation:
+```bash
+curl http://localhost:8000/llm/health
+```
+
+### Query Testing
+
+Test RAG pipeline with a sample question:
+```bash
+curl -X POST http://localhost:8000/ask \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"What is the sprint duration?"}'
+```
+
+## Troubleshooting
+
+### LLM 404 Error
+
+**Symptom**: `/ask` endpoint returns 404 error or "LLM generation service appears unreachable"
+
+## Troubleshooting
+
+### rag-ollama Container Unhealthy
+
+**Symptom**: `docker compose ps` shows rag-ollama as "unhealthy"
+
+**Solution**:
+- Confirm the healthcheck uses `ollama list` (not curl) in docker-compose.yml
+- Ensure `LLM_HOST=rag-ollama` in .env matches the service name
+- Check logs: `docker compose logs rag-ollama --tail=50`
+- Restart if needed: `docker compose restart rag-ollama`
+
+### LLM 404 Error
+
+**Symptom**: `/ask` endpoint returns 404 error or "LLM generation service appears unreachable"
+
+**Solution**:
+```bash
+# 1. Check if Ollama container is running
+docker ps | grep rag-ollama
+
+# 2. Check if model is downloaded
+docker exec rag-ollama ollama list
+
+# 3. If model missing, download it
+docker exec rag-ollama ollama pull mistral
+
+# 4. Restart backend
+```
+
+### Service Dependencies Not Healthy
+
+**Solution**:
+```bash
+# Check logs
+docker compose logs <service-name> --tail=50
+
+# Full restart
+docker compose down && docker compose up -d
+```
 
 ## Project Structure
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './App.css';
+import HealthBadge from './components/HealthBadge';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -21,8 +22,12 @@ function App() {
   const [sessionId, setSessionId] = useState(null);
   const [typingText, setTypingText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isDegraded, setIsDegraded] = useState(false);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
+  const abortControllerRef = useRef(null);
+  const typingIntervalRef = useRef(null);
 
   // Auto-scroll to bottom
   const scrollToBottom = () => {
@@ -50,12 +55,18 @@ function App() {
     setTypingText('');
     let currentIndex = 0;
     
-    const typingInterval = setInterval(() => {
+    // Clear any existing interval
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+    }
+    
+    typingIntervalRef.current = setInterval(() => {
       if (currentIndex < text.length) {
         setTypingText(text.substring(0, currentIndex + 1));
         currentIndex++;
       } else {
-        clearInterval(typingInterval);
+        clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
         setIsTyping(false);
         setTypingText('');
         
@@ -69,14 +80,22 @@ function App() {
         setMessages(prev => [...prev, assistantMessage]);
       }
     }, 15); // Faster typing speed
+  };
 
-    return () => clearInterval(typingInterval);
+  // Stop typing animation
+  const stopTyping = () => {
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+    setIsTyping(false);
+    setTypingText('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!query.trim() || loading || isTyping) {
+    if (!query.trim() || isGenerating || isTyping) {
       return;
     }
 
@@ -87,7 +106,11 @@ function App() {
     const currentQuery = query;
     setQuery(''); // Clear input immediately
     setLoading(true);
+    setIsGenerating(true);
     setError(null);
+
+    // Create AbortController for cancellation
+    abortControllerRef.current = new AbortController();
 
     // Add placeholder assistant message immediately (for loading state)
     const placeholderMessage = {
@@ -98,12 +121,19 @@ function App() {
     setMessages(prev => [...prev, placeholderMessage]);
 
     try {
-      const result = await axios.post(`${API_BASE_URL}/ask`, {
-        query: currentQuery,
-        session_id: sessionId
-      });
+      const result = await axios.post(
+        `${API_BASE_URL}/ask`,
+        {
+          query: currentQuery,
+          session_id: sessionId
+        },
+        {
+          signal: abortControllerRef.current.signal
+        }
+      );
       
       setLoading(false);
+      setIsGenerating(false);
       
       // Remove placeholder message
       setMessages(prev => prev.filter(msg => !msg.isLoading));
@@ -118,9 +148,57 @@ function App() {
     } catch (err) {
       // Remove placeholder message on error
       setMessages(prev => prev.filter(msg => !msg.isLoading));
-      setError(err.response?.data?.detail || 'An error occurred. Please try again.');
-      console.error('Error:', err);
+      
+      // Check if it was aborted - DON'T add message here, handleStop already did
+      if (axios.isCancel(err) || err.name === 'CanceledError') {
+        // Do nothing - handleStop already added the cancelled message
+        console.log('Request was cancelled by user');
+      } else {
+        // Only add error for non-cancellation errors
+        setError(err.response?.data?.detail || 'An error occurred. Please try again.');
+        console.error('Error:', err);
+      }
+      
       setLoading(false);
+      setIsGenerating(false);
+    } finally {
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Handle stop/cancel
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    
+    // Stop typing animation if in progress
+    stopTyping();
+    
+    // Remove loading placeholder
+    setMessages(prev => prev.filter(msg => !msg.isLoading));
+    
+    // Add ONLY ONE cancelled message
+    const cancelledMessage = {
+      role: 'assistant',
+      content: '(Request cancelled)',
+      isCancelled: true
+    };
+    setMessages(prev => [...prev, cancelledMessage]);
+    
+    setLoading(false);
+    setIsGenerating(false);
+  };
+
+  // Copy message to clipboard
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Could add a toast notification here
+      console.log('Copied to clipboard');
+    } catch (err) {
+      console.error('Failed to copy:', err);
     }
   };
 
@@ -129,153 +207,210 @@ function App() {
       e.preventDefault();
       handleSubmit(e);
     }
+    // Escape key to cancel
+    if (e.key === 'Escape' && isGenerating) {
+      handleStop();
+    }
   };
 
   return (
     <div className="App">
-      <div className="container">
-        <header className="header">
-          <h1>🤖 RAG Enterprise Chatbot</h1>
-          <p>Ask questions about company policies, onboarding, and HR information</p>
-          {sessionId && (
-            <p className="session-info">Session: {sessionId.slice(0, 8)}...</p>
-          )}
-        </header>
-
-        <div className="chat-container" ref={chatContainerRef}>
-          {/* Message history */}
-          <div className="messages-wrapper">
-            {/* Always show messages if they exist */}
-            {messages.length > 0 && (
-              <div className="messages-list">
-                {messages.map((msg, index) => (
-                  <div key={index} className={`message ${msg.role}`}>
-                    <div className="message-header">
-                      <span className="message-role">
-                        {msg.role === 'user' ? '👤 You' : '🤖 Assistant'}
-                      </span>
-                      {msg.latency_ms && (
-                        <span className="message-latency">⚡ {(msg.latency_ms / 1000).toFixed(1)}s</span>
-                      )}
-                      {msg.isLoading && (
-                        <span className="typing-indicator">⏳ thinking...</span>
-                      )}
-                    </div>
-                    
-                    {/* Show loading dots or content */}
-                    {msg.isLoading ? (
-                      <div className="message-content loading-dots">
-                        <span></span><span></span><span></span>
-                      </div>
-                    ) : (
-                      <div className="message-content">{msg.content}</div>
-                    )}
-                    
-                    {msg.sources && msg.sources.length > 0 && (
-                      <div className="message-sources">
-                        <details>
-                          <summary>📚 {msg.sources.length} sources</summary>
-                          <div className="sources-list">
-                            {msg.sources.map((source, idx) => (
-                              <div key={idx} className="source-item-inline">
-                                <strong>{source.title}</strong> (score: {typeof source.score === 'string' ? source.score : source.score.toFixed(3)})
-                                <p>{source.text}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </details>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                
-                {/* Typing animation - keep it inside messages-list */}
-                {isTyping && typingText && (
-                  <div className="message assistant typing">
-                    <div className="message-header">
-                      <span className="message-role">🤖 Assistant</span>
-                      <span className="typing-indicator">✍️ typing...</span>
-                    </div>
-                    <div className="message-content">
-                      {typingText}<span className="cursor">|</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Typing animation when no messages yet (first interaction) */}
-            {messages.length === 0 && isTyping && typingText && (
-              <div className="messages-list">
-                <div className="message assistant typing">
-                  <div className="message-header">
-                    <span className="message-role">🤖 Assistant</span>
-                    <span className="typing-indicator">✍️ typing...</span>
-                  </div>
-                  <div className="message-content">
-                    {typingText}<span className="cursor">|</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="error-box">
-                <h3>Error</h3>
-                <p>{error}</p>
-              </div>
-            )}
-
-            {messages.length === 0 && !loading && !error && !isTyping && (
-              <div className="welcome-message">
-                <h2>Welcome!</h2>
-                <p>Start a conversation by asking about:</p>
-                <ul>
-                  <li>HR policies and benefits</li>
-                  <li>Leave and PTO information</li>
-                  <li>Onboarding procedures</li>
-                  <li>Engineering standards</li>
-                  <li>Incident management</li>
-                  <li>API documentation</li>
-                </ul>
-                <p className="hint">💡 I remember our conversation, so feel free to ask follow-up questions!</p>
-              </div>
-            )}
-
-            {/* Invisible element for scrolling to bottom */}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input form at bottom */}
-          <form onSubmit={handleSubmit} className="input-form">
-            <div className="input-wrapper">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask a question or continue the conversation..."
-                className="query-input"
-                disabled={loading || isTyping}
-              />
-              <button 
-                type="submit" 
-                className={`send-button ${loading ? 'loading' : ''}`}
-                disabled={loading || isTyping || !query.trim()}
-              >
-                {loading ? (
-                  <div className="button-spinner"></div>
-                ) : (
-                  '►'
-                )}
-              </button>
-            </div>
-          </form>
+      {/* Three-column layout with gutters */}
+      <div className="viewport-grid">
+        {/* Left gutter - Reserved for future use */}
+        <div className="left-gutter">
+          {/* Reserved space */}
         </div>
 
-        <footer className="footer">
-          <p>Powered by RAG | FastAPI + Milvus + BGE Embeddings + Mistral</p>
-        </footer>
+        {/* Center - Main chat card */}
+        <div className="center-content">
+          <div className="container">
+            <header className="header">
+              <h1>🤖 RAG Enterprise Chatbot</h1>
+              <p>Ask questions about company policies, onboarding, and HR information</p>
+              {sessionId && (
+                <p className="session-info">Session: {sessionId.slice(0, 8)}...</p>
+              )}
+            </header>
+
+            <div className="chat-container" ref={chatContainerRef}>
+              {/* Degraded mode banner */}
+              {isDegraded && (
+                <div className="degraded-banner" role="alert">
+                  <span className="degraded-icon">⚠️</span>
+                  <span className="degraded-text">
+                    Model is temporarily unavailable. Showing retrieved excerpts only.
+                  </span>
+                </div>
+              )}
+
+              {/* Message history */}
+              <div className="messages-wrapper" aria-live="polite" aria-atomic="false">
+                {/* Always show messages if they exist */}
+                {messages.length > 0 && (
+                  <div className="messages-list">
+                    {messages.map((msg, index) => (
+                      <div 
+                        key={index} 
+                        className={`message ${msg.role} ${msg.isCancelled ? 'cancelled' : ''}`}
+                      >
+                        <div className="message-header">
+                          <span className="message-role">
+                            {msg.role === 'user' ? '👤 You' : '🤖 Assistant'}
+                          </span>
+                          <div className="message-actions">
+                            {msg.latency_ms && (
+                              <span className="message-latency">⚡ {(msg.latency_ms / 1000).toFixed(1)}s</span>
+                            )}
+                            {msg.isLoading && (
+                              <span className="typing-indicator">⏳ thinking...</span>
+                            )}
+                            {/* Copy button for completed messages */}
+                            {!msg.isLoading && !msg.isCancelled && msg.content && (
+                              <button 
+                                className="copy-button"
+                                onClick={() => copyToClipboard(msg.content)}
+                                aria-label="Copy message"
+                                title="Copy to clipboard"
+                              >
+                                📋
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Show loading dots or content */}
+                        {msg.isLoading ? (
+                          <div className="message-content loading-dots">
+                            <span></span><span></span><span></span>
+                          </div>
+                        ) : (
+                          <div className="message-content">{msg.content}</div>
+                        )}
+                        
+                        {msg.sources && msg.sources.length > 0 && (
+                          <div className="message-sources">
+                            <details>
+                              <summary>📚 {msg.sources.length} sources</summary>
+                              <div className="sources-list">
+                                {msg.sources.map((source, idx) => (
+                                  <div key={idx} className="source-item-inline">
+                                    <strong>{source.title}</strong> (score: {typeof source.score === 'string' ? source.score : source.score.toFixed(3)})
+                                    <p>{source.text}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    
+                    {/* Typing animation - keep it inside messages-list */}
+                    {isTyping && typingText && (
+                      <div className="message assistant typing">
+                        <div className="message-header">
+                          <span className="message-role">🤖 Assistant</span>
+                          <span className="typing-indicator">✍️ typing...</span>
+                        </div>
+                        <div className="message-content">
+                          {typingText}<span className="cursor">|</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Typing animation when no messages yet (first interaction) */}
+                {messages.length === 0 && isTyping && typingText && (
+                  <div className="messages-list">
+                    <div className="message assistant typing">
+                      <div className="message-header">
+                        <span className="message-role">🤖 Assistant</span>
+                        <span className="typing-indicator">✍️ typing...</span>
+                      </div>
+                      <div className="message-content">
+                        {typingText}<span className="cursor">|</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="error-box">
+                    <h3>Error</h3>
+                    <p>{error}</p>
+                  </div>
+                )}
+
+                {messages.length === 0 && !loading && !error && !isTyping && (
+                  <div className="welcome-message">
+                    <h2>Welcome!</h2>
+                    <p>Start a conversation by asking about:</p>
+                    <ul>
+                      <li>HR policies and benefits</li>
+                      <li>Leave and PTO information</li>
+                      <li>Onboarding procedures</li>
+                      <li>Engineering standards</li>
+                      <li>Incident management</li>
+                      <li>API documentation</li>
+                    </ul>
+                    <p className="hint">💡 I remember our conversation, so feel free to ask follow-up questions!</p>
+                  </div>
+                )}
+
+                {/* Invisible element for scrolling to bottom */}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input form at bottom */}
+              <form onSubmit={handleSubmit} className="input-form">
+                <div className="input-wrapper">
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Ask a question or continue the conversation..."
+                    className="query-input"
+                    disabled={isGenerating || isTyping}
+                    aria-label="Message input"
+                  />
+                  {!isGenerating ? (
+                    <button 
+                      type="submit" 
+                      className="send-button"
+                      disabled={isTyping || !query.trim()}
+                      aria-label="Send message"
+                    >
+                      ►
+                    </button>
+                  ) : (
+                    <button 
+                      type="button"
+                      onClick={handleStop}
+                      className="stop-button"
+                      aria-label="Stop generating"
+                      title="Press Escape to stop"
+                    >
+                      <span className="stop-icon">⏹</span>
+                      <span className="stop-text">Stop</span>
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            <footer className="footer">
+              <p>Powered by RAG | FastAPI + Milvus + BGE Embeddings + Mistral</p>
+            </footer>
+          </div>
+        </div>
+
+        {/* Right gutter - Health badges */}
+        <div className="right-gutter">
+          <HealthBadge onDegraded={setIsDegraded} position="side" />
+        </div>
       </div>
     </div>
   );
