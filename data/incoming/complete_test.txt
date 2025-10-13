@@ -1,0 +1,1 @@
+Complete end-to-end test: This document should be automatically detected by the folder watcher, embedded using BGE model, and stored in Milvus for RAG queries.

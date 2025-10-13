@@ -58,9 +58,20 @@ class RAGPipeline:
             self._extract_document_topics()
     
     def load_data_if_needed(self):
-        """Load initial data if collection is empty (called from background task)"""
+        """
+        Load initial SAMPLE documents if collection is empty (called from background task)
+        
+        NOTE: This is for the INITIAL KNOWLEDGE BASE (17 sample Confluence documents).
+        For NEW document uploads during runtime, use the async ingestion API:
+            - POST /api/ingest/upload
+            - Status tracking via /api/ingest/status/{job_id}
+        
+        This ensures the system has a working knowledge base on first startup
+        while all production document ingestion uses the proper async pipeline.
+        """
         if self.needs_data_loading:
-            logger.info("📥 Loading initial data in background...")
+            logger.info("📥 Loading initial SAMPLE knowledge base in background...")
+            logger.info("💡 For new documents, use: POST /api/ingest/upload")
             self._load_initial_data()
             self._extract_document_topics()
             self.needs_data_loading = False
@@ -173,7 +184,20 @@ class RAGPipeline:
         return chunks if chunks else [text[:max_length]]
     
     def _load_initial_data(self):
-        """Load and index documents from data directory and Confluence"""
+        """
+        Load and index SAMPLE documents from data directory and Confluence
+        
+        IMPORTANT: This method is ONLY for initial knowledge base loading on startup.
+        For runtime document ingestion, use the async ingestion API instead.
+        
+        This method loads:
+        - Confluence sample documents (17 enterprise docs)
+        - Any .txt files in DATA_DIR
+        
+        For NEW documents during production:
+        - Use POST /api/ingest/upload (async processing)
+        - Do NOT add files to data/ directory
+        """
         titles = []
         texts = []
         

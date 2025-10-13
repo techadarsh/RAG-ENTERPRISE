@@ -95,18 +95,87 @@ rag-enterprise/
 └──────┬──────┘
        │
        ▼
+```
 ┌─────────────────┐      ┌──────────────┐
-│  React Frontend │──────│   Backend    │
+│  React Frontend │◄────►│ FastAPI      │
 │   (Port 3000)   │      │  (Port 8000) │
 └─────────────────┘      └──────┬───────┘
                                 │
-                    ┌───────────┼──────────┐
-                    ▼           ▼          ▼
-              ┌──────────┐ ┌────────┐ ┌──────┐
-              │ Embedder │ │ Milvus │ │ LLM  │
-              │   BGE    │ │ Vector │ │Client│
-              │ Large-En │ │   DB   │ │      │
-              └──────────┘ └────────┘ └──────┘
+                    ┌───────────┼──────────┬──────────┐
+                    ▼           ▼          ▼          ▼
+              ┌──────────┐ ┌────────┐ ┌──────┐ ┌─────────┐
+              │ Embedder │ │ Milvus │ │ LLM  │ │  Redis  │
+              │   BGE    │ │ Vector │ │Client│ │  Queue  │
+              │ Large-En │ │   DB   │ │      │ │         │
+              └──────────┘ └────────┘ └──────┘ └────┬────┘
+                                                     │
+                                              ┌──────┴──────────┐
+                                              │   Ingestion     │
+                                              │    Workers      │
+                                              └────────┬────────┘
+                                                       │
+                              ┌────────────────────────┼────────────────────┐
+                              ▼                        ▼                    ▼
+                        ┌──────────┐           ┌─────────────┐      ┌──────────────┐
+                        │  Folder  │           │  S3/MinIO   │      │  Confluence  │
+                        │ Watcher  │           │  Listener   │      │   Webhook    │
+                        └──────────┘           └─────────────┘      └──────────────┘
+                        📂 Local files         ☁️  Bucket events    🔔 Page updates
+```
+
+### Request Flow
+
+1. **User Query** → Frontend sends query to backend `/api/query` endpoint
+2. **Embedding** → Query is embedded using BGE-Large-En model
+3. **Retrieval** → Top-3 similar documents retrieved from Milvus
+4. **Context Building** → Retrieved documents combined as context
+5. **Generation** → LLM generates answer based on context
+6. **Response** → Answer, sources, and latency returned to UI
+
+### Ingestion Flow (Phase 1: Manual API)
+
+1. **Document Upload** → User uploads file to `/api/ingest/upload`
+2. **Job Queuing** → Backend saves file and publishes job to Redis
+3. **Worker Processing** → Ingestion worker picks up job from queue
+4. **Chunking & Embedding** → Worker chunks document and generates embeddings
+5. **Storage** → Embeddings and text inserted into Milvus
+6. **Status Update** → Job status updated in Redis
+
+### Auto-Trigger Ingestion Flow (Phase 2: New!)
+
+**Three automatic trigger mechanisms:**
+
+#### 📂 Folder Watcher
+1. User drops file in `data/incoming/` directory
+2. Watcher detects new/modified file
+3. Job automatically enqueued to Redis
+4. Worker processes file → embeds → stores in Milvus
+
+#### ☁️ S3/MinIO Listener
+1. File uploaded to S3/MinIO bucket (`incoming/` prefix)
+2. Listener receives bucket notification event
+3. File downloaded to temporary location
+4. Job automatically enqueued to Redis
+5. Worker processes file → embeds → stores in Milvus
+
+#### 🔔 Confluence Webhook
+1. Page created/updated in Confluence
+2. Webhook POST sent to `/api/webhook/confluence`
+3. Backend extracts page URL
+4. URL ingestion job enqueued to Redis
+5. Worker fetches content → embeds → stores in Milvus
+
+**Enable auto-triggers:**
+```bash
+# Set in .env
+ENABLE_FOLDER_WATCHER=true
+ENABLE_S3_TRIGGER=true
+
+# Start trigger service
+docker compose --profile trigger up -d
+```
+
+See [TRIGGER_SERVICE_GUIDE.md](TRIGGER_SERVICE_GUIDE.md) for complete documentation.
 ```
 
 ### Request Flow
@@ -284,6 +353,8 @@ See `LLM_BACKEND_IMPLEMENTATION.md` for detailed configuration guide.
 
 ## API Endpoints
 
+### Core Query API
+
 ### GET `/health`
 Health check endpoint
 ```json
@@ -292,7 +363,187 @@ Health check endpoint
 }
 ```
 
+### POST `/api/query`
+Process a user query with conversational memory
+
+**Request:**
+```json
+{
+  "query": "What is the PTO policy?",
+  "session_id": "user123"  // Optional, for conversation history
+}
+```
+
+**Response:**
+```json
+{
+  "answer": "Based on the HR policies...",
+  "sources": [
+    {"title": "HR_Policies.txt", "text": "..."}
+  ],
+  "latency_ms": 1234.56,
+  "session_id": "user123"
+}
+```
+
+### Document Ingestion API
+
+The system now supports **asynchronous document ingestion** via a dedicated microservice. Upload documents through the REST API, and they'll be processed in the background by worker services.
+
+#### POST `/api/ingest/upload`
+Upload a document for asynchronous ingestion
+
+**Request:**
+```bash
+curl -X POST http://localhost:8000/api/ingest/upload \
+  -F "file=@document.txt"
+```
+
+**Response:**
+```json
+{
+  "job_id": "abc123-def456-ghi789",
+  "status": "queued",
+  "message": "Document 'document.txt' queued for ingestion",
+  "file_path": "/app/uploads/abc123_document.txt"
+}
+```
+
+#### GET `/api/ingest/status/{job_id}`
+Check the status of an ingestion job
+
+**Request:**
+```bash
+curl http://localhost:8000/api/ingest/status/abc123-def456-ghi789
+```
+
+**Response (Completed):**
+```json
+{
+  "job_id": "abc123-def456-ghi789",
+  "status": "completed",
+  "result": {
+    "status": "success",
+    "title": "document.txt",
+    "chunks": 5,
+    "total_characters": 12450,
+    "elapsed_seconds": 23.5,
+    "message": "✅ Successfully ingested: document.txt"
+  }
+}
+```
+
+**Status Values:**
+- `queued` - Job waiting in queue
+- `processing` - Worker is processing
+- `completed` - Successfully ingested
+- `failed` - Ingestion failed
+
+#### DELETE `/api/ingest/job/{job_id}`
+Cancel a pending or running ingestion job
+
+**Ingestion Architecture:**
+```
+User Upload → FastAPI Backend → Redis Queue → Ingestion Worker → Milvus
+```
+
+**Key Features:**
+- ✅ Asynchronous processing (non-blocking)
+- ✅ Redis queue for job management  
+- ✅ Scalable workers (can run multiple)
+- ✅ Job status tracking
+- ✅ Automatic chunking and embedding
+- ✅ Supports .txt and .md files
+
+**See [INGESTION_API_GUIDE.md](./INGESTION_API_GUIDE.md) for detailed documentation.**
+
+### Auto-Trigger Ingestion (Phase 2 - NEW!)
+
+Automatically ingest documents without manual API calls. Three trigger mechanisms available:
+
+#### POST `/api/webhook/confluence`
+Receive Confluence webhook events for automatic page ingestion
+
+**Request:**
+```json
+{
+  "event": "page_created",
+  "page": {
+    "id": "12345",
+    "title": "Engineering Guidelines",
+    "url": "https://yourcompany.atlassian.net/wiki/spaces/ENG/pages/12345"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Confluence page 'Engineering Guidelines' queued for ingestion",
+  "job_id": "abc-123-def"
+}
+```
+
+#### Folder Watcher
+
+Monitor local directory for new files and automatically enqueue for ingestion.
+
+```bash
+# Enable in .env
+ENABLE_FOLDER_WATCHER=true
+WATCH_DIR=/app/data/incoming
+
+# Start trigger service
+docker compose --profile trigger up -d
+
+# Drop files to auto-ingest
+cp document.txt data/incoming/
+```
+
+**Supported file types:** `.txt`, `.md`, `.pdf`, `.doc`, `.docx`
+
+#### S3/MinIO Listener
+
+Listen to bucket events and automatically ingest uploaded files.
+
+```bash
+# Enable in .env
+ENABLE_S3_TRIGGER=true
+MINIO_ENDPOINT=http://minio:9000
+S3_BUCKET_NAME=documents
+
+# Start trigger service
+docker compose --profile trigger up -d
+
+# Upload to bucket → automatically ingested
+```
+
+**Quick Start:**
+```bash
+# 1. Enable triggers in .env
+echo "ENABLE_FOLDER_WATCHER=true" >> .env
+
+# 2. Start services with trigger profile
+docker compose --profile trigger up -d
+
+# 3. Drop a file
+echo "Test document" > data/incoming/test.txt
+
+# 4. Watch it get processed
+docker compose logs -f trigger
+```
+
+**📖 Complete Guide:** See [TRIGGER_SERVICE_GUIDE.md](./TRIGGER_SERVICE_GUIDE.md) for:
+- Detailed setup instructions
+- Configuration reference
+- Troubleshooting guide
+- Security best practices
+- Testing procedures
+
 ### POST `/ask`
+**⚠️ Deprecated:** Use `/api/query` instead.
+
 Process a user query
 
 **Request:**

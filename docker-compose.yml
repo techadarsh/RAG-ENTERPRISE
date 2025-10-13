@@ -74,6 +74,24 @@ services:
       - rag-network
     restart: unless-stopped
 
+  # Redis Service (Message Queue for Ingestion)
+  redis:
+    container_name: rag-redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
   # Backend Service
   backend:
     container_name: rag-backend
@@ -97,23 +115,85 @@ services:
       - CONFLUENCE_LOCAL_DIR=/app/data/sample_confluence_pages
       - CONFLUENCE_BASE_URL=https://yourcompany.atlassian.net/wiki
       - CONFLUENCE_SPACE_KEY=ENGINEERING
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
     volumes:
       - ./data:/app/data:ro
+      - upload-data:/app/uploads
     depends_on:
       milvus:
         condition: service_healthy
       ollama:
         condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - rag-network
     restart: unless-stopped
-    # Healthcheck temporarily disabled to allow long model initialization
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 5
-    #   start_period: 300s  # 5 minutes for model download + embedding generation on first run
+
+  # Ingestion Worker Service
+  ingestion:
+    container_name: rag-ingestion
+    build:
+      context: .
+      dockerfile: ingestion/Dockerfile
+    environment:
+      - MILVUS_HOST=milvus
+      - MILVUS_PORT=19530
+      - COLLECTION_NAME=enterprise_docs
+      - EMBEDDING_MODEL=BAAI/bge-base-en
+      - EMBEDDING_DIM=768
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+    volumes:
+      - upload-data:/app/uploads:ro
+      - ./data/incoming:/app/data/incoming:ro
+      - ./backend/embeddings.py:/app/backend/embeddings.py:ro
+      - ./backend/milvus_client.py:/app/backend/milvus_client.py:ro
+      - ./ingestion:/app/ingestion:ro
+    depends_on:
+      milvus:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rag-network
+    restart: unless-stopped
+
+  # Auto-Trigger Service (Folder Watcher + S3 Listener + Webhooks)
+  trigger:
+    container_name: rag-trigger
+    build:
+      context: ./trigger
+      dockerfile: Dockerfile
+    environment:
+      - ENABLE_FOLDER_WATCHER=${ENABLE_FOLDER_WATCHER:-false}
+      - ENABLE_S3_TRIGGER=${ENABLE_S3_TRIGGER:-false}
+      - WATCH_DIR=/app/data/incoming
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - S3_BUCKET_NAME=documents
+      - S3_WATCH_PREFIX=incoming/
+      - S3_DOWNLOAD_DIR=/app/data/s3_downloads
+    volumes:
+      - ./data/incoming:/app/data/incoming
+      - s3-downloads:/app/data/s3_downloads
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - rag-network
+    restart: unless-stopped
+    profiles:
+      - trigger  # Optional service - enable with --profile trigger
 
   # Frontend Service
   frontend:
@@ -140,3 +220,6 @@ volumes:
   minio-data:
   milvus-data:
   ollama-data:
+  redis-data:
+  upload-data:
+  s3-downloads:

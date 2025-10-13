@@ -92,10 +92,10 @@ Authorization: Bearer <access_token>
 Success Response (200 OK):
 {
   "id": "user_12345",
-  "email": "user@example.com",
-  "first_name": "John",
-  "last_name": "Doe",
-  "role": "developer",
+  "email": "adarsh@email.com",
+  "first_name": "Adarsh",
+  "last_name": "Sharma",
+  "role": "Owner",
   "created_at": "2025-01-15T10:30:00Z",
   "last_login": "2025-10-11T08:15:00Z"
 }
@@ -107,18 +107,18 @@ Description: Update current user profile
 
 Request Body:
 {
-  "first_name": "John",
-  "last_name": "Doe",
-  "phone": "+1-555-0123"
+  "first_name": "Adarsh",
+  "last_name": "Sharma",
+  "phone": "+91-964-448-8821"
 }
 
 Success Response (200 OK):
 {
   "id": "user_12345",
-  "email": "user@example.com",
-  "first_name": "John",
-  "last_name": "Doe",
-  "phone": "+1-555-0123",
+  "email": "adarsh@email.com",
+  "first_name": "Adarsh",
+  "last_name": "Sharma",
+  "phone": "+91-964-448-8821",
   "updated_at": "2025-10-11T10:30:00Z"
 }
 
