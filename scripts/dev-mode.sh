@@ -6,9 +6,9 @@
 
 set -e
 
-# Load env vars if .env exists
+# Load env vars if .env exists (strip inline comments)
 if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+    export $(grep -v '^#' .env | sed 's/#.*$//' | grep -v '^[[:space:]]*$' | xargs)
 fi
 
 API_PORT=${API_PORT:-8000}
@@ -24,7 +24,8 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}╔═══════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   RAG Enterprise - Development Mode         ║${NC}"
-echo -e "${BLUE}║   Hot Reload Enabled for Frontend & Backend   ║${NC}"
+echo -e "${BLUE}║   Hot Reload: Backend, Frontend, Ingestion    ║${NC}"
+echo -e "${BLUE}║   Services: + Trigger Service                 ║${NC}"
 echo -e "${BLUE}╚═══════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -65,8 +66,9 @@ fi
 echo ""
 
 # Step 4: Start backend and frontend with dev configuration
-echo -e "${BLUE} Starting backend and frontend with HOT RELOAD...${NC}"
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d backend frontend
+echo -e "${BLUE} Starting backend, frontend, ingestion, and trigger with HOT RELOAD...${NC}"
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d backend frontend ingestion
+docker compose --profile trigger up -d trigger
 echo -e "${GREEN} Development services started${NC}"
 echo ""
 
@@ -97,6 +99,21 @@ else
     echo -e "${YELLOW}   Services may still be initializing. Check logs if issues persist.${NC}"
 fi
 
+# Step 6: Verify ingestion and trigger services are running
+echo ""
+echo -e "${BLUE} Verifying ingestion and trigger services...${NC}"
+if docker ps --format '{{.Names}}' | grep -q "rag-ingestion"; then
+    echo -e "${GREEN}   Ingestion service: Running${NC}"
+else
+    echo -e "${YELLOW}   Ingestion service: Not running${NC}"
+fi
+
+if docker ps --format '{{.Names}}' | grep -q "rag-trigger"; then
+    echo -e "${GREEN}   Trigger service: Running${NC}"
+else
+    echo -e "${YELLOW}   Trigger service: Not running${NC}"
+fi
+
 echo ""
 echo -e "${BLUE}╔═══════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║        Development Mode Active!           ║${NC}"
@@ -107,15 +124,33 @@ echo -e "   Frontend:  ${BLUE}http://localhost:3000${NC}"
 echo -e "   Backend:   ${BLUE}http://localhost:${API_PORT}${NC}"
 echo -e "   API Docs:  ${BLUE}http://localhost:${API_PORT}/docs${NC}"
 echo ""
+echo -e "${GREEN} Services Running:${NC}"
+echo -e "   Backend API:         Hot-reload enabled"
+echo -e "   Frontend (React):    Hot-reload enabled"
+echo -e "   Ingestion Worker:    Monitoring Redis queue"
+echo -e "   Trigger Service:     Watching ${BLUE}./data/incoming/${NC}"
+echo ""
 echo -e "${GREEN} Hot Reload Enabled:${NC}"
 echo -e "   Backend:   Edit files in ${BLUE}./backend/${NC} → Auto-reload"
 echo -e "   Frontend:  Edit files in ${BLUE}./frontend/src/${NC} → Auto-reload"
+echo -e "   Ingestion: Edit files in ${BLUE}./ingestion/${NC} → Restart container"
+echo -e "   Trigger:   Edit files in ${BLUE}./trigger/${NC} → Restart container"
+echo ""
+echo -e "${GREEN} Test Ingestion:${NC}"
+echo -e "   Drop file: ${BLUE}cp myfile.txt ./data/incoming/${NC}"
+echo -e "   Or API:    ${BLUE}curl -X POST http://localhost:${API_PORT}/ingest/file ...${NC}"
 echo ""
 echo -e "${GREEN} Useful Commands:${NC}"
-echo -e "   Logs:      ${BLUE}docker compose logs -f backend frontend${NC}"
-echo -e "   Stop:      ${BLUE}docker compose down${NC}"
-echo -e "   Restart:   ${BLUE}docker compose restart backend frontend${NC}"
+echo -e "   All Logs:  ${BLUE}docker compose logs -f${NC}"
+echo -e "   Backend:   ${BLUE}docker compose logs -f backend${NC}"
+echo -e "   Ingestion: ${BLUE}docker compose logs -f ingestion${NC}"
+echo -e "   Trigger:   ${BLUE}docker compose logs -f trigger${NC}"
+echo -e "   Stop All:  ${BLUE}docker compose --profile trigger down${NC}"
+echo -e "   Restart:   ${BLUE}docker compose restart backend ingestion trigger${NC}"
 echo ""
-echo -e "${YELLOW} Tip: Changes to Python files will reload backend automatically!${NC}"
-echo -e "${YELLOW} Tip: Changes to React files will rebuild frontend automatically!${NC}"
+echo -e "${YELLOW} Tips:${NC}"
+echo -e "   - Python changes reload backend automatically"
+echo -e "   - React changes rebuild frontend automatically"
+echo -e "   - Drop files in ${BLUE}./data/incoming/${NC} for auto-ingestion"
+echo -e "   - Check ${BLUE}./data/incoming/processed/${NC} for completed files"
 echo ""

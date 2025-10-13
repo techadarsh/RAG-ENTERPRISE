@@ -6,9 +6,9 @@
 
 set -e
 
-# Load env vars if .env exists
+# Load env vars if .env exists (strip inline comments)
 if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+    export $(grep -v '^#' .env | sed 's/#.*$//' | grep -v '^[[:space:]]*$' | xargs)
 fi
 
 API_PORT=${API_PORT:-8000}
