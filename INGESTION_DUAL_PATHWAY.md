@@ -1,8 +1,8 @@
 # Document Ingestion: Startup vs. Runtime
 
-## 🔄 Two Ingestion Pathways
+##  Two Ingestion Pathways
 
-### 1️⃣ **Startup Ingestion (Automatic)**
+### 1⃣ **Startup Ingestion (Automatic)**
 
 **Purpose:** Load the initial knowledge base with sample documents
 
@@ -24,14 +24,14 @@ def load_data_if_needed():
 ```
 
 **Why we keep this:**
-- ✅ System has working knowledge base immediately
-- ✅ Great for demos and development
-- ✅ Users can test queries right away
-- ✅ No manual setup required
+- [x] System has working knowledge base immediately
+- [x] Great for demos and development
+- [x] Users can test queries right away
+- [x] No manual setup required
 
 ---
 
-### 2️⃣ **Runtime Ingestion (Async API)**
+### 2⃣ **Runtime Ingestion (Async API)**
 
 **Purpose:** Add NEW documents during production use
 
@@ -56,15 +56,15 @@ curl http://localhost:8000/api/ingest/status/abc123
 ```
 
 **Why use this for new documents:**
-- ✅ Asynchronous (non-blocking)
-- ✅ Scalable with multiple workers
-- ✅ Job tracking and status updates
-- ✅ Proper production architecture
-- ✅ Error handling and retry
+- [x] Asynchronous (non-blocking)
+- [x] Scalable with multiple workers
+- [x] Job tracking and status updates
+- [x] Proper production architecture
+- [x] Error handling and retry
 
 ---
 
-## 🎯 **Decision: Hybrid Approach (Recommended)**
+##  **Decision: Hybrid Approach (Recommended)**
 
 ### **Keep Both Pathways**
 
@@ -97,7 +97,7 @@ curl http://localhost:8000/api/ingest/status/abc123
 
 ---
 
-## 🚫 **Alternative: Remove Startup Ingestion**
+##  **Alternative: Remove Startup Ingestion**
 
 If you prefer a **pure async-only approach**, you can:
 
@@ -118,31 +118,31 @@ Comment out or remove `load_data_if_needed()` in:
 - `backend/rag_pipeline.py` (needs_data_loading flag)
 
 **Pros:**
-- ✅ Single ingestion pathway
-- ✅ Consistent architecture
-- ✅ Faster startup
+- [x] Single ingestion pathway
+- [x] Consistent architecture
+- [x] Faster startup
 
 **Cons:**
-- ❌ Empty system on first run
-- ❌ Must manually upload all documents
-- ❌ Less demo-friendly
+-  Empty system on first run
+-  Must manually upload all documents
+-  Less demo-friendly
 
 ---
 
-## 📊 **Comparison**
+##  **Comparison**
 
 | Aspect | Hybrid (Recommended) | Async-Only |
 |--------|---------------------|------------|
 | **First Startup** | Working with 17 docs | Empty system |
-| **Demo Ready** | ✅ Immediate | ❌ Must upload |
-| **Production** | ✅ Async API | ✅ Async API |
+| **Demo Ready** | [x] Immediate |  Must upload |
+| **Production** | [x] Async API | [x] Async API |
 | **Complexity** | 2 pathways | 1 pathway |
-| **User Experience** | ✅ Better | ⚠️ More steps |
-| **Architecture** | ✅ Pragmatic | ✅ Purist |
+| **User Experience** | [x] Better |  More steps |
+| **Architecture** | [x] Pragmatic | [x] Purist |
 
 ---
 
-## 💡 **Recommended Approach**
+##  **Recommended Approach**
 
 ### **For Your Mid-Semester Project:**
 
@@ -181,7 +181,7 @@ async pipeline for all new content).
 
 ---
 
-## 🔧 **Current Implementation**
+##  **Current Implementation**
 
 ### **What Happens Now:**
 
@@ -213,22 +213,22 @@ async pipeline for all new content).
 
 ---
 
-## ✅ **Conclusion**
+## [x] **Conclusion**
 
 **Decision: KEEP BOTH**
 
 The hybrid approach is:
-- ✅ **Practical** - System works immediately
-- ✅ **Production-Ready** - New docs use async API
-- ✅ **Demo-Friendly** - No manual setup required
-- ✅ **Architecturally Sound** - Clear separation of concerns
+- [x] **Practical** - System works immediately
+- [x] **Production-Ready** - New docs use async API
+- [x] **Demo-Friendly** - No manual setup required
+- [x] **Architecturally Sound** - Clear separation of concerns
 
 The startup ingestion is clearly documented as "initial sample knowledge base loading" and all new documents are directed to use the async API.
 
 ---
 
 **Updated files with clarifying comments:**
-- ✅ `backend/rag_pipeline.py` - Added documentation
-- ✅ This guide created
+- [x] `backend/rag_pipeline.py` - Added documentation
+- [x] This guide created
 
 **No code removal needed** - just clear documentation!

@@ -40,12 +40,12 @@ print_test() {
 }
 
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    echo -e "${GREEN} $1${NC}"
     ((TESTS_PASSED++))
 }
 
 print_error() {
-    echo -e "${RED}✗ $1${NC}"
+    echo -e "${RED} $1${NC}"
     ((TESTS_FAILED++))
 }
 
@@ -342,7 +342,7 @@ test_job_status_api() {
 ###############################################################################
 
 main() {
-    print_header "🚀 RAG Enterprise - Auto-Trigger Ingestion Test Suite"
+    print_header " RAG Enterprise - Auto-Trigger Ingestion Test Suite"
     
     # Parse arguments
     test_type="${1:-all}"
@@ -391,7 +391,7 @@ main() {
     echo -e "${RED}Failed: ${TESTS_FAILED}${NC}"
     
     if [ $TESTS_FAILED -eq 0 ]; then
-        print_success "All tests passed! 🎉"
+        print_success "All tests passed! "
         exit 0
     else
         print_error "Some tests failed. Check logs above for details."

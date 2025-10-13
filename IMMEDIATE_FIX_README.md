@@ -10,7 +10,7 @@ After any backend restart, wait 15-20 seconds before sending queries.
 
 Check if ready:
 ```bash
-docker compose logs backend | grep "✅.*loaded successfully"
+docker compose logs backend | grep "[x].*loaded successfully"
 ```
 
 ### 2. Test Again
@@ -27,13 +27,13 @@ curl -X POST http://localhost:8000/ask \
 
 ## What We've Already Fixed
 
-✅ **New High-Performance LLM Client** - Installed and active:
+[x] **New High-Performance LLM Client** - Installed and active:
 - Connection pooling (limit=20)
 - Circuit breaker (threshold=3, cooldown=90s)
 - Adaptive timeouts (20s cold, 5s warm)
 - Better error handling
 
-✅ **Environment Variables** - Added to `.env`:
+[x] **Environment Variables** - Added to `.env`:
 - LLM_INITIAL_TIMEOUT_MS=20000
 - LLM_TIMEOUT_MS=5000
 - LLM_HEALTH_GATE=true
@@ -66,9 +66,9 @@ docker compose logs backend --tail 50
 ```
 
 Look for:
-- `✅ Embeddings model loaded successfully` 
-- `🔌 HTTP connection pool initialized`
-- `⚡ Circuit breaker initialized`
+- `[x] Embeddings model loaded successfully` 
+- ` HTTP connection pool initialized`
+- ` Circuit breaker initialized`
 
 ### Test 2: Check Health
 ```bash
@@ -89,28 +89,28 @@ Expected: Real answer in 5-15 seconds
 
 ### Test 4: Check LLM Logs
 ```bash
-docker compose logs backend --tail 100 | grep -E "🦙|llm_client|Circuit"
+docker compose logs backend --tail 100 | grep -E "|llm_client|Circuit"
 ```
 
 Look for:
-- `🦙 [Attempt 1/2] Trying Ollama`
-- `✅ Ollama response received`
+- ` [Attempt 1/2] Trying Ollama`
+- `[x] Ollama response received`
 - Circuit breaker state changes
 
 ## Performance Improvements Achieved
 
 ### Before (Old Client):
-- ❌ No connection reuse (new TCP connection each time)
-- ❌ Fixed 20s timeout (even for warm calls)
-- ❌ No circuit breaker (kept trying even when failing)
-- ❌ No health awareness
+-  No connection reuse (new TCP connection each time)
+-  Fixed 20s timeout (even for warm calls)
+-  No circuit breaker (kept trying even when failing)
+-  No health awareness
 
 ### After (New Client):
-- ✅ Connection pooling (20 persistent connections)
-- ✅ Adaptive timeouts (20s cold → 5s warm)
-- ✅ Circuit breaker (fast-fail after 3 failures)
-- ✅ Health monitoring integration ready
-- ✅ Structured logging with latency metrics
+- [x] Connection pooling (20 persistent connections)
+- [x] Adaptive timeouts (20s cold → 5s warm)
+- [x] Circuit breaker (fast-fail after 3 failures)
+- [x] Health monitoring integration ready
+- [x] Structured logging with latency metrics
 
 ## If Still Having Issues
 
@@ -150,9 +150,9 @@ sleep 20  # Wait for embeddings
 
 ## Files Modified
 
-- `.env` - Added performance tuning variables ✅
-- `backend/llm_client.py` - Replaced with optimized version ✅
-- `backend/llm_client_backup.py` - Backup of old version ✅
+- `.env` - Added performance tuning variables [x]
+- `backend/llm_client.py` - Replaced with optimized version [x]
+- `backend/llm_client_backup.py` - Backup of old version [x]
 
 ## Rollback If Needed
 
@@ -176,18 +176,18 @@ With new LLM client active:
 
 ```bash
 # Watch logs in real-time
-docker compose logs -f backend | grep -E "🦙|✅|❌|Circuit|timeout"
+docker compose logs -f backend | grep -E "|[x]||Circuit|timeout"
 ```
 
 Good signs:
-- `🔌 HTTP connection pool initialized`
-- `⚡ Circuit breaker initialized`
-- `🦙 [Attempt 1/2] Trying Ollama`
-- `✅ Ollama response received (X chars, Yms)`
+- ` HTTP connection pool initialized`
+- ` Circuit breaker initialized`
+- ` [Attempt 1/2] Trying Ollama`
+- `[x] Ollama response received (X chars, Yms)`
 
 Bad signs:
-- `❌ Failed at http://rag-ollama:11434/api/generate: ReadTimeout`
-- `🔴 Circuit breaker OPEN`
+- ` Failed at http://rag-ollama:11434/api/generate: ReadTimeout`
+- ` Circuit breaker OPEN`
 - `ReadTimeout: timed out`
 
 ---

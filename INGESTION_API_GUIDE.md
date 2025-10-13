@@ -1,12 +1,12 @@
 # Document Ingestion API Guide
 
-## 🎯 Overview
+##  Overview
 
 The RAG Enterprise System now supports **asynchronous document ingestion** through a dedicated microservice architecture. Documents are uploaded via REST API, queued in Redis, and processed by background workers.
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -45,7 +45,7 @@ The RAG Enterprise System now supports **asynchronous document ingestion** throu
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### **1. Start All Services**
 
@@ -58,12 +58,12 @@ docker compose ps
 ```
 
 Expected services:
-- ✅ `rag-backend` - REST API (port 8000)
-- ✅ `rag-ingestion` - Worker service
-- ✅ `rag-redis` - Message queue (port 6379)
-- ✅ `milvus-standalone` - Vector database
-- ✅ `rag-frontend` - UI (port 3000)
-- ✅ `rag-ollama` - LLM service
+- [x] `rag-backend` - REST API (port 8000)
+- [x] `rag-ingestion` - Worker service
+- [x] `rag-redis` - Message queue (port 6379)
+- [x] `milvus-standalone` - Vector database
+- [x] `rag-frontend` - UI (port 3000)
+- [x] `rag-ollama` - LLM service
 
 ### **2. Upload a Document**
 
@@ -112,7 +112,7 @@ curl http://localhost:8000/api/ingest/status/abc123-def456-ghi789
     "chunks": 5,
     "total_characters": 12450,
     "elapsed_seconds": 23.5,
-    "message": "✅ Successfully ingested: document.txt"
+    "message": "[x] Successfully ingested: document.txt"
   },
   "error": null
 }
@@ -132,7 +132,7 @@ curl -X POST http://localhost:8000/api/query \
 
 ---
 
-## 📡 API Endpoints
+##  API Endpoints
 
 ### **POST /api/ingest/upload**
 
@@ -237,7 +237,7 @@ curl http://localhost:8000/api/ingest/status/abc123-def456-ghi789
     "chunks": 8,
     "total_characters": 24500,
     "elapsed_seconds": 45.2,
-    "message": "✅ Successfully ingested: document.txt"
+    "message": "[x] Successfully ingested: document.txt"
   },
   "error": null
 }
@@ -286,7 +286,7 @@ curl -X DELETE http://localhost:8000/api/ingest/job/abc123-def456-ghi789
 
 ---
 
-## 🔧 Configuration
+##  Configuration
 
 ### **Environment Variables**
 
@@ -315,7 +315,7 @@ EMBEDDING_DIM=768
 
 ---
 
-## 📊 Monitoring
+##  Monitoring
 
 ### **View Worker Logs**
 
@@ -329,18 +329,18 @@ docker compose logs --tail 100 ingestion
 
 **Expected Log Output:**
 ```
-🚀 Starting RQ worker for ingestion queue...
-📡 Connected to Redis at redis:6379
-👷 Worker ready to process jobs from 'ingestion' queue
-📊 Queue size: 0
+ Starting RQ worker for ingestion queue...
+ Connected to Redis at redis:6379
+ Worker ready to process jobs from 'ingestion' queue
+ Queue size: 0
 
-📄 Starting ingestion for: /app/uploads/abc123_document.txt
-📖 Read 24500 characters from /app/uploads/abc123_document.txt
-✂️  Split into 8 chunks
-🔢 Generating embeddings for 8 chunks...
-✅ Generated 8 embeddings
-💾 Inserting 8 chunks into Milvus...
-✅ Ingestion complete for document.txt in 45.2s
+ Starting ingestion for: /app/uploads/abc123_document.txt
+ Read 24500 characters from /app/uploads/abc123_document.txt
+  Split into 8 chunks
+ Generating embeddings for 8 chunks...
+[x] Generated 8 embeddings
+ Inserting 8 chunks into Milvus...
+[x] Ingestion complete for document.txt in 45.2s
 ```
 
 ### **Check Redis Queue Status**
@@ -371,7 +371,7 @@ open http://localhost:8000/docs
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### **Test with Sample Document**
 
@@ -425,7 +425,7 @@ curl -X POST http://localhost:8000/api/query \
 
 ---
 
-## 🔬 Advanced Usage
+##  Advanced Usage
 
 ### **Batch Upload Multiple Documents**
 
@@ -481,7 +481,7 @@ docker compose ps | grep ingestion
 
 ---
 
-## ⚠️ Troubleshooting
+##  Troubleshooting
 
 ### **"Ingestion service not available"**
 
@@ -539,7 +539,7 @@ docker stats rag-ingestion
 
 ---
 
-## 📈 Performance
+##  Performance
 
 ### **Benchmarks**
 
@@ -576,7 +576,7 @@ docker stats rag-ingestion
 
 ---
 
-## 🎓 Best Practices
+##  Best Practices
 
 1. **File Naming**
    - Use descriptive filenames
@@ -600,7 +600,7 @@ docker stats rag-ingestion
 
 ---
 
-## 🔮 Future Enhancements
+##  Future Enhancements
 
 - [ ] Support for PDF files
 - [ ] Support for DOCX files
@@ -614,7 +614,7 @@ docker stats rag-ingestion
 
 ---
 
-## 📚 Related Documentation
+##  Related Documentation
 
 - [Architecture Overview](./ARCHITECTURE.md)
 - [Quick Start Guide](./QUICKSTART.md)
@@ -623,4 +623,4 @@ docker stats rag-ingestion
 
 ---
 
-**Need Help?** Check the logs or open an issue on GitHub! 🚀
+**Need Help?** Check the logs or open an issue on GitHub! 

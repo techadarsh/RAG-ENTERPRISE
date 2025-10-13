@@ -71,17 +71,17 @@ class MinIOEventListener:
             secure=secure
         )
         
-        logger.info(f"✅ Connected to MinIO at {minio_endpoint}")
+        logger.info(f" Connected to MinIO at {minio_endpoint}")
         
         # Create bucket if it doesn't exist
         try:
             if not self.minio_client.bucket_exists(bucket_name):
                 self.minio_client.make_bucket(bucket_name)
-                logger.info(f"📦 Created bucket: {bucket_name}")
+                logger.info(f" Created bucket: {bucket_name}")
             else:
-                logger.info(f"📦 Using existing bucket: {bucket_name}")
+                logger.info(f" Using existing bucket: {bucket_name}")
         except Exception as e:
-            logger.error(f"❌ Error checking/creating bucket: {e}")
+            logger.error(f" Error checking/creating bucket: {e}")
             raise
         
         # Initialize Redis connection
@@ -94,7 +94,7 @@ class MinIOEventListener:
         
         # Test Redis connection
         self.redis_conn.ping()
-        logger.info(f"✅ Connected to Redis at {redis_host}:{redis_port}")
+        logger.info(f" Connected to Redis at {redis_host}:{redis_port}")
         
         # Initialize RQ queue
         self.queue = Queue('ingestion', connection=self.redis_conn)
@@ -112,7 +112,7 @@ class MinIOEventListener:
         path = Path(object_name)
         
         if path.suffix.lower() not in self.SUPPORTED_EXTENSIONS:
-            logger.debug(f"⏭️  Ignoring unsupported file type: {object_name}")
+            logger.debug(f"⏭  Ignoring unsupported file type: {object_name}")
             return False
         
         return True
@@ -130,7 +130,7 @@ class MinIOEventListener:
             local_path = os.path.join(self.download_dir, local_filename)
             
             # Download file
-            logger.info(f"☁️  Downloading object: {object_name}")
+            logger.info(f"  Downloading object: {object_name}")
             self.minio_client.fget_object(
                 self.bucket_name,
                 object_name,
@@ -139,7 +139,7 @@ class MinIOEventListener:
             
             # Verify file was downloaded
             if not os.path.exists(local_path):
-                logger.error(f"❌ Downloaded file not found: {local_path}")
+                logger.error(f" Downloaded file not found: {local_path}")
                 return
             
             # Enqueue ingestion job
@@ -152,21 +152,21 @@ class MinIOEventListener:
             )
             
             logger.info(
-                f"☁️  S3 event received: {object_name} → Downloaded → "
+                f"  S3 event received: {object_name} → Downloaded → "
                 f"Enqueued job {job.id}"
             )
             
         except Exception as e:
-            logger.error(f"❌ Error downloading/enqueuing object {object_name}: {e}")
+            logger.error(f" Error downloading/enqueuing object {object_name}: {e}")
     
     def listen_events(self):
         """
         Listen for bucket events using MinIO's listen_bucket_notification
         This uses long-polling to receive events
         """
-        logger.info(f"👀 Starting MinIO event listener for bucket: {self.bucket_name}")
-        logger.info(f"📋 Monitoring prefix: {self.prefix}")
-        logger.info(f"📋 Supported extensions: {', '.join(self.SUPPORTED_EXTENSIONS)}")
+        logger.info(f" Starting MinIO event listener for bucket: {self.bucket_name}")
+        logger.info(f" Monitoring prefix: {self.prefix}")
+        logger.info(f" Supported extensions: {', '.join(self.SUPPORTED_EXTENSIONS)}")
         
         try:
             # Listen for events (this blocks)
@@ -183,19 +183,19 @@ class MinIOEventListener:
                         object_name = record['s3']['object']['key']
                         event_name = record['eventName']
                         
-                        logger.debug(f"📥 Received event: {event_name} for {object_name}")
+                        logger.debug(f" Received event: {event_name} for {object_name}")
                         
                         # Check if we should process this object
                         if self.should_process_object(object_name):
                             self.download_and_enqueue(object_name)
                             
                 except Exception as e:
-                    logger.error(f"❌ Error processing event: {e}")
+                    logger.error(f" Error processing event: {e}")
                     
         except KeyboardInterrupt:
-            logger.info("🛑 Stopping MinIO event listener...")
+            logger.info(" Stopping MinIO event listener...")
         except Exception as e:
-            logger.error(f"❌ Error in event listener: {e}")
+            logger.error(f" Error in event listener: {e}")
             raise
     
     def start(self):
@@ -222,7 +222,7 @@ def main():
     redis_db = int(os.getenv("REDIS_DB", "0"))
     download_dir = os.getenv("S3_DOWNLOAD_DIR", "/app/data/s3_downloads")
     
-    logger.info("🚀 Initializing MinIO/S3 Event Listener Service")
+    logger.info(" Initializing MinIO/S3 Event Listener Service")
     logger.info(f"   MinIO Endpoint: {minio_endpoint}")
     logger.info(f"   Bucket: {bucket_name}")
     logger.info(f"   Prefix: {prefix}")

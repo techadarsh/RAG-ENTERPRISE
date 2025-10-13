@@ -39,7 +39,7 @@ class CircuitBreaker:
         """Record successful call"""
         self.failures = 0
         if self.state == CircuitState.HALF_OPEN:
-            logger.info("✅ Circuit breaker: HALF_OPEN → CLOSED (recovery successful)")
+            logger.info(" Circuit breaker: HALF_OPEN → CLOSED (recovery successful)")
             self.state = CircuitState.CLOSED
             
     def record_failure(self):
@@ -48,7 +48,7 @@ class CircuitBreaker:
         if self.failures >= self.failure_threshold and self.state == CircuitState.CLOSED:
             self.state = CircuitState.OPEN
             self.opened_at = datetime.now()
-            logger.warning(f"🔴 Circuit breaker: OPEN (failures={self.failures})")
+            logger.warning(f" Circuit breaker: OPEN (failures={self.failures})")
             
     def can_attempt(self) -> bool:
         """Check if we can attempt a request"""
@@ -58,7 +58,7 @@ class CircuitBreaker:
         if self.state == CircuitState.OPEN:
             # Check if cooldown expired
             if datetime.now() - self.opened_at > timedelta(seconds=self.cooldown_seconds):
-                logger.info("🟡 Circuit breaker: OPEN → HALF_OPEN (cooldown expired, testing)")
+                logger.info(" Circuit breaker: OPEN → HALF_OPEN (cooldown expired, testing)")
                 self.state = CircuitState.HALF_OPEN
                 return True
             return False
@@ -117,7 +117,7 @@ class LLMClient:
                 headers={"Connection": "keep-alive"},
                 timeout=self.normal_timeout_ms / 1000.0
             )
-            logger.info(f"🔌 HTTP connection pool initialized (limit={pool_limit})")
+            logger.info(f" HTTP connection pool initialized (limit={pool_limit})")
         
         # Initialize circuit breaker
         if LLMClient._breaker is None and self.breaker_enabled:
@@ -125,9 +125,9 @@ class LLMClient:
                 failure_threshold=self.breaker_fails,
                 cooldown_seconds=self.breaker_cooldown
             )
-            logger.info(f"⚡ Circuit breaker initialized (threshold={self.breaker_fails}, cooldown={self.breaker_cooldown}s)")
+            logger.info(f" Circuit breaker initialized (threshold={self.breaker_fails}, cooldown={self.breaker_cooldown}s)")
         
-        logger.info(f"🤖 LLM Client initialized - Mode: {self.mode}, Backend: {self.backend}")
+        logger.info(f" LLM Client initialized - Mode: {self.mode}, Backend: {self.backend}")
         logger.info(f"   Primary endpoint: {self.endpoints[0] if self.endpoints else 'None'}")
         logger.info(f"   Model: {self.model_name}, Timeouts: {self.initial_timeout_ms}ms cold / {self.normal_timeout_ms}ms warm")
     
@@ -233,13 +233,13 @@ CRITICAL RULES - NEVER VIOLATE THESE:
 5. NEVER provide advice, recommendations, or opinions unless they are explicitly stated in the Context
 
 ALLOWED BEHAVIORS:
-✓ Answer questions directly from the Context
-✓ Combine information from multiple parts of the Context
-✓ Clarify or rephrase what's in the Context
-✓ Ask for clarification if the question is ambiguous
-✓ Admit when the Context doesn't contain enough information
-✓ Quote relevant sections from the Context when helpful
-✓ Be conversational and helpful in tone
+ Answer questions directly from the Context
+ Combine information from multiple parts of the Context
+ Clarify or rephrase what's in the Context
+ Ask for clarification if the question is ambiguous
+ Admit when the Context doesn't contain enough information
+ Quote relevant sections from the Context when helpful
+ Be conversational and helpful in tone
 
 RESPONSE GUIDELINES:
 - Start with a direct answer when possible
@@ -291,7 +291,7 @@ Your Response:"""
         # Check circuit breaker
         if self.breaker_enabled and LLMClient._breaker:
             if not LLMClient._breaker.can_attempt():
-                logger.warning(f"🔴 Circuit breaker OPEN - skipping LLM call")
+                logger.warning(f" Circuit breaker OPEN - skipping LLM call")
                 raise Exception("CircuitBreakerOpen")
         
         # Get adaptive timeout
@@ -314,13 +314,13 @@ Your Response:"""
         for i, url in enumerate(self.endpoints):
             try:
                 breaker_state = LLMClient._breaker.state.value if LLMClient._breaker else "N/A"
-                logger.info(f"🦙 [Attempt {i+1}/{len(self.endpoints)}] Trying Ollama: {url} (timeout={timeout:.1f}s {timeout_label}, breaker={breaker_state})")
+                logger.info(f" [Attempt {i+1}/{len(self.endpoints)}] Trying Ollama: {url} (timeout={timeout:.1f}s {timeout_label}, breaker={breaker_state})")
                 
                 response = self._try_generate(url, payload, timeout)
                 
                 if response:
                     latency_ms = (time.perf_counter() - start_time) * 1000
-                    logger.info(f"✅ Ollama response received ({len(response)} chars, {latency_ms:.0f}ms) from: {url}")
+                    logger.info(f" Ollama response received ({len(response)} chars, {latency_ms:.0f}ms) from: {url}")
                     
                     # Record success
                     if self.breaker_enabled and LLMClient._breaker:
@@ -331,12 +331,12 @@ Your Response:"""
                     
                     return response
                 else:
-                    logger.warning(f"⚠️  Ollama returned empty response from: {url}")
+                    logger.warning(f"  Ollama returned empty response from: {url}")
                     
             except Exception as e:
                 latency_ms = (time.perf_counter() - start_time) * 1000
                 error_type = type(e).__name__
-                logger.warning(f"❌ Failed at {url} ({latency_ms:.0f}ms): {error_type}: {str(e)[:100]}")
+                logger.warning(f" Failed at {url} ({latency_ms:.0f}ms): {error_type}: {str(e)[:100]}")
                 last_error = e
                 
                 # Record failure for circuit breaker (only for primary endpoint)
@@ -350,7 +350,7 @@ Your Response:"""
             "I'm currently unable to process your request. "
             "Please try again in a moment. If the problem persists, contact support."
         )
-        logger.error(f"❌ All Ollama endpoints failed. Last error: {last_error}")
+        logger.error(f" All Ollama endpoints failed. Last error: {last_error}")
         return error_msg
     
     def _generate_mock(self, prompt: str, context: Optional[str]) -> str:
@@ -360,7 +360,7 @@ Your Response:"""
     
     def _generate_huggingface(self, prompt: str) -> str:
         """Generate using Hugging Face Inference API"""
-        logger.info(f"🤗 Generating answer via HuggingFace")
+        logger.info(f" Generating answer via HuggingFace")
         
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -402,7 +402,7 @@ Your Response:"""
         Returns True if successful, False otherwise
         """
         try:
-            logger.info("🔥 Warming up LLM model...")
+            logger.info(" Warming up LLM model...")
             client = cls()
             
             if client.backend == "ollama":
@@ -421,12 +421,12 @@ Your Response:"""
                 latency_ms = (time.perf_counter() - start) * 1000
                 
                 if response:
-                    logger.info(f"✅ LLM warmed up successfully ({latency_ms:.0f}ms)")
+                    logger.info(f" LLM warmed up successfully ({latency_ms:.0f}ms)")
                     cls._first_call = False
                     return True
                     
         except Exception as e:
-            logger.warning(f"⚠️  LLM warmup failed (non-fatal): {type(e).__name__}: {str(e)[:100]}")
+            logger.warning(f"  LLM warmup failed (non-fatal): {type(e).__name__}: {str(e)[:100]}")
         
         return False
     
@@ -455,4 +455,4 @@ Your Response:"""
         """Close shared HTTP client (call on shutdown)"""
         if cls._http_client:
             cls._http_client.close()
-            logger.info("🔌 HTTP connection pool closed")
+            logger.info(" HTTP connection pool closed")

@@ -66,7 +66,7 @@ function HealthBadge({ onDegraded, position = 'bottom' }) {
     return (
       <aside className={`health-badge-container ${position}`}>
         <div className="health-header">
-          <span className="health-icon">⚡</span>
+          <span className="health-icon"></span>
           <span className="health-title">System</span>
         </div>
         <div className="health-items">
@@ -95,7 +95,7 @@ function HealthBadge({ onDegraded, position = 'bottom' }) {
   return (
     <aside className={`health-badge-container ${position}`}>
       <div className="health-header">
-        <span className="health-icon">⚡</span>
+        <span className="health-icon"></span>
         <span className="health-title">System Health</span>
       </div>
       

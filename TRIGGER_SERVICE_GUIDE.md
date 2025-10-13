@@ -1,18 +1,18 @@
 # Auto-Trigger Ingestion Service Guide
 
-## 📋 Overview
+##  Overview
 
 The Auto-Trigger Ingestion Service (Phase 2) enables automatic document ingestion without manual API calls. It supports three trigger mechanisms:
 
-1. **📂 Folder Watcher** - Monitors local directory for new/modified files
-2. **☁️  S3/MinIO Listener** - Listens to bucket upload events
-3. **🔔 Confluence Webhook** - Receives webhook notifications for page updates
+1. ** Folder Watcher** - Monitors local directory for new/modified files
+2. **  S3/MinIO Listener** - Listens to bucket upload events
+3. ** Confluence Webhook** - Receives webhook notifications for page updates
 
 All triggers enqueue ingestion jobs to Redis queue for processing by the ingestion worker service.
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 ┌─────────────────────┐
@@ -34,7 +34,7 @@ All triggers enqueue ingestion jobs to Redis queue for processing by the ingesti
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Enable Folder Watcher
 
@@ -55,7 +55,7 @@ docker compose logs -f trigger
 
 **Expected output:**
 ```
-📂 New file detected (created): my_document.txt → Enqueued job abc-123
+ New file detected (created): my_document.txt → Enqueued job abc-123
 ```
 
 ### 2. Enable S3/MinIO Listener
@@ -79,7 +79,7 @@ docker compose logs -f trigger
 
 **Expected output:**
 ```
-☁️  S3 event received: incoming/report.pdf → Downloaded → Enqueued job def-456
+  S3 event received: incoming/report.pdf → Downloaded → Enqueued job def-456
 ```
 
 ### 3. Setup Confluence Webhook
@@ -102,16 +102,16 @@ docker compose restart backend
 
 **Backend logs:**
 ```
-🔔 Confluence webhook received: page_updated
+ Confluence webhook received: page_updated
    Page ID: 12345
    Title: Engineering Guidelines
    URL: https://yourcompany.atlassian.net/wiki/spaces/ENG/pages/12345
-🔔 Confluence webhook processed → Enqueued job ghi-789
+ Confluence webhook processed → Enqueued job ghi-789
 ```
 
 ---
 
-## ⚙️ Configuration
+##  Configuration
 
 ### Environment Variables
 
@@ -150,7 +150,7 @@ docker compose restart backend
 
 ---
 
-## 📂 Folder Watcher Details
+##  Folder Watcher Details
 
 ### Supported File Types
 
@@ -190,7 +190,7 @@ cp hr_policy.txt data/incoming/policies/
 
 ---
 
-## ☁️ S3/MinIO Listener Details
+##  S3/MinIO Listener Details
 
 ### Setup MinIO Bucket
 
@@ -242,7 +242,7 @@ S3_WATCH_PREFIX=documents/incoming/
 
 ---
 
-## 🔔 Confluence Webhook Details
+##  Confluence Webhook Details
 
 ### Webhook Endpoint
 
@@ -316,7 +316,7 @@ For production deployments:
 
 ---
 
-## 🐳 Docker Compose Usage
+##  Docker Compose Usage
 
 ### Standard Mode (No Auto-Triggers)
 
@@ -363,7 +363,7 @@ docker compose --profile trigger up -d --build trigger
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Manual Testing
 
@@ -379,11 +379,11 @@ echo "Test document content" > data/incoming/test.txt
 
 # 3. Check trigger logs
 docker compose logs trigger | grep "test.txt"
-# Should show: 📂 New file detected (created): test.txt → Enqueued job ...
+# Should show:  New file detected (created): test.txt → Enqueued job ...
 
 # 4. Check ingestion worker logs
 docker compose logs ingestion | grep "test.txt"
-# Should show: ✅ Successfully ingested (test.txt)
+# Should show: [x] Successfully ingested (test.txt)
 
 # 5. Query the document
 curl -X POST http://localhost:8000/api/query \
@@ -428,7 +428,7 @@ See `test_trigger.sh` for comprehensive automated tests.
 
 ---
 
-## 📊 Monitoring
+##  Monitoring
 
 ### View Trigger Logs
 
@@ -471,7 +471,7 @@ docker compose logs -f ingestion
 
 ---
 
-## 🛠️ Troubleshooting
+##  Troubleshooting
 
 ### Trigger Service Not Starting
 
@@ -560,7 +560,7 @@ docker compose --profile trigger restart trigger
 1. Backend has Redis connection:
    ```bash
    docker compose logs backend | grep Redis
-   # Should show: ✅ Connected to Redis
+   # Should show: [x] Connected to Redis
    ```
 
 2. Payload format is correct:
@@ -582,7 +582,7 @@ docker compose --profile trigger restart trigger
 
 ---
 
-## 🔧 Advanced Configuration
+##  Advanced Configuration
 
 ### Custom File Extensions
 
@@ -620,7 +620,7 @@ data/incoming/legal/
 
 ---
 
-## 📚 Additional Resources
+##  Additional Resources
 
 - **Phase 1 Documentation**: See `INGESTION_API_GUIDE.md` for manual API ingestion
 - **Architecture**: See `README.md` for system architecture
@@ -629,7 +629,7 @@ data/incoming/legal/
 
 ---
 
-## ✅ Summary
+## [x] Summary
 
 ### Three Ways to Trigger Ingestion
 
@@ -664,4 +664,4 @@ curl http://localhost:8000/api/ingest/status/<job-id>
 
 **Last Updated:** Phase 2 Implementation  
 **Version:** 1.0.0  
-**Status:** ✅ Production Ready
+**Status:** [x] Production Ready

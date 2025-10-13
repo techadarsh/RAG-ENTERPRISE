@@ -27,7 +27,7 @@ class IngestionPipeline:
     
     def __init__(self):
         """Initialize pipeline with shared components"""
-        logger.info("🔧 Initializing IngestionPipeline")
+        logger.info(" Initializing IngestionPipeline")
         
         # Get configuration from environment
         self.milvus_host = os.getenv("MILVUS_HOST", "milvus")
@@ -51,7 +51,7 @@ class IngestionPipeline:
         
         # Connect to Milvus
         self.milvus_client.connect()
-        logger.info("✅ IngestionPipeline initialized successfully")
+        logger.info(" IngestionPipeline initialized successfully")
     
     def chunk_text(
         self, 
@@ -124,7 +124,7 @@ class IngestionPipeline:
         start_time = time.time()
         
         try:
-            logger.info(f"📄 Starting ingestion for: {file_path}")
+            logger.info(f" Starting ingestion for: {file_path}")
             
             # Validate file exists
             if not os.path.exists(file_path):
@@ -137,7 +137,7 @@ class IngestionPipeline:
             if not content:
                 raise ValueError(f"File is empty: {file_path}")
             
-            logger.info(f"📖 Read {len(content)} characters from {file_path}")
+            logger.info(f" Read {len(content)} characters from {file_path}")
             
             # Generate title if not provided
             if not title:
@@ -145,7 +145,7 @@ class IngestionPipeline:
             
             # Chunk the document
             chunks = self.chunk_text(content)
-            logger.info(f"✂️  Split into {len(chunks)} chunks")
+            logger.info(f"  Split into {len(chunks)} chunks")
             
             # Prepare titles for chunks
             titles = []
@@ -161,12 +161,12 @@ class IngestionPipeline:
                 texts.append(chunk)
             
             # Generate embeddings
-            logger.info(f"🔢 Generating embeddings for {len(chunks)} chunks...")
+            logger.info(f" Generating embeddings for {len(chunks)} chunks...")
             embeddings = self.embedding_model.embed_texts(texts)
-            logger.info(f"✅ Generated {len(embeddings)} embeddings")
+            logger.info(f" Generated {len(embeddings)} embeddings")
             
             # Insert into Milvus
-            logger.info(f"💾 Inserting {len(chunks)} chunks into Milvus...")
+            logger.info(f" Inserting {len(chunks)} chunks into Milvus...")
             self.milvus_client.insert(titles, texts, embeddings)
             
             elapsed = time.time() - start_time
@@ -178,15 +178,15 @@ class IngestionPipeline:
                 "chunks": len(chunks),
                 "total_characters": len(content),
                 "elapsed_seconds": round(elapsed, 2),
-                "message": f"✅ Successfully ingested: {title}"
+                "message": f" Successfully ingested: {title}"
             }
             
-            logger.info(f"✅ Ingestion complete for {title} in {elapsed:.2f}s")
+            logger.info(f" Ingestion complete for {title} in {elapsed:.2f}s")
             return result
             
         except Exception as e:
             elapsed = time.time() - start_time
-            error_msg = f"❌ Ingestion failed for {file_path}: {str(e)}"
+            error_msg = f" Ingestion failed for {file_path}: {str(e)}"
             logger.error(error_msg, exc_info=True)
             
             return {
@@ -218,9 +218,9 @@ def ingest_document_job(file_path: str, title: str = None, metadata: Dict[str, A
     
     # Log result
     if result["status"] == "success":
-        logger.info(f"✅ Job completed: {result['message']}")
+        logger.info(f" Job completed: {result['message']}")
     else:
-        logger.error(f"❌ Job failed: {result['message']}")
+        logger.error(f" Job failed: {result['message']}")
     
     return result
 
@@ -241,7 +241,7 @@ def ingest_url_job(url: str, title: str = None, metadata: Dict[str, Any] = None)
     pipeline = IngestionPipeline()
     
     try:
-        logger.info(f"🌐 Fetching content from URL: {url}")
+        logger.info(f" Fetching content from URL: {url}")
         
         # Fetch content from URL
         response = requests.get(url, timeout=30)
@@ -280,9 +280,9 @@ def ingest_url_job(url: str, title: str = None, metadata: Dict[str, Any] = None)
         
         # Log result
         if result["status"] == "success":
-            logger.info(f"✅ URL job completed: {result['message']}")
+            logger.info(f" URL job completed: {result['message']}")
         else:
-            logger.error(f"❌ URL job failed: {result['message']}")
+            logger.error(f" URL job failed: {result['message']}")
         
         return result
         

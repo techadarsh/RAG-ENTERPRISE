@@ -1,13 +1,13 @@
-# 🔒 100% On-Premise RAG System - Privacy Guaranteed
+#  100% On-Premise RAG System - Privacy Guaranteed
 
-## ✅ NO DATA LEAVES YOUR MACHINE
+## [x] NO DATA LEAVES YOUR MACHINE
 
 **Your concern**: Documents might be exposed to third-party API endpoints  
 **Solution**: Everything runs locally on your machine in Docker containers
 
 ---
 
-## 🏠 ARCHITECTURE - FULLY LOCAL
+##  ARCHITECTURE - FULLY LOCAL
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -33,7 +33,7 @@
 
 ---
 
-## 🔐 PRIVACY FEATURES
+##  PRIVACY FEATURES
 
 ### 1. Local LLM (Ollama + Mistral)
 - **Location**: Runs in Docker container on your machine
@@ -59,25 +59,25 @@
 
 ---
 
-## 🔍 CONFIGURATION VERIFICATION
+##  CONFIGURATION VERIFICATION
 
 ### Current Settings (docker-compose.yml):
 
 ```yaml
 backend:
   environment:
-    # ✅ NO EXTERNAL API - Uses local Ollama
+    # [x] NO EXTERNAL API - Uses local Ollama
     - LLM_MODE=api
     - LLM_BACKEND=ollama
     - MISTRAL_API_URL=http://ollama:11434/api/generate  # ← Docker network, NOT internet
     - MISTRAL_API_KEY=not_required_for_ollama           # ← No API key needed
     - MISTRAL_MODEL=mistral                              # ← Local model
     
-    # ✅ LOCAL EMBEDDINGS - No API calls
+    # [x] LOCAL EMBEDDINGS - No API calls
     - EMBEDDING_MODEL=BAAI/bge-base-en                   # ← Downloaded to container
     - EMBEDDING_DIM=768
     
-    # ✅ LOCAL VECTOR DB
+    # [x] LOCAL VECTOR DB
     - MILVUS_HOST=milvus                                 # ← Docker network, NOT cloud
     - MILVUS_PORT=19530
 ```
@@ -89,7 +89,7 @@ backend:
 
 ---
 
-## 📊 DATA FLOW (100% LOCAL)
+##  DATA FLOW (100% LOCAL)
 
 ### Query Processing:
 ```
@@ -117,32 +117,32 @@ backend:
 8. User sees answer in browser
 ```
 
-**ZERO EXTERNAL API CALLS** ✅
+**ZERO EXTERNAL API CALLS** [x]
 
 ---
 
-## 🛡️ PRIVACY GUARANTEES
+##  PRIVACY GUARANTEES
 
 ### What NEVER Leaves Your Machine:
-✅ Your documents (hr_policy.txt, leave_policy.txt, etc.)  
-✅ Your queries ("What is the sprint duration?")  
-✅ Retrieved context from Milvus  
-✅ LLM-generated answers  
-✅ Embeddings/vectors  
-✅ Conversation history  
-✅ Any user data  
+[x] Your documents (hr_policy.txt, leave_policy.txt, etc.)  
+[x] Your queries ("What is the sprint duration?")  
+[x] Retrieved context from Milvus  
+[x] LLM-generated answers  
+[x] Embeddings/vectors  
+[x] Conversation history  
+[x] Any user data  
 
 ### What DOES Use Internet (Only During Setup):
-⚠️ Docker image downloads (one-time: python, ollama, milvus images)  
-⚠️ Mistral model download (one-time: 4.4GB via Ollama)  
-⚠️ BAAI/bge-base-en model download (one-time: ~1.2GB via HuggingFace)  
-⚠️ Python package downloads (one-time: pip install in Dockerfile)  
+ Docker image downloads (one-time: python, ollama, milvus images)  
+ Mistral model download (one-time: 4.4GB via Ollama)  
+ BAAI/bge-base-en model download (one-time: ~1.2GB via HuggingFace)  
+ Python package downloads (one-time: pip install in Dockerfile)  
 
 **After Initial Setup**: System works 100% offline with NO internet connection required!
 
 ---
 
-## 🔍 HOW TO VERIFY (Prove No External Calls)
+##  HOW TO VERIFY (Prove No External Calls)
 
 ### Method 1: Check Backend Logs
 ```bash
@@ -184,7 +184,7 @@ docker logs rag-ollama 2>&1 | grep -E "(http|api)"
 
 ---
 
-## 🎯 MISTRAL MODEL STATUS
+##  MISTRAL MODEL STATUS
 
 ### Current Status:
 ```bash
@@ -192,7 +192,7 @@ $ docker exec rag-ollama ollama list
 ```
 
 **If empty**: Mistral model still downloading (96% complete, ~4.4GB)  
-**If shows "mistral"**: Model ready for local inference ✅
+**If shows "mistral"**: Model ready for local inference [x]
 
 ### Download Progress:
 - **Size**: 4.4GB
@@ -202,21 +202,21 @@ $ docker exec rag-ollama ollama list
 
 ---
 
-## 📈 PERFORMANCE - LOCAL vs CLOUD
+##  PERFORMANCE - LOCAL vs CLOUD
 
 | Aspect | Cloud API (OpenAI/etc) | Your Local Setup |
 |--------|------------------------|------------------|
-| **Privacy** | ❌ Data sent to 3rd party | ✅ 100% on-premise |
-| **Cost** | 💰 Pay per token | ✅ FREE (after setup) |
+| **Privacy** |  Data sent to 3rd party | [x] 100% on-premise |
+| **Cost** |  Pay per token | [x] FREE (after setup) |
 | **Latency** | ~500-2000ms | ~500-1000ms (local) |
-| **Internet Required** | ❌ Always | ✅ No (after setup) |
-| **Data Retention** | ⚠️ Unknown (vendor policy) | ✅ You control everything |
-| **Audit Trail** | ❌ Limited visibility | ✅ Full Docker logs |
-| **Compliance** | ⚠️ Depends on vendor | ✅ GDPR/HIPAA friendly |
+| **Internet Required** |  Always | [x] No (after setup) |
+| **Data Retention** |  Unknown (vendor policy) | [x] You control everything |
+| **Audit Trail** |  Limited visibility | [x] Full Docker logs |
+| **Compliance** |  Depends on vendor | [x] GDPR/HIPAA friendly |
 
 ---
 
-## 🚀 FINAL VERIFICATION CHECKLIST
+##  FINAL VERIFICATION CHECKLIST
 
 Before using in production, verify:
 
@@ -229,26 +229,26 @@ Before using in production, verify:
 
 ---
 
-## 🎉 CONCLUSION
+##  CONCLUSION
 
 **Your RAG system is 100% on-premise and privacy-preserving.**
 
-✅ **No data ever leaves your machine**  
-✅ **No third-party API calls**  
-✅ **No API keys needed** (except placeholder for code structure)  
-✅ **Works offline** after initial setup  
-✅ **Full control over your data**  
-✅ **GDPR/HIPAA compliant architecture**  
+[x] **No data ever leaves your machine**  
+[x] **No third-party API calls**  
+[x] **No API keys needed** (except placeholder for code structure)  
+[x] **Works offline** after initial setup  
+[x] **Full control over your data**  
+[x] **GDPR/HIPAA compliant architecture**  
 
 The only time data goes over the internet is during initial setup:
 - Docker image downloads
 - Model downloads (Mistral, BAAI/bge-base-en)
 - Python packages
 
-**After that**: Your documents, queries, and answers stay on your machine forever! 🔒
+**After that**: Your documents, queries, and answers stay on your machine forever! 
 
 ---
 
 **System Status**: Fully operational, waiting for Mistral download to complete (96%)  
 **Privacy Level**: Maximum (100% on-premise)  
-**External API Dependency**: ZERO ✅
+**External API Dependency**: ZERO [x]

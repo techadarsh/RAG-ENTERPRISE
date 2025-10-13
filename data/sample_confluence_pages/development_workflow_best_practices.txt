@@ -93,17 +93,17 @@ Types:
 - chore/    : Maintenance tasks
 
 Examples:
-✅ feature/add-query-caching
-✅ bugfix/fix-milvus-connection-timeout
-✅ hotfix/patch-security-vulnerability
-✅ refactor/optimize-embedding-generation
-✅ docs/update-api-documentation
-✅ test/add-integration-tests
-✅ chore/upgrade-dependencies
+ feature/add-query-caching
+ bugfix/fix-milvus-connection-timeout
+ hotfix/patch-security-vulnerability
+ refactor/optimize-embedding-generation
+ docs/update-api-documentation
+ test/add-integration-tests
+ chore/upgrade-dependencies
 
-❌ my-feature
-❌ fix-bug
-❌ update
+ my-feature
+ fix-bug
+ update
 ```
 
 ### Feature Development Workflow
@@ -157,12 +157,12 @@ git pull origin develop
 Brief description of changes
 
 ## Type of Change
-- [ ] 🎉 New feature
-- [ ] 🐛 Bug fix
-- [ ] 📝 Documentation update
-- [ ] ♻️  Refactoring
-- [ ] ✅ Test addition
-- [ ] 🔧 Configuration change
+- [ ]  New feature
+- [ ]  Bug fix
+- [ ]  Documentation update
+- [ ]   Refactoring
+- [ ]  Test addition
+- [ ]  Configuration change
 
 ## Changes Made
 - Added Redis caching layer
@@ -298,7 +298,7 @@ def test_conversation_memory(rag_pipeline):
 ### Code Documentation Best Practices
 
 ```python
-# ✅ Good Documentation Example:
+#  Good Documentation Example:
 
 def search_similar_documents(
     query_embedding: np.ndarray,
@@ -380,7 +380,7 @@ def search_similar_documents(
 ### Examples
 
 ```
-✅ Good commits:
+ Good commits:
 
 feat(caching): implement Redis caching layer
 
@@ -409,7 +409,7 @@ Added troubleshooting section.
 
 ---
 
-❌ Bad commits:
+ Bad commits:
 
 - "update"
 - "fix bug"
@@ -427,21 +427,21 @@ Added troubleshooting section.
 
 ```
 Small PR (< 200 lines):
-✅ Easy to review
-✅ Fast feedback cycle
-✅ Lower risk
-✅ Quicker to merge
+ Easy to review
+ Fast feedback cycle
+ Lower risk
+ Quicker to merge
 
 Medium PR (200-400 lines):
-⚠️  Acceptable if cohesive
-⚠️  May take longer to review
-⚠️  Consider splitting if possible
+  Acceptable if cohesive
+  May take longer to review
+  Consider splitting if possible
 
 Large PR (> 400 lines):
-❌ Difficult to review thoroughly
-❌ Higher risk of bugs
-❌ Slower feedback cycle
-❌ Should be split into smaller PRs
+ Difficult to review thoroughly
+ Higher risk of bugs
+ Slower feedback cycle
+ Should be split into smaller PRs
 
 Exception: Large PRs okay for:
 - Database migrations
@@ -604,14 +604,14 @@ python -m memory_profiler backend/main.py
 ### Query Optimization
 
 ```python
-# ❌ Bad: No caching
+#  Bad: No caching
 def process_query(query: str):
     embedding = embedder.encode([query])
     results = milvus.search(embedding)
     answer = llm.generate(query, results)
     return answer
 
-# ✅ Good: With caching
+#  Good: With caching
 @cache(ttl=300)  # 5 minute cache
 def process_query(query: str):
     embedding = get_cached_embedding(query)
@@ -633,17 +633,17 @@ def get_cached_embedding(query: str):
 ### Database Optimization
 
 ```python
-# ❌ Bad: Sequential queries
+#  Bad: Sequential queries
 for doc in documents:
     milvus.insert(doc)  # One connection per insert
 
-# ✅ Good: Batch insert
+#  Good: Batch insert
 milvus.insert_batch(documents)  # Single connection
 
-# ❌ Bad: Loading entire collection
+#  Bad: Loading entire collection
 all_docs = milvus.query(collection_name)
 
-# ✅ Good: Pagination
+#  Good: Pagination
 for page in range(num_pages):
     docs = milvus.query(
         collection_name,
@@ -656,14 +656,14 @@ for page in range(num_pages):
 ### Resource Management
 
 ```python
-# ❌ Bad: No connection pooling
+#  Bad: No connection pooling
 def search(query):
     client = MilvusClient()  # New connection each time
     results = client.search(query)
     client.close()
     return results
 
-# ✅ Good: Connection pooling
+#  Good: Connection pooling
 from functools import lru_cache
 
 @lru_cache(maxsize=1)
@@ -684,11 +684,11 @@ def search(query):
 
 Following these development workflows and best practices ensures:
 
-✅ **Code Quality**: Consistent, maintainable, well-tested code
-✅ **Team Collaboration**: Clear processes for reviews and merges
-✅ **Fast Development**: Efficient workflows minimize friction
-✅ **Production Readiness**: Rigorous testing and deployment practices
-✅ **Knowledge Sharing**: Comprehensive documentation
+ **Code Quality**: Consistent, maintainable, well-tested code
+ **Team Collaboration**: Clear processes for reviews and merges
+ **Fast Development**: Efficient workflows minimize friction
+ **Production Readiness**: Rigorous testing and deployment practices
+ **Knowledge Sharing**: Comprehensive documentation
 
 **Key Takeaways**:
 - Write small, focused commits

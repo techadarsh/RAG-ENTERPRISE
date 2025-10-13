@@ -1430,12 +1430,12 @@ Users | Req/sec | Avg Latency | Error Rate
 **Option 1: Horizontal Scaling** (10x backend instances):
 - 10 servers × 8 CPUs × 16 GB RAM = 80 CPUs, 160 GB RAM
 - Cost: $500/month per server × 10 = $5,000/month
-- Throughput: 450 req/sec ✅
+- Throughput: 450 req/sec 
 
 **Option 2: GPU Acceleration** (fewer servers):
 - 3 servers × 8 CPUs × 16 GB RAM × 1 GPU (RTX 3080) = 24 CPUs, 48 GB RAM, 3 GPUs
 - Cost: $1,200/month per server × 3 = $3,600/month
-- Throughput: 3 × 150 req/sec = 450 req/sec ✅
+- Throughput: 3 × 150 req/sec = 450 req/sec 
 - **Recommendation**: Option 2 (lower cost, better performance)
 
 ---

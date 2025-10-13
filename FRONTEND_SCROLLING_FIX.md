@@ -35,9 +35,9 @@
 ```
 
 **Changes Explained**:
-- ✅ Added `overflow-y: auto` - Enables vertical scrolling when content exceeds container height
-- ✅ Added `overflow-x: hidden` - Prevents horizontal scrollbar (keeps clean UI)
-- ✅ Kept `scroll-behavior: smooth` - Maintains smooth auto-scroll to new messages
+- [x] Added `overflow-y: auto` - Enables vertical scrolling when content exceeds container height
+- [x] Added `overflow-x: hidden` - Prevents horizontal scrollbar (keeps clean UI)
+- [x] Kept `scroll-behavior: smooth` - Maintains smooth auto-scroll to new messages
 
 ---
 
@@ -139,12 +139,12 @@ docker compose up -d frontend
 
 ### Expected Behavior
 
-✅ **Scrollbar visible** when content overflows  
-✅ **Smooth scrolling** with mouse wheel or trackpad  
-✅ **Auto-scroll to new messages** when at or near bottom  
-✅ **Manual scroll preserved** when user scrolls up  
-✅ **Custom purple scrollbar** matching app theme  
-✅ **Input field always visible** at bottom (sticky)
+[x] **Scrollbar visible** when content overflows  
+[x] **Smooth scrolling** with mouse wheel or trackpad  
+[x] **Auto-scroll to new messages** when at or near bottom  
+[x] **Manual scroll preserved** when user scrolls up  
+[x] **Custom purple scrollbar** matching app theme  
+[x] **Input field always visible** at bottom (sticky)
 
 ---
 
@@ -152,10 +152,10 @@ docker compose up -d frontend
 
 | Browser | Status | Notes |
 |---------|--------|-------|
-| Chrome | ✅ Works | Custom scrollbar supported |
-| Firefox | ✅ Works | Default scrollbar (Firefox doesn't support ::-webkit-scrollbar) |
-| Safari | ✅ Works | Custom scrollbar supported |
-| Edge | ✅ Works | Custom scrollbar supported |
+| Chrome | [x] Works | Custom scrollbar supported |
+| Firefox | [x] Works | Default scrollbar (Firefox doesn't support ::-webkit-scrollbar) |
+| Safari | [x] Works | Custom scrollbar supported |
+| Edge | [x] Works | Custom scrollbar supported |
 
 **Note**: The `overflow-y: auto` CSS property is supported in all modern browsers.
 
@@ -279,12 +279,12 @@ docker compose up -d frontend
 **Issue**: Chat messages not scrollable  
 **Solution**: Added `overflow-y: auto` to `.messages-wrapper`  
 **Impact**: Zero breaking changes, CSS-only fix  
-**Status**: ✅ Deployed and working
+**Status**: [x] Deployed and working
 
 Users can now:
-- ✅ Scroll through conversation history
-- ✅ Review previous questions and answers
-- ✅ Auto-scroll to new messages
-- ✅ Manually control scroll position
+- [x] Scroll through conversation history
+- [x] Review previous questions and answers
+- [x] Auto-scroll to new messages
+- [x] Manually control scroll position
 
 The fix maintains all existing functionality while enabling proper scrolling behavior.

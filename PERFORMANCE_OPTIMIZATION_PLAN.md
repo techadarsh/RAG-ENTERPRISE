@@ -1,13 +1,13 @@
 # RAG Enterprise Performance Optimization - Implementation Plan
 
 ## Current Status
-- ✅ New environment variables added to .env
-- ✅ New high-performance LLM client created (llm_client_optimized.py → llm_client.py)
-- ⏳ Main.py needs health-aware fast-fail and degraded mode
-- ⏳ RAG pipeline needs optimization
-- ⏳ Streaming endpoint needed
-- ⏳ Frontend updates needed
-- ⏳ Benchmark harness needed
+- [x] New environment variables added to .env
+- [x] New high-performance LLM client created (llm_client_optimized.py → llm_client.py)
+-  Main.py needs health-aware fast-fail and degraded mode
+-  RAG pipeline needs optimization
+-  Streaming endpoint needed
+-  Frontend updates needed
+-  Benchmark harness needed
 
 ## Critical Path (Implement First)
 
@@ -47,13 +47,13 @@ async def ask_question(request: QueryRequest) -> QueryResponse:
     if health_gate_enabled:
         health = await get_cached_health()
         if health.get("ollama") != "ok":
-            logger.warning(f"⚠️  LLM unhealthy (ollama={health.get('ollama')}), using degraded mode")
+            logger.warning(f"  LLM unhealthy (ollama={health.get('ollama')}), using degraded mode")
             return await ask_question_degraded(request)
     
     # Check circuit breaker
     if rag_pipeline and rag_pipeline.llm_client:
         if not rag_pipeline.llm_client.is_available():
-            logger.warning(f"🔴 Circuit breaker OPEN, using degraded mode")
+            logger.warning(f" Circuit breaker OPEN, using degraded mode")
             return await ask_question_degraded(request)
     
     # Normal flow continues...
@@ -89,13 +89,13 @@ async def ask_question_degraded(request: QueryRequest) -> QueryResponse:
             }
             snippets.append(snippet)
         
-        answer = "⚠️ Model temporarily unavailable. Here are the most relevant excerpts:\n\n"
+        answer = " Model temporarily unavailable. Here are the most relevant excerpts:\n\n"
         for i, s in enumerate(snippets, 1):
             answer += f"{i}. {s['title']} (relevance: {s['score']})\n{s['text_excerpt']}...\n\n"
         
         latency_ms = (time.perf_counter() - start_time) * 1000
         
-        logger.info(f"✅ Degraded mode response ({latency_ms:.0f}ms)")
+        logger.info(f"[x] Degraded mode response ({latency_ms:.0f}ms)")
         
         return QueryResponse(
             answer=answer,
@@ -175,11 +175,11 @@ async def startup_event():
             from llm_client import LLMClient
             success = LLMClient.warmup()
             if success:
-                logger.info("🔥 LLM warm-up completed successfully")
+                logger.info(" LLM warm-up completed successfully")
             else:
-                logger.warning("⚠️  LLM warm-up failed (non-fatal)")
+                logger.warning("  LLM warm-up failed (non-fatal)")
         except Exception as e:
-            logger.warning(f"⚠️  LLM warm-up error: {e}")
+            logger.warning(f"  LLM warm-up error: {e}")
     
     # START KEEP-ALIVE TASK
     keepalive_enabled = os.getenv("LLM_KEEPALIVE_ENABLED", "true").lower() == "true"
@@ -197,7 +197,7 @@ async def llm_keepalive_task():
         try:
             await asyncio.sleep(180)  # Every 3 minutes
             LLMClient.keepalive_probe()
-            logger.debug("🔄 LLM keep-alive probe sent")
+            logger.debug(" LLM keep-alive probe sent")
         except asyncio.CancelledError:
             break
         except Exception as e:
@@ -249,18 +249,18 @@ If this times out in 5-10s instead of 40s, the new client is working!
 ## Expected Improvements
 
 ### Before Optimization
-- ❌ LLM down → 40s timeout → "I don't know" error
-- ❌ First query → 30-40s (cold start)
-- ❌ Subsequent queries → 20-30s
-- ❌ No connection reuse
-- ❌ No circuit breaker
+-  LLM down → 40s timeout → "I don't know" error
+-  First query → 30-40s (cold start)
+-  Subsequent queries → 20-30s
+-  No connection reuse
+-  No circuit breaker
 
 ### After Optimization  
-- ✅ LLM down → <1s response with degraded mode
-- ✅ First query → 15-20s (warm-up on startup)
-- ✅ Subsequent queries → 3-8s (connection pooling + warm model)
-- ✅ Circuit breaker prevents cascading failures
-- ✅ Health gate provides instant feedback
+- [x] LLM down → <1s response with degraded mode
+- [x] First query → 15-20s (warm-up on startup)
+- [x] Subsequent queries → 3-8s (connection pooling + warm model)
+- [x] Circuit breaker prevents cascading failures
+- [x] Health gate provides instant feedback
 
 ## Rollback Plan
 

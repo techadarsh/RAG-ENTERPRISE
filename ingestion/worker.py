@@ -30,15 +30,15 @@ def run_worker():
     """
     Start RQ worker to consume jobs from the ingestion queue
     """
-    logger.info(f"🚀 Starting RQ worker for ingestion queue...")
-    logger.info(f"📡 Connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
+    logger.info(f" Starting RQ worker for ingestion queue...")
+    logger.info(f" Connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
     
     with Connection(redis_conn):
         queue = Queue('ingestion', connection=redis_conn)
         worker = Worker([queue], connection=redis_conn)
         
-        logger.info(f"👷 Worker ready to process jobs from 'ingestion' queue")
-        logger.info(f"📊 Queue size: {len(queue)}")
+        logger.info(f" Worker ready to process jobs from 'ingestion' queue")
+        logger.info(f" Queue size: {len(queue)}")
         
         # Start consuming jobs
         worker.work(with_scheduler=True)
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     try:
         run_worker()
     except KeyboardInterrupt:
-        logger.info("⏹️  Worker stopped by user")
+        logger.info("⏹  Worker stopped by user")
     except Exception as e:
-        logger.error(f"❌ Worker error: {e}", exc_info=True)
+        logger.error(f" Worker error: {e}", exc_info=True)
         sys.exit(1)

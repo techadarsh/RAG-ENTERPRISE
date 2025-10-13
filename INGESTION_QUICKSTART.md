@@ -1,6 +1,6 @@
 # Quick Start: Document Ingestion
 
-## 🚀 Get Started in 3 Minutes
+##  Get Started in 3 Minutes
 
 ### Step 1: Start All Services
 
@@ -77,13 +77,13 @@ curl -X POST http://localhost:8000/api/query \
 }
 ```
 
-## ✅ That's It!
+## [x] That's It!
 
 Your document is now searchable in the RAG system!
 
 ---
 
-## 🔧 Troubleshooting
+##  Troubleshooting
 
 ### Services not running?
 
@@ -109,13 +109,13 @@ docker compose restart ingestion
 
 ### Upload failed?
 
-- ✅ File must be `.txt` or `.md`
-- ✅ File must not be empty
-- ✅ Backend must be running on port 8000
+- [x] File must be `.txt` or `.md`
+- [x] File must not be empty
+- [x] Backend must be running on port 8000
 
 ---
 
-## 📖 Next Steps
+##  Next Steps
 
 - [Full API Documentation](./INGESTION_API_GUIDE.md)
 - [Implementation Details](./INGESTION_IMPLEMENTATION_SUMMARY.md)
@@ -123,14 +123,14 @@ docker compose restart ingestion
 
 ---
 
-## 🎯 Features
+##  Features
 
-- ✅ **Asynchronous** - Upload returns immediately
-- ✅ **Scalable** - Run multiple workers: `docker compose up -d --scale ingestion=3`
-- ✅ **Reliable** - Jobs are persisted in Redis
-- ✅ **Trackable** - Check status anytime with job ID
-- ✅ **Automatic** - Chunking, embedding, and indexing handled automatically
+- [x] **Asynchronous** - Upload returns immediately
+- [x] **Scalable** - Run multiple workers: `docker compose up -d --scale ingestion=3`
+- [x] **Reliable** - Jobs are persisted in Redis
+- [x] **Trackable** - Check status anytime with job ID
+- [x] **Automatic** - Chunking, embedding, and indexing handled automatically
 
 ---
 
-**Need help?** Check the [full documentation](./INGESTION_API_GUIDE.md) or open an issue! 🚀
+**Need help?** Check the [full documentation](./INGESTION_API_GUIDE.md) or open an issue! 

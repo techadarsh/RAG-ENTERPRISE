@@ -4,10 +4,10 @@
 
 The RAG Enterprise project now supports **hot-reload** (live reload) for both frontend and backend during development. This means:
 
-- ✅ **Backend (Python/FastAPI)**: Edit `.py` files → Uvicorn auto-reloads
-- ✅ **Frontend (React)**: Edit `.js/.jsx/.css` files → React auto-rebuilds
-- ✅ **No manual restarts needed** during development
-- ✅ **Faster development workflow** with instant feedback
+- [x] **Backend (Python/FastAPI)**: Edit `.py` files → Uvicorn auto-reloads
+- [x] **Frontend (React)**: Edit `.js/.jsx/.css` files → React auto-rebuilds
+- [x] **No manual restarts needed** during development
+- [x] **Faster development workflow** with instant feedback
 
 ---
 
@@ -91,16 +91,16 @@ backend:
 5. Changes are live in ~1-2 seconds
 
 **What gets reloaded**:
-- ✅ `main.py` (API endpoints)
-- ✅ `rag_pipeline.py` (RAG logic)
-- ✅ `llm_client.py` (LLM integration)
-- ✅ `milvus_client.py` (Vector DB operations)
-- ✅ Any `.py` file in `/app`
+- [x] `main.py` (API endpoints)
+- [x] `rag_pipeline.py` (RAG logic)
+- [x] `llm_client.py` (LLM integration)
+- [x] `milvus_client.py` (Vector DB operations)
+- [x] Any `.py` file in `/app`
 
 **What doesn't reload**:
-- ❌ Docker image changes (requires rebuild)
-- ❌ `requirements.txt` changes (requires rebuild)
-- ❌ Environment variables (requires restart)
+-  Docker image changes (requires rebuild)
+-  `requirements.txt` changes (requires rebuild)
+-  Environment variables (requires restart)
 
 ### Frontend Hot Reload
 
@@ -127,16 +127,16 @@ frontend:
 6. Changes are live in ~2-5 seconds
 
 **What gets reloaded**:
-- ✅ `App.js` (main component)
-- ✅ `App.css` (styles)
-- ✅ Any `.js/.jsx` files in `src/`
-- ✅ Any `.css` files
-- ✅ Public assets
+- [x] `App.js` (main component)
+- [x] `App.css` (styles)
+- [x] Any `.js/.jsx` files in `src/`
+- [x] Any `.css` files
+- [x] Public assets
 
 **What doesn't reload**:
-- ❌ `package.json` changes (requires rebuild)
-- ❌ `Dockerfile` changes (requires rebuild)
-- ❌ Environment variables starting with `REACT_APP_` (requires restart)
+-  `package.json` changes (requires rebuild)
+-  `Dockerfile` changes (requires rebuild)
+-  Environment variables starting with `REACT_APP_` (requires restart)
 
 ---
 
@@ -203,7 +203,7 @@ curl http://localhost:8000/test
 vim frontend/src/App.js
 
 # Change title:
-<h1>🔥 RAG Enterprise Chatbot with Hot Reload</h1>
+<h1> RAG Enterprise Chatbot with Hot Reload</h1>
 
 # 3. Save file → React rebuilds (check logs)
 docker compose logs -f frontend
@@ -436,7 +436,7 @@ docker compose exec frontend ps aux | grep node
 
 ## Best Practices
 
-### Do's ✅
+### Do's [x]
 
 1. **Use dev mode during development**
    - Faster iteration
@@ -461,7 +461,7 @@ docker compose exec frontend ps aux | grep node
    docker compose up -d
    ```
 
-### Don'ts ❌
+### Don'ts 
 
 1. **Don't use dev mode in production**
    - `--reload` has performance overhead
@@ -559,10 +559,10 @@ frontend:
 
 Hot reload is now fully configured for both frontend and backend:
 
-- ✅ Edit Python files → Backend reloads automatically
-- ✅ Edit React files → Frontend rebuilds automatically
-- ✅ See changes in ~1-3 seconds
-- ✅ No manual restarts needed
-- ✅ Production mode still available for final testing
+- [x] Edit Python files → Backend reloads automatically
+- [x] Edit React files → Frontend rebuilds automatically
+- [x] See changes in ~1-3 seconds
+- [x] No manual restarts needed
+- [x] Production mode still available for final testing
 
-**Development workflow is now 10x faster!** 🚀
+**Development workflow is now 10x faster!** 

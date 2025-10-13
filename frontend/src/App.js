@@ -226,7 +226,7 @@ function App() {
         <div className="center-content">
           <div className="container">
             <header className="header">
-              <h1>🤖 RAG Enterprise Chatbot</h1>
+              <h1> RAG Enterprise Chatbot</h1>
               <p>Ask questions about company policies, onboarding, and HR information</p>
               {sessionId && (
                 <p className="session-info">Session: {sessionId.slice(0, 8)}...</p>
@@ -237,7 +237,7 @@ function App() {
               {/* Degraded mode banner */}
               {isDegraded && (
                 <div className="degraded-banner" role="alert">
-                  <span className="degraded-icon">⚠️</span>
+                  <span className="degraded-icon"></span>
                   <span className="degraded-text">
                     Model is temporarily unavailable. Showing retrieved excerpts only.
                   </span>
@@ -256,14 +256,14 @@ function App() {
                       >
                         <div className="message-header">
                           <span className="message-role">
-                            {msg.role === 'user' ? '👤 You' : '🤖 Assistant'}
+                            {msg.role === 'user' ? ' You' : ' Assistant'}
                           </span>
                           <div className="message-actions">
                             {msg.latency_ms && (
-                              <span className="message-latency">⚡ {(msg.latency_ms / 1000).toFixed(1)}s</span>
+                              <span className="message-latency"> {(msg.latency_ms / 1000).toFixed(1)}s</span>
                             )}
                             {msg.isLoading && (
-                              <span className="typing-indicator">⏳ thinking...</span>
+                              <span className="typing-indicator"> thinking...</span>
                             )}
                             {/* Copy button for completed messages */}
                             {!msg.isLoading && !msg.isCancelled && msg.content && (
@@ -273,7 +273,7 @@ function App() {
                                 aria-label="Copy message"
                                 title="Copy to clipboard"
                               >
-                                📋
+                                
                               </button>
                             )}
                           </div>
@@ -291,7 +291,7 @@ function App() {
                         {msg.sources && msg.sources.length > 0 && (
                           <div className="message-sources">
                             <details>
-                              <summary>📚 {msg.sources.length} sources</summary>
+                              <summary> {msg.sources.length} sources</summary>
                               <div className="sources-list">
                                 {msg.sources.map((source, idx) => (
                                   <div key={idx} className="source-item-inline">
@@ -310,8 +310,8 @@ function App() {
                     {isTyping && typingText && (
                       <div className="message assistant typing">
                         <div className="message-header">
-                          <span className="message-role">🤖 Assistant</span>
-                          <span className="typing-indicator">✍️ typing...</span>
+                          <span className="message-role"> Assistant</span>
+                          <span className="typing-indicator"> typing...</span>
                         </div>
                         <div className="message-content">
                           {typingText}<span className="cursor">|</span>
@@ -326,8 +326,8 @@ function App() {
                   <div className="messages-list">
                     <div className="message assistant typing">
                       <div className="message-header">
-                        <span className="message-role">🤖 Assistant</span>
-                        <span className="typing-indicator">✍️ typing...</span>
+                        <span className="message-role"> Assistant</span>
+                        <span className="typing-indicator"> typing...</span>
                       </div>
                       <div className="message-content">
                         {typingText}<span className="cursor">|</span>
@@ -355,7 +355,7 @@ function App() {
                       <li>Incident management</li>
                       <li>API documentation</li>
                     </ul>
-                    <p className="hint">💡 I remember our conversation, so feel free to ask follow-up questions!</p>
+                    <p className="hint"> I remember our conversation, so feel free to ask follow-up questions!</p>
                   </div>
                 )}
 

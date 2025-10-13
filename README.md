@@ -1,4 +1,4 @@
-# 🤖 RAG Enterprise Chatbot
+#  RAG Enterprise Chatbot
 
 A production-ready Retrieval-Augmented Generation (RAG) chatbot system for enterprise knowledge management with on-premise LLM support, automatic document ingestion, and resilient service architecture.
 
@@ -7,18 +7,18 @@ A production-ready Retrieval-Augmented Generation (RAG) chatbot system for enter
 This project implements a complete RAG pipeline that allows users to ask questions about enterprise documents (HR policies, onboarding guides, engineering standards) and receive contextual answers backed by retrieved sources using local LLM inference.
 
 **Key Features:**
-- ✅ End-to-end RAG pipeline with resilient LLM integration
-- ✅ Vector similarity search with Milvus
-- ✅ Local LLM inference via Ollama (Mistral 7B)
-- ✅ State-of-the-art embeddings (BGE-Base-En)
-- ✅ Automatic document ingestion via folder watcher
-- ✅ Confluence integration (POC mode with API-ready architecture)
-- ✅ **Conversational memory** — remembers last 5 turns per chat session
-- ✅ Health checks and service monitoring
-- ✅ Reboot-stable architecture with automatic model loading
-- ✅ Clean, minimal React UI
-- ✅ One-command deployment with Docker Compose
-- ✅ Source attribution and latency tracking
+- [x] End-to-end RAG pipeline with resilient LLM integration
+- [x] Vector similarity search with Milvus
+- [x] Local LLM inference via Ollama (Mistral 7B)
+- [x] State-of-the-art embeddings (BGE-Base-En)
+- [x] Automatic document ingestion via folder watcher
+- [x] Confluence integration (POC mode with API-ready architecture)
+- [x] **Conversational memory** — remembers last 5 turns per chat session
+- [x] Health checks and service monitoring
+- [x] Reboot-stable architecture with automatic model loading
+- [x] Clean, minimal React UI
+- [x] One-command deployment with Docker Compose
+- [x] Source attribution and latency tracking
 
 ## Quick Start
 
@@ -27,7 +27,7 @@ This project implements a complete RAG pipeline that allows users to ask questio
 - 12GB RAM minimum (for LLM model + embeddings)
 - Ports 3000, 8000, 11434, 19530 available
 
-### 🚀 Stable Startup (Recommended)
+###  Stable Startup (Recommended)
 
 Use the development startup script for reliable initialization:
 
@@ -277,7 +277,7 @@ rag-enterprise/
                         │  Folder  │           │  S3/MinIO   │      │  Confluence  │
                         │ Watcher  │           │  Listener   │      │   Webhook    │
                         └──────────┘           └─────────────┘      └──────────────┘
-                        📂 Local files         ☁️  Bucket events    🔔 Page updates
+                         Local files           Bucket events     Page updates
 ```
 
 ### Request Flow
@@ -302,20 +302,20 @@ rag-enterprise/
 
 **Three automatic trigger mechanisms:**
 
-#### 📂 Folder Watcher
+####  Folder Watcher
 1. User drops file in `data/incoming/` directory
 2. Watcher detects new/modified file
 3. Job automatically enqueued to Redis
 4. Worker processes file → embeds → stores in Milvus
 
-#### ☁️ S3/MinIO Listener
+####  S3/MinIO Listener
 1. File uploaded to S3/MinIO bucket (`incoming/` prefix)
 2. Listener receives bucket notification event
 3. File downloaded to temporary location
 4. Job automatically enqueued to Redis
 5. Worker processes file → embeds → stores in Milvus
 
-#### 🔔 Confluence Webhook
+####  Confluence Webhook
 1. Page created/updated in Confluence
 2. Webhook POST sent to `/api/webhook/confluence`
 3. Backend extracts page URL
@@ -380,7 +380,7 @@ See [TRIGGER_SERVICE_GUIDE.md](TRIGGER_SERVICE_GUIDE.md) for complete documentat
 - Consistent environments (dev/prod)
 - Easy dependency handling
 
-## 🔧 Configuration
+##  Configuration
 
 ### Environment Variables
 
@@ -446,10 +446,10 @@ CONFLUENCE_SPACE_KEY=ENGINEERING
 - Demonstrates **enterprise-ready** design for dissertation
 
 **Why This Approach?**
-- ✅ Working POC without external dependencies
-- ✅ Architecturally sound for production extension
-- ✅ Can truthfully claim Confluence integration capability
-- ✅ Sample docs demonstrate handling of real enterprise content
+- [x] Working POC without external dependencies
+- [x] Architecturally sound for production extension
+- [x] Can truthfully claim Confluence integration capability
+- [x] Sample docs demonstrate handling of real enterprise content
 
 ### LLM Backend Options
 
@@ -459,10 +459,10 @@ The system supports **4 different LLM backends** with automatic detection. Choos
 ```bash
 LLM_MODE=mock
 ```
-- ✅ No dependencies, instant responses
-- ✅ Perfect for testing/demos
-- ✅ Returns template with context snippets
-- 📝 Emoji indicator: 📝
+- [x] No dependencies, instant responses
+- [x] Perfect for testing/demos
+- [x] Returns template with context snippets
+-  Emoji indicator: 
 
 #### 2. **Ollama** (Local Inference - Best for Privacy)
 ```bash
@@ -470,11 +470,11 @@ LLM_MODE=api
 MISTRAL_API_URL=http://host.docker.internal:11434/api/generate
 MISTRAL_MODEL=mistral
 ```
-- ✅ Fast local inference
-- ✅ Completely private, no data leaves your machine
-- ✅ Free (after initial setup)
-- 🦙 Emoji indicator: 🦙
-- 📦 Requires: [Ollama installed](https://ollama.ai)
+- [x] Fast local inference
+- [x] Completely private, no data leaves your machine
+- [x] Free (after initial setup)
+-  Emoji indicator: 
+-  Requires: [Ollama installed](https://ollama.ai)
 
 #### 3. **HuggingFace Inference API** (Cloud - Best for Quick Start)
 ```bash
@@ -483,11 +483,11 @@ MISTRAL_API_URL=https://api-inference.huggingface.co/models/mistralai/Mistral-7B
 MISTRAL_API_KEY=hf_YOUR_TOKEN_HERE
 MISTRAL_MODEL=mistralai/Mistral-7B-Instruct-v0.2
 ```
-- ✅ No local setup required
-- ✅ Free tier available
-- ✅ Access to many models
-- 🤗 Emoji indicator: 🤗
-- 🔑 Requires: [HuggingFace API token](https://huggingface.co/settings/tokens)
+- [x] No local setup required
+- [x] Free tier available
+- [x] Access to many models
+-  Emoji indicator: 
+-  Requires: [HuggingFace API token](https://huggingface.co/settings/tokens)
 
 #### 4. **Mistral AI Official API** (Cloud - Best for Production)
 ```bash
@@ -496,10 +496,10 @@ MISTRAL_API_URL=https://api.mistral.ai/v1/chat/completions
 MISTRAL_API_KEY=your_mistral_api_key
 MISTRAL_MODEL=mistral-small-latest
 ```
-- ✅ Enterprise-grade support
-- ✅ High performance
-- 🌟 Emoji indicator: 🌟
-- 💳 Requires: [Mistral API key](https://console.mistral.ai) (paid)
+- [x] Enterprise-grade support
+- [x] High performance
+-  Emoji indicator: 
+-  Requires: [Mistral API key](https://console.mistral.ai) (paid)
 
 **Backend Auto-Detection:** The system automatically detects which backend to use based on the URL pattern:
 - Contains "ollama" or ":11434" → Ollama
@@ -585,7 +585,7 @@ curl http://localhost:8000/api/ingest/status/abc123-def456-ghi789
     "chunks": 5,
     "total_characters": 12450,
     "elapsed_seconds": 23.5,
-    "message": "✅ Successfully ingested: document.txt"
+    "message": "[x] Successfully ingested: document.txt"
   }
 }
 ```
@@ -605,12 +605,12 @@ User Upload → FastAPI Backend → Redis Queue → Ingestion Worker → Milvus
 ```
 
 **Key Features:**
-- ✅ Asynchronous processing (non-blocking)
-- ✅ Redis queue for job management  
-- ✅ Scalable workers (can run multiple)
-- ✅ Job status tracking
-- ✅ Automatic chunking and embedding
-- ✅ Supports .txt and .md files
+- [x] Asynchronous processing (non-blocking)
+- [x] Redis queue for job management  
+- [x] Scalable workers (can run multiple)
+- [x] Job status tracking
+- [x] Automatic chunking and embedding
+- [x] Supports .txt and .md files
 
 **See [INGESTION_API_GUIDE.md](./INGESTION_API_GUIDE.md) for detailed documentation.**
 
@@ -691,7 +691,7 @@ echo "Test document" > data/incoming/test.txt
 docker compose logs -f trigger
 ```
 
-**📖 Complete Guide:** See [TRIGGER_SERVICE_GUIDE.md](./TRIGGER_SERVICE_GUIDE.md) for:
+** Complete Guide:** See [TRIGGER_SERVICE_GUIDE.md](./TRIGGER_SERVICE_GUIDE.md) for:
 - Detailed setup instructions
 - Configuration reference
 - Troubleshooting guide
@@ -699,7 +699,7 @@ docker compose logs -f trigger
 - Testing procedures
 
 ### POST `/ask`
-**⚠️ Deprecated:** Use `/api/query` instead.
+** Deprecated:** Use `/api/query` instead.
 
 Process a user query
 
@@ -849,10 +849,10 @@ The evaluation generates a Markdown file (`results.md`) with:
 
 The `results.md` file is ready for direct inclusion in your dissertation's **Results & Evaluation** chapter:
 
-- ✅ Quantitative performance metrics
-- ✅ System configuration details
-- ✅ Comparison baseline data
-- ✅ Markdown format (easy to convert to LaTeX/Word)
+- [x] Quantitative performance metrics
+- [x] System configuration details
+- [x] Comparison baseline data
+- [x] Markdown format (easy to convert to LaTeX/Word)
 
 ## Performance Notes
 
@@ -864,13 +864,13 @@ The `results.md` file is ready for direct inclusion in your dissertation's **Res
 ## Limitations (PoC)
 
 This is a minimal proof-of-concept. For production:
-- ❌ No authentication/authorization
-- ❌ No query history or conversation memory
-- ❌ No document versioning
-- ❌ No monitoring/alerting
-- ❌ Single-node Milvus (use cluster for scale)
-- ❌ No caching layer
-- ❌ Basic error handling
+-  No authentication/authorization
+-  No query history or conversation memory
+-  No document versioning
+-  No monitoring/alerting
+-  Single-node Milvus (use cluster for scale)
+-  No caching layer
+-  Basic error handling
 
 ## Future Enhancements
 
@@ -898,6 +898,6 @@ For questions about this implementation, please refer to the code comments and d
 
 ---
 
-**Built with ❤️ for enterprise knowledge management**
+**Built with  for enterprise knowledge management**
 
 *Last updated: October 2025*

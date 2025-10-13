@@ -58,18 +58,18 @@ class DocumentFileHandler(FileSystemEventHandler):
         
         # Check extension
         if path.suffix.lower() not in self.SUPPORTED_EXTENSIONS:
-            logger.debug(f"⏭️  Ignoring unsupported file type: {path.name}")
+            logger.debug(f"⏭  Ignoring unsupported file type: {path.name}")
             return False
         
         # Check for temporary file patterns
         for pattern in self.IGNORE_PATTERNS:
             if pattern in path.name:
-                logger.debug(f"⏭️  Ignoring temporary file: {path.name}")
+                logger.debug(f"⏭  Ignoring temporary file: {path.name}")
                 return False
         
         # Check if already processing
         if file_path in self.processing_files:
-            logger.debug(f"⏭️  Already processing: {path.name}")
+            logger.debug(f"⏭  Already processing: {path.name}")
             return False
         
         return True
@@ -93,11 +93,11 @@ class DocumentFileHandler(FileSystemEventHandler):
             
             # Verify file still exists and is readable
             if not path.exists():
-                logger.warning(f"⚠️  File disappeared before enqueuing: {path.name}")
+                logger.warning(f"  File disappeared before enqueuing: {path.name}")
                 return
             
             if not os.access(file_path, os.R_OK):
-                logger.warning(f"⚠️  File not readable: {path.name}")
+                logger.warning(f"  File not readable: {path.name}")
                 return
             
             # Enqueue job with retries
@@ -112,7 +112,7 @@ class DocumentFileHandler(FileSystemEventHandler):
                     )
                     
                     logger.info(
-                        f"📂 New file detected ({event_type}): {path.name} "
+                        f" New file detected ({event_type}): {path.name} "
                         f"→ Enqueued job {job.id}"
                     )
                     break
@@ -120,17 +120,17 @@ class DocumentFileHandler(FileSystemEventHandler):
                 except Exception as e:
                     if attempt < self.max_retries:
                         logger.warning(
-                            f"⚠️  Failed to enqueue job (attempt {attempt}/{self.max_retries}): {e}"
+                            f"  Failed to enqueue job (attempt {attempt}/{self.max_retries}): {e}"
                         )
                         time.sleep(2 ** attempt)  # Exponential backoff
                     else:
                         logger.error(
-                            f"❌ Failed to enqueue job after {self.max_retries} attempts: {e}"
+                            f" Failed to enqueue job after {self.max_retries} attempts: {e}"
                         )
                         raise
                         
         except Exception as e:
-            logger.error(f"❌ Error processing file {path.name}: {e}")
+            logger.error(f" Error processing file {path.name}: {e}")
         finally:
             # Remove from processing set
             self.processing_files.discard(file_path)
@@ -185,7 +185,7 @@ class FolderWatcher:
         
         # Test Redis connection
         self.redis_conn.ping()
-        logger.info(f"✅ Connected to Redis at {redis_host}:{redis_port}")
+        logger.info(f" Connected to Redis at {redis_host}:{redis_port}")
         
         # Initialize RQ queue
         self.queue = Queue('ingestion', connection=self.redis_conn)
@@ -197,8 +197,8 @@ class FolderWatcher:
         
     def start(self):
         """Start monitoring the folder"""
-        logger.info(f"👀 Starting folder watcher for: {self.watch_dir}")
-        logger.info(f"📋 Supported extensions: {', '.join(DocumentFileHandler.SUPPORTED_EXTENSIONS)}")
+        logger.info(f" Starting folder watcher for: {self.watch_dir}")
+        logger.info(f" Supported extensions: {', '.join(DocumentFileHandler.SUPPORTED_EXTENSIONS)}")
         
         self.observer.start()
         
@@ -206,14 +206,14 @@ class FolderWatcher:
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            logger.info("🛑 Stopping folder watcher...")
+            logger.info(" Stopping folder watcher...")
             self.stop()
     
     def stop(self):
         """Stop monitoring the folder"""
         self.observer.stop()
         self.observer.join()
-        logger.info("✅ Folder watcher stopped")
+        logger.info(" Folder watcher stopped")
 
 
 def main():
@@ -230,7 +230,7 @@ def main():
     redis_port = int(os.getenv("REDIS_PORT", "6379"))
     redis_db = int(os.getenv("REDIS_DB", "0"))
     
-    logger.info("🚀 Initializing Folder Watcher Service")
+    logger.info(" Initializing Folder Watcher Service")
     logger.info(f"   Watch Directory: {watch_dir}")
     logger.info(f"   Redis: {redis_host}:{redis_port}/{redis_db}")
     

@@ -45,10 +45,10 @@ Last error: ConnectError
 
 **Root Cause**:
 The initial error was misleading. Investigation revealed:
-1. ✅ Ollama container was healthy and running
-2. ✅ Mistral model was loaded (4.4 GB)
-3. ✅ Health checks to `/api/tags` were passing (200 OK)
-4. ❌ Generation requests to `/api/generate` were timing out (20s)
+1. [x] Ollama container was healthy and running
+2. [x] Mistral model was loaded (4.4 GB)
+3. [x] Health checks to `/api/tags` were passing (200 OK)
+4.  Generation requests to `/api/generate` were timing out (20s)
 
 The timeout was occurring during actual generation requests, not connection issues. Upon backend restart after the embeddings fix, this issue resolved itself - likely because:
 - The backend needed a fresh initialization
@@ -63,7 +63,7 @@ curl -X POST http://localhost:8000/ask \
   -d '{"query":"What is API documentation?","session_id":"test123"}'
 ```
 
-**Response**: ✅ Generated proper answer in 37 seconds with 3 relevant sources
+**Response**: [x] Generated proper answer in 37 seconds with 3 relevant sources
 
 ---
 
@@ -96,7 +96,7 @@ curl http://localhost:8000/health/deps
     "minio": "ok",
     "redis": "ok",
     "ollama": "ok",
-    "embeddings": "ok"  // ✅ Now passing!
+    "embeddings": "ok"  // [x] Now passing!
 }
 ```
 
@@ -104,18 +104,18 @@ curl http://localhost:8000/health/deps
 
 ## Testing Results
 
-### ✅ Embeddings Health Status
+### [x] Embeddings Health Status
 - **Before**: "fail" with numpy ambiguous truth error
 - **After**: "ok" with successful test embedding generation
 
-### ✅ Chat Query Functionality
+### [x] Chat Query Functionality
 - **Before**: Timeout after 20 seconds, "I don't know" response
 - **After**: Successful generation with proper answer and sources
 
 **Sample Query**: "What is API documentation?"
 - **Response Time**: 37.3 seconds
 - **Sources Retrieved**: 3 relevant documents
-- **Answer Quality**: ✅ Comprehensive and accurate
+- **Answer Quality**: [x] Comprehensive and accurate
 
 ---
 
@@ -149,7 +149,7 @@ The backend tries 3 endpoints in order:
 2. `http://host.docker.internal:11434/api/generate` (Mac/Windows Docker)
 3. `http://localhost:11434/api/generate` (outside Docker)
 
-**Current Status**: ✅ Primary endpoint working correctly
+**Current Status**: [x] Primary endpoint working correctly
 
 ---
 
@@ -179,12 +179,12 @@ The backend tries 3 endpoints in order:
 
 ---
 
-## Status: ✅ RESOLVED
+## Status: [x] RESOLVED
 
 Both issues are now fixed:
-- ✅ Embeddings health showing "ok"
-- ✅ Chat queries generating proper answers
-- ✅ All 7 services reporting healthy status
+- [x] Embeddings health showing "ok"
+- [x] Chat queries generating proper answers
+- [x] All 7 services reporting healthy status
 
 **Verification**: Refresh browser and check:
 1. Health badge should show Embeddings with green dot

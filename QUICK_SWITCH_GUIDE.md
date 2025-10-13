@@ -4,7 +4,7 @@ This guide shows you how to switch between different LLM backends in 3 simple st
 
 ---
 
-## 📝 Mock Mode (Default)
+##  Mock Mode (Default)
 
 **Best for:** Development, testing, demos
 
@@ -29,13 +29,13 @@ curl -X POST http://localhost:8000/ask \
 ```
 
 ### What to Expect
-- ✅ Instant responses (~5ms)
-- 📝 Log shows: "📝 Generating mock answer"
+- [x] Instant responses (~5ms)
+-  Log shows: " Generating mock answer"
 - Returns: Template response with context snippet
 
 ---
 
-## 🦙 Ollama (Local Inference)
+##  Ollama (Local Inference)
 
 **Best for:** Privacy, offline usage, no API costs
 
@@ -84,7 +84,7 @@ curl -X POST http://localhost:8000/ask \
 ```
 
 ### What to Expect
-- 🦙 Log shows: "🦙 Generating answer via Ollama"
+-  Log shows: " Generating answer via Ollama"
 - Response time: 2-10 seconds (depends on hardware)
 - Real generated text from Mistral model
 
@@ -102,7 +102,7 @@ ollama serve
 
 ---
 
-## 🤗 HuggingFace Inference API (Cloud)
+##  HuggingFace Inference API (Cloud)
 
 **Best for:** Quick start, no local setup, free tier
 
@@ -147,7 +147,7 @@ curl -X POST http://localhost:8000/ask \
 ```
 
 ### What to Expect
-- 🤗 Log shows: "🤗 Generating answer via HuggingFace"
+-  Log shows: " Generating answer via HuggingFace"
 - **First request:** May take 30-60 seconds (model loading)
 - **Subsequent requests:** 5-10 seconds
 - Real generated text from HuggingFace model
@@ -173,7 +173,7 @@ echo $MISTRAL_API_KEY  # Should start with "hf_"
 
 ---
 
-## 🌟 Mistral AI Official API (Cloud)
+##  Mistral AI Official API (Cloud)
 
 **Best for:** Production, enterprise support
 
@@ -217,24 +217,24 @@ curl -X POST http://localhost:8000/ask \
 ```
 
 ### What to Expect
-- 🌟 Log shows: "✅ Mistral API response received"
+-  Log shows: "[x] Mistral API response received"
 - Response time: 2-5 seconds
 - High-quality generated text
 
 ---
 
-## 🔍 How to Verify Which Backend is Active
+##  How to Verify Which Backend is Active
 
 ### Check Logs
 ```bash
 # View backend logs
-docker compose logs backend | grep "🤖"
+docker compose logs backend | grep ""
 
 # You should see one of:
-# 🤖 LLM Client initialized - Mode: mock, Backend: mock
-# 🤖 LLM Client initialized - Mode: api, Backend: ollama
-# 🤖 LLM Client initialized - Mode: api, Backend: huggingface
-# 🤖 LLM Client initialized - Mode: api, Backend: mistral
+#  LLM Client initialized - Mode: mock, Backend: mock
+#  LLM Client initialized - Mode: api, Backend: ollama
+#  LLM Client initialized - Mode: api, Backend: huggingface
+#  LLM Client initialized - Mode: api, Backend: mistral
 ```
 
 ### During Query
@@ -248,15 +248,15 @@ curl -X POST http://localhost:8000/ask \
 docker compose logs backend | tail -20
 
 # Look for:
-# 📝 = Mock mode
-# 🦙 = Ollama
-# 🤗 = HuggingFace
-# 🌟 = Mistral
+#  = Mock mode
+#  = Ollama
+#  = HuggingFace
+#  = Mistral
 ```
 
 ---
 
-## 🐛 Common Issues
+##  Common Issues
 
 ### Issue: Backend keeps restarting
 ```bash
@@ -310,18 +310,18 @@ docker compose restart backend
 
 ---
 
-## 📊 Comparison Table
+##  Comparison Table
 
 | Backend | Cost | Speed | Privacy | Setup | Quality |
 |---------|------|-------|---------|-------|---------|
-| Mock | Free | ⚡ Instant | 🔒 Full | ✅ None | ⭐ Template |
-| Ollama | Free | 🚀 Fast | 🔒 Full | 🛠️ Medium | ⭐⭐⭐⭐ High |
-| HuggingFace | Free tier | 🐌 Slow | ⚠️ Cloud | ✅ Easy | ⭐⭐⭐⭐ High |
-| Mistral | Paid | 🚀 Fast | ⚠️ Cloud | ✅ Easy | ⭐⭐⭐⭐⭐ Best |
+| Mock | Free |  Instant |  Full | [x] None | ⭐ Template |
+| Ollama | Free |  Fast |  Full |  Medium | ⭐⭐⭐⭐ High |
+| HuggingFace | Free tier |  Slow |  Cloud | [x] Easy | ⭐⭐⭐⭐ High |
+| Mistral | Paid |  Fast |  Cloud | [x] Easy | ⭐⭐⭐⭐⭐ Best |
 
 ---
 
-## 💡 Best Practices
+##  Best Practices
 
 ### Development
 ```bash
@@ -354,7 +354,7 @@ MISTRAL_API_KEY=your_key
 
 ---
 
-## 🚀 Quick Switch Commands
+##  Quick Switch Commands
 
 ### Mock → Ollama
 ```bash

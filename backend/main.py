@@ -24,7 +24,7 @@ try:
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
-    logger.warning("⚠️  Redis/RQ not available - ingestion API will be disabled")
+    logger.warning("  Redis/RQ not available - ingestion API will be disabled")
 
 # Load environment variables (don't override existing ones)
 load_dotenv(override=False)
@@ -107,20 +107,20 @@ def warmup_embeddings():
     This prevents blocking the startup event
     """
     try:
-        logger.info("🔹 Background warm-up started ...")
+        logger.info(" Background warm-up started ...")
         
         # Load embedding model first
         model = EmbeddingModel.get_model()
         # Warm up with a test encoding
         _ = model.encode(["warmup"], normalize_embeddings=True, show_progress_bar=False)
-        logger.info("✅ Embedding model loaded in background and ready for use")
+        logger.info(" Embedding model loaded in background and ready for use")
         
         # Now load data if needed
         if rag_pipeline and hasattr(rag_pipeline, 'load_data_if_needed'):
             rag_pipeline.load_data_if_needed()
             
     except Exception as e:
-        logger.error(f"⚠️  Warm-up failed: {e}")
+        logger.error(f"  Warm-up failed: {e}")
 
 
 @app.on_event("startup")
@@ -141,11 +141,11 @@ async def startup_event():
             redis_conn.ping()  # Test connection
             
             ingestion_queue = Queue('ingestion', connection=redis_conn)
-            logger.info(f"✅ Connected to Redis at {redis_host}:{redis_port}")
-            logger.info(f"📊 Ingestion queue size: {len(ingestion_queue)}")
+            logger.info(f" Connected to Redis at {redis_host}:{redis_port}")
+            logger.info(f" Ingestion queue size: {len(ingestion_queue)}")
         except Exception as e:
-            logger.warning(f"⚠️  Redis connection failed: {e}")
-            logger.warning("⚠️  Ingestion API will be disabled")
+            logger.warning(f"  Redis connection failed: {e}")
+            logger.warning("  Ingestion API will be disabled")
             redis_conn = None
             ingestion_queue = None
     
@@ -158,7 +158,7 @@ async def startup_event():
         try:
             confluence_ingestor = ConfluenceIngestor()
             confluence_docs = confluence_ingestor.get_documents()
-            logger.info(f"✅ Ingested {len(confluence_docs)} Confluence pages (mode: {confluence_mode})")
+            logger.info(f" Ingested {len(confluence_docs)} Confluence pages (mode: {confluence_mode})")
         except Exception as e:
             logger.warning(f"Failed to load Confluence documents: {e}")
             logger.warning("Continuing without Confluence integration")
@@ -181,7 +181,7 @@ async def startup_event():
         # Start background warmup thread (non-blocking)
         # Now safe with ARM64-compatible PyTorch + fallback logic
         threading.Thread(target=warmup_embeddings, daemon=True).start()
-        logger.info("🚀 FastAPI started without blocking - background loading initiated")
+        logger.info(" FastAPI started without blocking - background loading initiated")
         
     except Exception as e:
         logger.error(f"Failed to initialize RAG pipeline: {e}")
@@ -477,7 +477,7 @@ async def upload_document(file: UploadFile = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        logger.info(f"📁 Saved uploaded file: {file_path}")
+        logger.info(f" Saved uploaded file: {file_path}")
         
         # Enqueue ingestion job (RQ requires string path to function)
         job = ingestion_queue.enqueue(
@@ -490,7 +490,7 @@ async def upload_document(file: UploadFile = File(...)):
             failure_ttl=604800
         )
         
-        logger.info(f"📤 Enqueued ingestion job {job.id} for {file.filename}")
+        logger.info(f" Enqueued ingestion job {job.id} for {file.filename}")
         
         return IngestionJobResponse(
             job_id=job.id,
@@ -585,7 +585,7 @@ async def cancel_job(job_id: str):
             return {"status": "already_failed", "message": "Job already failed"}
         
         job.cancel()
-        logger.info(f"🚫 Cancelled job {job_id}")
+        logger.info(f" Cancelled job {job_id}")
         
         return {"status": "cancelled", "message": f"Job {job_id} cancelled"}
     
@@ -656,7 +656,7 @@ async def confluence_webhook(payload: ConfluenceWebhookPayload):
                 detail="Missing required field: page.url"
             )
         
-        logger.info(f"🔔 Confluence webhook received: {event_type}")
+        logger.info(f" Confluence webhook received: {event_type}")
         logger.info(f"   Page ID: {page_id}")
         logger.info(f"   Title: {page_title}")
         logger.info(f"   URL: {page_url}")
@@ -672,7 +672,7 @@ async def confluence_webhook(payload: ConfluenceWebhookPayload):
             failure_ttl=604800
         )
         
-        logger.info(f"🔔 Confluence webhook processed → Enqueued job {job.id}")
+        logger.info(f" Confluence webhook processed → Enqueued job {job.id}")
         
         return WebhookResponse(
             status="success",

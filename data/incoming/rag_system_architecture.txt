@@ -894,11 +894,11 @@ def process_query(query: str):
 
 The RAG Enterprise Chatbot demonstrates a production-ready architecture for intelligent knowledge retrieval. Key strengths:
 
-✅ **Privacy-First**: 100% on-premise deployment
-✅ **Performant**: Sub-2-second response times
-✅ **Scalable**: Horizontal and vertical scaling options
-✅ **Maintainable**: Clean, modular architecture
-✅ **Extensible**: Easy to add new features and models
+ **Privacy-First**: 100% on-premise deployment
+ **Performant**: Sub-2-second response times
+ **Scalable**: Horizontal and vertical scaling options
+ **Maintainable**: Clean, modular architecture
+ **Extensible**: Easy to add new features and models
 
 **Metrics**:
 - Response Time: < 2 seconds (p95)

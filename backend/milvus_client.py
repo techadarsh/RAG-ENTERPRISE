@@ -61,7 +61,7 @@ class MilvusClient:
                 if field.name == "embedding":
                     existing_dim = field.params.get('dim', 0)
                     if existing_dim != self.dim:
-                        logger.warning(f"⚠️  Schema mismatch detected: existing dim={existing_dim}, required dim={self.dim}")
+                        logger.warning(f"  Schema mismatch detected: existing dim={existing_dim}, required dim={self.dim}")
                         schema_mismatch = True
                         break
             
@@ -96,7 +96,7 @@ class MilvusClient:
             "params": {"nlist": 128}
         }
         self.collection.create_index(field_name="embedding", index_params=index_params)
-        logger.info(f"✅ Collection created and indexed successfully (dim={self.dim})")
+        logger.info(f" Collection created and indexed successfully (dim={self.dim})")
     
     def insert(self, titles: List[str], texts: List[str], embeddings: np.ndarray):
         """

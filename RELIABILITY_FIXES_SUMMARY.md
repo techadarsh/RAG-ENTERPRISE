@@ -6,7 +6,7 @@ Applied 5 critical reliability fixes to ensure stable rag-ollama healthchecks an
 
 ---
 
-## ✅ Changes Applied
+## [x] Changes Applied
 
 ### 1. RAG Ollama Healthcheck (No Curl Dependency)
 
@@ -33,10 +33,10 @@ healthcheck:
 ```
 
 **Benefits**:
-- ✅ No dependency on `curl` being installed in Ollama image
-- ✅ Uses Ollama's native CLI for more reliable checks
-- ✅ Increased retries from 5 to 10 for better cold-start tolerance
-- ✅ Direct check that Ollama CLI is functional
+- [x] No dependency on `curl` being installed in Ollama image
+- [x] Uses Ollama's native CLI for more reliable checks
+- [x] Increased retries from 5 to 10 for better cold-start tolerance
+- [x] Direct check that Ollama CLI is functional
 
 ---
 
@@ -75,10 +75,10 @@ backend:
 ```
 
 **Benefits**:
-- ✅ Single source of truth: `.env` file controls all LLM configuration
-- ✅ Service name matches container name: `rag-ollama`
-- ✅ No conflicting overrides in docker-compose.yml
-- ✅ Consistent naming across all services
+- [x] Single source of truth: `.env` file controls all LLM configuration
+- [x] Service name matches container name: `rag-ollama`
+- [x] No conflicting overrides in docker-compose.yml
+- [x] Consistent naming across all services
 
 ---
 
@@ -103,15 +103,15 @@ backend:
 4. **Added model details display**:
    ```bash
    # Show model details
-   echo -e "${BLUE}📊 Model information:${NC}"
+   echo -e "${BLUE} Model information:${NC}"
    docker exec -it ${OLLAMA_CONTAINER} ollama show ${LLM_MODEL} || true
    ```
 
 **Benefits**:
-- ✅ Early detection if Ollama CLI isn't working
-- ✅ Interactive mode for better progress display during downloads
-- ✅ Shows model details for verification
-- ✅ Continues gracefully if commands fail (`|| true`)
+- [x] Early detection if Ollama CLI isn't working
+- [x] Interactive mode for better progress display during downloads
+- [x] Shows model details for verification
+- [x] Continues gracefully if commands fail (`|| true`)
 
 ---
 
@@ -130,10 +130,10 @@ ENV PYTHONPATH=/app
 ```
 
 **Benefits**:
-- ✅ Eliminates Docker lint warning about undefined variable
-- ✅ Simpler and cleaner - no variable expansion needed
-- ✅ Same functionality (appends /app to Python import path)
-- ✅ Consistent with Docker best practices
+- [x] Eliminates Docker lint warning about undefined variable
+- [x] Simpler and cleaner - no variable expansion needed
+- [x] Same functionality (appends /app to Python import path)
+- [x] Consistent with Docker best practices
 
 ---
 
@@ -155,9 +155,9 @@ ENV PYTHONPATH=/app
 ```
 
 **Benefits**:
-- ✅ Clear guidance for most common healthcheck issue
-- ✅ Emphasizes importance of service name consistency
-- ✅ Provides immediate troubleshooting steps
+- [x] Clear guidance for most common healthcheck issue
+- [x] Emphasizes importance of service name consistency
+- [x] Provides immediate troubleshooting steps
 
 ---
 
@@ -229,7 +229,7 @@ curl http://localhost:8000/llm/health
 
 ## Acceptance Criteria Results
 
-### ✅ 1. `docker compose up -d rag-ollama` transitions to 'healthy'
+### [x] 1. `docker compose up -d rag-ollama` transitions to 'healthy'
 **Status**: PASS
 
 **Test**:
@@ -243,7 +243,7 @@ docker compose ps rag-ollama
 
 ---
 
-### ✅ 2. `LLM_HOST=rag-ollama` and the API can generate answers
+### [x] 2. `LLM_HOST=rag-ollama` and the API can generate answers
 **Status**: PASS
 
 **Test**:
@@ -262,7 +262,7 @@ curl -X POST http://localhost:8000/ask \
 
 ---
 
-### ✅ 3. No Dockerfile lints/warnings about PYTHONPATH
+### [x] 3. No Dockerfile lints/warnings about PYTHONPATH
 **Status**: PASS
 
 **Test**:
@@ -326,25 +326,25 @@ docker compose build ingestion 2>&1 | grep -i "pythonpath\|undefined"
 ## Files Modified
 
 ```
-✏️  .env
+  .env
     - Changed LLM_HOST from 'ollama' to 'rag-ollama'
     - Changed MISTRAL_API_URL to use 'rag-ollama'
 
-✏️  docker-compose.yml
+  docker-compose.yml
     - Updated healthcheck: curl → ollama list
     - Increased retries: 5 → 10
     - Removed MISTRAL_API_URL override from backend
     - Fixed duplicate redis condition
 
-✏️  scripts/dev-up.sh
+  scripts/dev-up.sh
     - Added model listing before checks
     - Made pull command interactive (-it flag)
     - Added model details display (ollama show)
 
-✏️  ingestion/Dockerfile
+  ingestion/Dockerfile
     - Simplified PYTHONPATH: removed ${PYTHONPATH:-} expansion
 
-✏️  README.md
+  README.md
     - Added rag-ollama unhealthy troubleshooting section
 ```
 
@@ -402,10 +402,10 @@ All other changes (scripts, Dockerfile, README) are non-breaking and can stay.
 ## Conclusion
 
 All 5 reliability fixes have been successfully applied:
-- ✅ Healthcheck uses native `ollama list` command
-- ✅ Service name consistent: `rag-ollama` everywhere
-- ✅ Single source of truth: `.env` file
-- ✅ No Docker warnings or lints
-- ✅ Enhanced script with better diagnostics
+- [x] Healthcheck uses native `ollama list` command
+- [x] Service name consistent: `rag-ollama` everywhere
+- [x] Single source of truth: `.env` file
+- [x] No Docker warnings or lints
+- [x] Enhanced script with better diagnostics
 
 The system is now more reliable, with proper health checks and consistent service naming throughout the stack.

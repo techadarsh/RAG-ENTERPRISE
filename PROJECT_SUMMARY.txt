@@ -1,13 +1,13 @@
 
 ╔════════════════════════════════════════════════════════════════════════════╗
 ║                                                                            ║
-║                   🤖 RAG ENTERPRISE CHATBOT - COMPLETE                     ║
+║                    RAG ENTERPRISE CHATBOT - COMPLETE                     ║
 ║                                                                            ║
 ║                     Minimal PoC for Dissertation/Demo                      ║
 ║                                                                            ║
 ╚════════════════════════════════════════════════════════════════════════════╝
 
-📂 PROJECT STRUCTURE
+ PROJECT STRUCTURE
 ─────────────────────────────────────────────────────────────────────────────
 
 rag-enterprise/
@@ -50,7 +50,7 @@ rag-enterprise/
     └── leave_policy.txt            # Leave policies
 
 
-🔧 TECHNOLOGY STACK
+ TECHNOLOGY STACK
 ─────────────────────────────────────────────────────────────────────────────
 
 Backend:
@@ -118,25 +118,25 @@ Total Size:         ~3.5GB (with models)
  KEY FEATURES
 ─────────────────────────────────────────────────────────────────────────────
 
-✅ Complete RAG Pipeline
+ Complete RAG Pipeline
    • Query embedding with BGE-Large-En
    • Vector similarity search in Milvus
    • Context assembly from top-3 results
    • Answer generation with LLM
 
-✅ Production-Ready Components
+ Production-Ready Components
    • FastAPI with async support
    • Milvus vector database
    • Docker containerization
    • Health checks & logging
 
-✅ User-Friendly Interface
+ User-Friendly Interface
    • Clean React UI
    • Real-time responses
    • Source attribution
    • Latency metrics
 
-✅ Developer Experience
+ Developer Experience
    • One-command deployment
    • Comprehensive documentation
    • Easy configuration
@@ -170,7 +170,7 @@ JSON Response
 Display in UI
 
 
-⚡ PERFORMANCE
+ PERFORMANCE
 ─────────────────────────────────────────────────────────────────────────────
 
 Component              Latency
@@ -185,7 +185,7 @@ Total (Mock Mode)     200-500ms
 Total (API Mode)      800-2500ms
 
 
-🔐 CONFIGURATION
+ CONFIGURATION
 ─────────────────────────────────────────────────────────────────────────────
 
 File: backend/.env
@@ -201,7 +201,7 @@ MISTRAL_API_URL=https://api.mistral.ai/...  # API endpoint
 DATA_DIR=/app/data                           # Document directory
 
 
-📝 SAMPLE QUERIES
+ SAMPLE QUERIES
 ─────────────────────────────────────────────────────────────────────────────
 
 1. "What is the PTO policy?"
@@ -223,17 +223,17 @@ DATA_DIR=/app/data                           # Document directory
    → Returns: Annual in December, mid-year in June
 
 
-🎓 FOR DISSERTATION/DEMO
+ FOR DISSERTATION/DEMO
 ─────────────────────────────────────────────────────────────────────────────
 
 Highlights:
-✓ Complete end-to-end RAG implementation
-✓ Modern technology stack (FastAPI + Milvus + BGE + Mistral)
-✓ Clean, modular architecture
-✓ One-command deployment
-✓ Source attribution for transparency
-✓ Performance metrics tracking
-✓ Production-ready patterns
+ Complete end-to-end RAG implementation
+ Modern technology stack (FastAPI + Milvus + BGE + Mistral)
+ Clean, modular architecture
+ One-command deployment
+ Source attribution for transparency
+ Performance metrics tracking
+ Production-ready patterns
 
 Demo Flow:
 1. Show architecture diagram (ARCHITECTURE.md)
@@ -246,7 +246,7 @@ Demo Flow:
 8. Explain technical components
 
 
-🛠️  MAINTENANCE COMMANDS
+  MAINTENANCE COMMANDS
 ─────────────────────────────────────────────────────────────────────────────
 
 Start:          docker compose up --build
@@ -264,7 +264,7 @@ Or use helper script:
                 ./start.sh clean
 
 
-🐛 TROUBLESHOOTING
+ TROUBLESHOOTING
 ─────────────────────────────────────────────────────────────────────────────
 
 Issue: "Connection refused"
@@ -280,7 +280,7 @@ Issue: "Frontend can't reach backend"
 Fix:   Check CORS settings, verify backend is running
 
 
-📚 DOCUMENTATION FILES
+ DOCUMENTATION FILES
 ─────────────────────────────────────────────────────────────────────────────
 
 README.md         → Main project documentation
@@ -290,20 +290,20 @@ CHECKLIST.md      → Setup and launch checklist
 This file         → Visual project summary
 
 
-✨ SUCCESS CRITERIA
+ SUCCESS CRITERIA
 ─────────────────────────────────────────────────────────────────────────────
 
 Your setup is successful if:
 
-✅ Frontend loads at http://localhost:3000
-✅ Backend health check returns {"status": "ok"}
-✅ Queries return relevant answers within 500ms
-✅ Sources are properly displayed with scores
-✅ No errors in docker compose logs
-✅ All 3 sample documents are indexed
+ Frontend loads at http://localhost:3000
+ Backend health check returns {"status": "ok"}
+ Queries return relevant answers within 500ms
+ Sources are properly displayed with scores
+ No errors in docker compose logs
+ All 3 sample documents are indexed
 
 
-🎉 YOU'RE READY TO LAUNCH!
+ YOU'RE READY TO LAUNCH!
 ─────────────────────────────────────────────────────────────────────────────
 
 Run this command to start:
@@ -314,7 +314,7 @@ Then visit:
 
     http://localhost:3000
 
-Good luck with your demo! 🚀
+Good luck with your demo! 
 
 
 ─────────────────────────────────────────────────────────────────────────────

@@ -135,25 +135,25 @@ Action Items:
 DEFINITION OF DONE
 
 Code Level:
-✓ Code written and peer reviewed
-✓ Unit tests pass with >80% coverage
-✓ Integration tests pass
-✓ No critical security vulnerabilities
-✓ Code follows style guide
+ Code written and peer reviewed
+ Unit tests pass with >80% coverage
+ Integration tests pass
+ No critical security vulnerabilities
+ Code follows style guide
 
 Story Level:
-✓ All acceptance criteria met
-✓ Deployed to test environment
-✓ QA tested and approved
-✓ Documentation updated
-✓ Product Owner approved
+ All acceptance criteria met
+ Deployed to test environment
+ QA tested and approved
+ Documentation updated
+ Product Owner approved
 
 Release Level:
-✓ All stories in release are "Done"
-✓ Regression tests pass
-✓ Performance benchmarks met
-✓ Release notes written
-✓ Stakeholders notified
+ All stories in release are "Done"
+ Regression tests pass
+ Performance benchmarks met
+ Release notes written
+ Stakeholders notified
 
 ═══════════════════════════════════════════════════════════════
 

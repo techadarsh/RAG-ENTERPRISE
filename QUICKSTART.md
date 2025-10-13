@@ -1,4 +1,4 @@
-# 🚀 Quick Start Guide
+#  Quick Start Guide
 
 ## One-Command Setup
 
@@ -115,9 +115,9 @@ npm start
 
 ## Next Steps
 
-1. ✅ Start the application
-2. ✅ Try example queries
-3. ✅ Add your own documents
-4. ✅ Customize for your use case
+1. [x] Start the application
+2. [x] Try example queries
+3. [x] Add your own documents
+4. [x] Customize for your use case
 
 For detailed documentation, see [README.md](README.md)

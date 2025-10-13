@@ -762,10 +762,10 @@ Any unwelcome conduct based on protected characteristics (race, gender, religion
 - No offensive graphics or messages
 
 **Examples**:
-- ✅ Acceptable: Jeans, t-shirts (plain or branded), sneakers, hoodies
-- ✅ Acceptable: Polo shirts, chinos, blouses, dress shoes
-- ❌ Not Acceptable: Shorts, flip-flops, tank tops, revealing clothing
-- ❌ Not Acceptable: Pajamas, sweatpants, clothing with holes
+-  Acceptable: Jeans, t-shirts (plain or branded), sneakers, hoodies
+-  Acceptable: Polo shirts, chinos, blouses, dress shoes
+-  Not Acceptable: Shorts, flip-flops, tank tops, revealing clothing
+-  Not Acceptable: Pajamas, sweatpants, clothing with holes
 
 **Exceptions**:
 - Casual Friday: More relaxed (shorts & flip-flops okay)

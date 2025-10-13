@@ -52,7 +52,7 @@ def evaluate_query(query: str, query_num: int) -> Dict[str, Any]:
         "top_source": None,
         "score": None,
         "answer_preview": None,
-        "status": "❌ Failed",
+        "status": " Failed",
         "error": None
     }
     
@@ -74,7 +74,7 @@ def evaluate_query(query: str, query_num: int) -> Dict[str, Any]:
         # Check response
         if response.status_code != 200:
             result["error"] = f"HTTP {response.status_code}"
-            print(f"  ❌ Error: HTTP {response.status_code}")
+            print(f"   Error: HTTP {response.status_code}")
             return result
         
         data = response.json()
@@ -95,19 +95,19 @@ def evaluate_query(query: str, query_num: int) -> Dict[str, Any]:
         answer = data.get("answer", "")
         result["answer_preview"] = answer[:100] + "..." if len(answer) > 100 else answer
         
-        result["status"] = "✅ Success"
+        result["status"] = " Success"
         
-        print(f"  ✓ Total: {result['total_ms']}ms | Top source: {result['top_source']} ({result['score']}%)")
+        print(f"   Total: {result['total_ms']}ms | Top source: {result['top_source']} ({result['score']}%)")
         
     except requests.Timeout:
         result["error"] = "Request timeout"
-        print(f"  ❌ Error: Request timeout")
+        print(f"   Error: Request timeout")
     except requests.RequestException as e:
         result["error"] = f"Request error: {str(e)}"
-        print(f"  ❌ Error: {str(e)}")
+        print(f"   Error: {str(e)}")
     except Exception as e:
         result["error"] = f"Unexpected error: {str(e)}"
-        print(f"  ❌ Error: {str(e)}")
+        print(f"   Error: {str(e)}")
     
     return result
 
@@ -123,7 +123,7 @@ def write_results_markdown(results: List[Dict[str, Any]]) -> None:
     os.makedirs(RESULTS_DIR, exist_ok=True)
     
     # Calculate averages (only from successful queries)
-    successful_results = [r for r in results if r["status"] == "✅ Success"]
+    successful_results = [r for r in results if r["status"] == " Success"]
     
     if successful_results:
         avg_retrieval = sum(r["retrieval_ms"] for r in successful_results) / len(successful_results)
@@ -211,14 +211,14 @@ def main():
     print("WRITING RESULTS TO FILE")
     print("=" * 70)
     write_results_markdown(results)
-    print(f"✅ Results saved to: {RESULTS_FILE}")
+    print(f" Results saved to: {RESULTS_FILE}")
     
     # Print summary to console
-    successful = [r for r in results if r["status"] == "✅ Success"]
+    successful = [r for r in results if r["status"] == " Success"]
     print("\n" + "=" * 70)
     print("EVALUATION SUMMARY")
     print("=" * 70)
-    print(f"✅ Successful queries: {len(successful)}/{len(results)}")
+    print(f" Successful queries: {len(successful)}/{len(results)}")
     
     if successful:
         avg_retrieval = sum(r["retrieval_ms"] for r in successful) / len(successful)
@@ -226,14 +226,14 @@ def main():
         avg_total = sum(r["total_ms"] for r in successful) / len(successful)
         avg_score = sum(r["score"] for r in successful if r["score"]) / len(successful)
         
-        print(f"\n📊 Average Metrics:")
+        print(f"\n Average Metrics:")
         print(f"   Retrieval Time:  {avg_retrieval:.2f} ms")
         print(f"   Generation Time: {avg_generation:.2f} ms")
         print(f"   Total Latency:   {avg_total:.2f} ms")
         print(f"   Relevance Score: {avg_score:.2f}%")
     
     print("\n" + "=" * 70)
-    print(f"📄 Detailed results: {RESULTS_FILE}")
+    print(f" Detailed results: {RESULTS_FILE}")
     print("=" * 70 + "\n")
     
     return len(successful) == len(results)

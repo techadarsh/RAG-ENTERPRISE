@@ -18,13 +18,13 @@ The system prompt has been redesigned to **strictly enforce knowledge base bound
 
 ### Allowed Behaviors
 
-✓ Answer questions directly from Context  
-✓ Combine information from multiple Context sections  
-✓ Clarify or rephrase Context information  
-✓ Ask for clarification if question is ambiguous  
-✓ Admit when Context doesn't contain enough info  
-✓ Quote relevant sections when helpful  
-✓ Be conversational and helpful in tone  
+ Answer questions directly from Context  
+ Combine information from multiple Context sections  
+ Clarify or rephrase Context information  
+ Ask for clarification if question is ambiguous  
+ Admit when Context doesn't contain enough info  
+ Quote relevant sections when helpful  
+ Be conversational and helpful in tone  
 
 ### Response Guidelines
 
@@ -38,41 +38,41 @@ The system prompt has been redesigned to **strictly enforce knowledge base bound
 
 ## Example Behaviors
 
-### ✅ GOOD: Answers from Context
+### [x] GOOD: Answers from Context
 
 **Query**: "What is the PTO policy?"  
 **Context**: Contains PTO policy document  
 **Response**: "According to the Employee Handbook, employees receive 15 days of PTO annually..."
 
-### ✅ GOOD: Admits Missing Information
+### [x] GOOD: Admits Missing Information
 
 **Query**: "What's the dress code for remote workers?"  
 **Context**: Only has office dress code policy  
 **Response**: "I have information about the office dress code, but I don't have specific information about dress code for remote workers in the knowledge base."
 
-### ✅ GOOD: Partial Answer with Honesty
+### [x] GOOD: Partial Answer with Honesty
 
 **Query**: "How do I request vacation and sick leave?"  
 **Context**: Contains vacation request process, but no sick leave info  
 **Response**: "For vacation requests, you need to submit a request through the HR portal at least 2 weeks in advance. However, I don't have information about sick leave procedures in the knowledge base."
 
-### ✅ GOOD: Handles Greetings
+### [x] GOOD: Handles Greetings
 
 **Query**: "Hello! How are you?"  
 **Response**: "Hello! I'm here to help you find information from the company knowledge base. What would you like to know about our policies, procedures, or documentation?"
 
-### ❌ BAD: General Knowledge (OLD BEHAVIOR)
+###  BAD: General Knowledge (OLD BEHAVIOR)
 
 **Query**: "What is Python?"  
 **Context**: No Python documentation  
-**Old Response**: "Python is a high-level programming language..." ❌  
+**Old Response**: "Python is a high-level programming language..."   
 **New Response**: "I don't have information about Python in the knowledge base. I can only answer questions about the company documentation available to me."
 
-### ❌ BAD: Assumptions (OLD BEHAVIOR)
+###  BAD: Assumptions (OLD BEHAVIOR)
 
 **Query**: "Should I use vacation days for a doctor's appointment?"  
 **Context**: Only has vacation policy basics  
-**Old Response**: "It depends on company policy, typically short appointments..." ❌  
+**Old Response**: "It depends on company policy, typically short appointments..."   
 **New Response**: "I don't have specific information about using vacation days for medical appointments in the knowledge base. You may want to check with HR for guidance on this."
 
 ---
@@ -213,11 +213,11 @@ The prompt is **hard-coded** in `llm_client.py` for consistency. To customize:
 ## Conclusion
 
 The new prompt design ensures:
-- ✅ **Zero hallucinations** from general knowledge
-- ✅ **Conversational** but bounded interactions
-- ✅ **Clear citations** to source documents
-- ✅ **Honest "I don't know"** when appropriate
-- ✅ **Production-ready** for enterprise deployment
+- [x] **Zero hallucinations** from general knowledge
+- [x] **Conversational** but bounded interactions
+- [x] **Clear citations** to source documents
+- [x] **Honest "I don't know"** when appropriate
+- [x] **Production-ready** for enterprise deployment
 
 This is a **critical security and quality control** measure for RAG systems.
 

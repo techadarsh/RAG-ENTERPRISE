@@ -1,17 +1,17 @@
 # Final Diagnosis: "I don't know" Issue
 
-## ✅ What We Fixed
+## [x] What We Fixed
 1. **New LLM Client** with connection pooling, circuit breaker, adaptive timeouts - ACTIVE
 2. **Environment variables** for performance tuning - CONFIGURED
 3. **Ollama is working** - Verified with direct test (responds in <1s)
 
-## 🔴 Current Issue
+##  Current Issue
 **Ollama times out (>20s) when called from RAG backend with full context**
 
 ### Evidence:
 ```
-rag-backend | 🦙 [Attempt 1/2] Trying Ollama: http://rag-ollama:11434/api/generate (timeout=20.0s cold, breaker=closed)
-rag-backend | ❌ Failed at http://rag-ollama:11434/api/generate (20005ms): ReadTimeout: timed out
+rag-backend |  [Attempt 1/2] Trying Ollama: http://rag-ollama:11434/api/generate (timeout=20.0s cold, breaker=closed)
+rag-backend |  Failed at http://rag-ollama:11434/api/generate (20005ms): ReadTimeout: timed out
 ```
 
 ### Why This Happens:
@@ -20,10 +20,10 @@ rag-backend | ❌ Failed at http://rag-ollama:11434/api/generate (20005ms): Read
 3. **Hardware limits**: Mistral 7B on CPU is slow for long contexts
 
 ### Test Results:
-- ✅ Simple prompt ("Say hello"): 266ms
-- ❌ Full RAG query with context: >20s (timeout)
+- [x] Simple prompt ("Say hello"): 266ms
+-  Full RAG query with context: >20s (timeout)
 
-## 🎯 Solutions (Apply in Order)
+##  Solutions (Apply in Order)
 
 ### Solution 1: Reduce Max Tokens (QUICK FIX - Do This Now)
 Reduce token generation limit to make responses faster.
@@ -90,7 +90,7 @@ This requires implementing the changes in `PERFORMANCE_OPTIMIZATION_PLAN.md`:
 - Degraded mode response (retrieval-only)
 - Fast-fail in <1s when LLM unavailable
 
-## 📊 Expected Results After Fixes
+##  Expected Results After Fixes
 
 ### After Solution 1 (Reduce Tokens):
 - Query time: 8-15s (down from >20s)
@@ -112,7 +112,7 @@ This requires implementing the changes in `PERFORMANCE_OPTIMIZATION_PLAN.md`:
 - LLM slow: Circuit breaker triggers, degraded mode
 - User experience: Always responsive
 
-## 🚀 Recommended Action Plan
+##  Recommended Action Plan
 
 ### Phase 1: Quick Win (5 minutes)
 ```bash
@@ -145,7 +145,7 @@ curl -X POST http://localhost:8000/ask \
 - Add `retrieve_only()` to RAGPipeline
 - Test fast-fail behavior
 
-## 🔍 Debugging Commands
+##  Debugging Commands
 
 ### Check Current Configuration:
 ```bash
@@ -154,7 +154,7 @@ docker compose exec backend env | grep -E "LLM_|RETRIEVAL_"
 
 ### Monitor LLM Attempts:
 ```bash
-docker compose logs -f backend | grep -E "🦙|timeout|Failed"
+docker compose logs -f backend | grep -E "|timeout|Failed"
 ```
 
 ### Test Ollama Directly:
@@ -175,13 +175,13 @@ time curl -X POST http://localhost:11434/api/generate \
 docker compose logs backend | grep -E "Circuit breaker|breaker="
 ```
 
-## 📈 Performance Metrics
+##  Performance Metrics
 
 ### Current State:
-- Health checks: ~200ms ✅
-- Simple Ollama query: ~300ms ✅
-- RAG query: >20s timeout ❌
-- Timeout rate: 100% ❌
+- Health checks: ~200ms [x]
+- Simple Ollama query: ~300ms [x]
+- RAG query: >20s timeout 
+- Timeout rate: 100% 
 
 ### Target State (After All Fixes):
 - Health checks: ~200ms
@@ -190,14 +190,14 @@ docker compose logs backend | grep -E "Circuit breaker|breaker="
 - Timeout rate: <5%
 - Degraded mode (LLM down): <1s
 
-## 🛠️ Files to Modify
+##  Files to Modify
 
 1. `.env` - Timeouts and max tokens (DONE - just need to edit values)
-2. `backend/llm_client.py` - Already optimized ✅
+2. `backend/llm_client.py` - Already optimized [x]
 3. `backend/rag_pipeline.py` - Add context trimming (TODO)
 4. `backend/main.py` - Add degraded mode (TODO)
 
-## ✅ Success Criteria
+## [x] Success Criteria
 
 Query should return:
 ```json

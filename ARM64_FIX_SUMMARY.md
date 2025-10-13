@@ -1,6 +1,6 @@
 # ARM64 PyTorch Segfault Fix - Summary
 
-## 🔍 ROOT CAUSE ANALYSIS
+##  ROOT CAUSE ANALYSIS
 
 **Problem**: Segmentation fault (exit code 139) when loading BAAI/bge-base-en model in Docker
 
@@ -15,7 +15,7 @@
 
 ---
 
-## ✅ SOLUTION IMPLEMENTED
+## [x] SOLUTION IMPLEMENTED
 
 ### 1. Updated Dockerfile (ARM64-Specific)
 
@@ -74,10 +74,10 @@ pymilvus==2.4.1
 ```python
 try:
     cls._model = SentenceTransformer(model_path)
-    logger.info(f"✅ Successfully loaded {model_path}")
+    logger.info(f"[x] Successfully loaded {model_path}")
 except Exception as e:
-    logger.warning(f"⚠️  {model_path} failed ({e})")
-    logger.warning("🔄 Falling back to BAAI/bge-small-en-v1.5")
+    logger.warning(f"  {model_path} failed ({e})")
+    logger.warning(" Falling back to BAAI/bge-small-en-v1.5")
     cls._model = SentenceTransformer("BAAI/bge-small-en-v1.5")
 ```
 
@@ -93,25 +93,25 @@ except Exception as e:
 ```python
 # Re-enabled after ARM64 fix
 threading.Thread(target=warmup_embeddings, daemon=True).start()
-logger.info("🚀 FastAPI started without blocking - background loading initiated")
+logger.info(" FastAPI started without blocking - background loading initiated")
 ```
 
 ---
 
-## 📊 EXPECTED OUTCOMES
+##  EXPECTED OUTCOMES
 
 ### Before Fix:
-- ❌ Container starts → Loads model → **SEGFAULT** (exit 139)
-- ❌ Restart loop every ~50 seconds
-- ❌ No embeddings, no data loaded
-- ❌ Frontend unusable
+-  Container starts → Loads model → **SEGFAULT** (exit 139)
+-  Restart loop every ~50 seconds
+-  No embeddings, no data loaded
+-  Frontend unusable
 
 ### After Fix:
-- ✅ Container starts in <5 seconds
-- ✅ FastAPI operational immediately
-- ✅ Model loads in background (~10-15s on M4 Pro)
-- ✅ No segfault, stable operation
-- ✅ Semantic search working
+- [x] Container starts in <5 seconds
+- [x] FastAPI operational immediately
+- [x] Model loads in background (~10-15s on M4 Pro)
+- [x] No segfault, stable operation
+- [x] Semantic search working
 
 ### Performance Metrics (Apple M4 Pro):
 - **Startup Time**: <5 seconds (previously: crash)
@@ -121,7 +121,7 @@ logger.info("🚀 FastAPI started without blocking - background loading initiate
 
 ---
 
-## 🧪 VERIFICATION STEPS
+##  VERIFICATION STEPS
 
 ### 1. Check Build Success
 ```bash
@@ -144,13 +144,13 @@ docker logs rag-backend 2>&1 | tail -40
 
 **Expected Logs**:
 ```
-✅ FastAPI started without blocking - background loading initiated
-🔹 Loading embedding model from BAAI/bge-base-en ...
-✅ Successfully loaded BAAI/bge-base-en
-✅ Embedding model ready for use (dim=768)
-📥 Loading initial data in background...
-✅ Generated 14 embeddings of dimension 768
-✅ Background data loading complete
+[x] FastAPI started without blocking - background loading initiated
+ Loading embedding model from BAAI/bge-base-en ...
+[x] Successfully loaded BAAI/bge-base-en
+[x] Embedding model ready for use (dim=768)
+ Loading initial data in background...
+[x] Generated 14 embeddings of dimension 768
+[x] Background data loading complete
 INFO: Uvicorn running on http://0.0.0.0:8000
 ```
 
@@ -172,7 +172,7 @@ curl -X POST http://localhost:8000/ask \
 
 ---
 
-## 🔧 TROUBLESHOOTING
+##  TROUBLESHOOTING
 
 ### If Model Still Crashes:
 
@@ -208,7 +208,7 @@ docker compose build --no-cache backend
 
 ---
 
-## 📝 FILES MODIFIED
+##  FILES MODIFIED
 
 1. **backend/Dockerfile**  
    - Added `--platform=linux/arm64/v8`
@@ -232,18 +232,18 @@ docker compose build --no-cache backend
 
 ---
 
-## 🎯 SUCCESS CRITERIA
+##  SUCCESS CRITERIA
 
 - [x] Dockerfile builds without errors (~5-10 minutes)
 - [x] Container starts and stays running (no restart loop)
-- [x] Logs show "✅ Successfully loaded BAAI/bge-base-en"
-- [x] Logs show "✅ Background data loading complete"
+- [x] Logs show "[x] Successfully loaded BAAI/bge-base-en"
+- [x] Logs show "[x] Background data loading complete"
 - [ ] Query returns semantic search results (test after build completes)
 - [ ] Frontend connects to backend successfully
 
 ---
 
-## 📚 TECHNICAL REFERENCES
+##  TECHNICAL REFERENCES
 
 ### ARM64 PyTorch Compatibility:
 - PyTorch 2.3.0+ has native ARM64 (aarch64) CPU support
@@ -261,7 +261,7 @@ docker compose build --no-cache backend
 
 ---
 
-## 🔄 ROLLBACK (if needed)
+##  ROLLBACK (if needed)
 
 If ARM64 fix causes issues, revert to hash embeddings:
 

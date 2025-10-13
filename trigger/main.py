@@ -21,7 +21,7 @@ def start_folder_watcher():
     redis_port = int(os.getenv("REDIS_PORT", "6379"))
     redis_db = int(os.getenv("REDIS_DB", "0"))
     
-    logger.info("📂 Starting Folder Watcher...")
+    logger.info(" Starting Folder Watcher...")
     watcher = FolderWatcher(
         watch_dir=watch_dir,
         redis_host=redis_host,
@@ -45,7 +45,7 @@ def start_s3_listener():
     redis_db = int(os.getenv("REDIS_DB", "0"))
     download_dir = os.getenv("S3_DOWNLOAD_DIR", "/app/data/s3_downloads")
     
-    logger.info("☁️  Starting MinIO/S3 Event Listener...")
+    logger.info("  Starting MinIO/S3 Event Listener...")
     listener = MinIOEventListener(
         minio_endpoint=minio_endpoint,
         access_key=minio_access_key,
@@ -72,7 +72,7 @@ def main():
     )
     
     logger.info("=" * 60)
-    logger.info("🚀 RAG Enterprise - Auto-Trigger Ingestion Service")
+    logger.info(" RAG Enterprise - Auto-Trigger Ingestion Service")
     logger.info("=" * 60)
     
     # Check which triggers are enabled
@@ -80,14 +80,14 @@ def main():
     enable_s3_trigger = os.getenv("ENABLE_S3_TRIGGER", "false").lower() == "true"
     
     if not enable_folder_watcher and not enable_s3_trigger:
-        logger.warning("⚠️  No triggers enabled!")
+        logger.warning("  No triggers enabled!")
         logger.warning("   Set ENABLE_FOLDER_WATCHER=true or ENABLE_S3_TRIGGER=true")
         logger.warning("   Exiting...")
         sys.exit(1)
     
-    logger.info("\n📋 Configuration:")
-    logger.info(f"   Folder Watcher: {'✅ Enabled' if enable_folder_watcher else '❌ Disabled'}")
-    logger.info(f"   S3/MinIO Listener: {'✅ Enabled' if enable_s3_trigger else '❌ Disabled'}")
+    logger.info("\n Configuration:")
+    logger.info(f"   Folder Watcher: {' Enabled' if enable_folder_watcher else ' Disabled'}")
+    logger.info(f"   S3/MinIO Listener: {' Enabled' if enable_s3_trigger else ' Disabled'}")
     
     # Start enabled triggers in separate threads
     threads: List[threading.Thread] = []
@@ -100,7 +100,7 @@ def main():
         )
         folder_thread.start()
         threads.append(folder_thread)
-        logger.info("✅ Folder Watcher thread started")
+        logger.info(" Folder Watcher thread started")
     
     if enable_s3_trigger:
         s3_thread = threading.Thread(
@@ -110,10 +110,10 @@ def main():
         )
         s3_thread.start()
         threads.append(s3_thread)
-        logger.info("✅ S3 Listener thread started")
+        logger.info(" S3 Listener thread started")
     
     logger.info("\n" + "=" * 60)
-    logger.info("🎯 All enabled triggers are running!")
+    logger.info(" All enabled triggers are running!")
     logger.info("   Press Ctrl+C to stop all services")
     logger.info("=" * 60 + "\n")
     
@@ -125,17 +125,17 @@ def main():
             # Check if any thread has died
             for thread in threads:
                 if not thread.is_alive():
-                    logger.error(f"❌ Thread {thread.name} has died!")
+                    logger.error(f" Thread {thread.name} has died!")
                     logger.error("   Restarting may be required")
                     
     except KeyboardInterrupt:
-        logger.info("\n🛑 Received shutdown signal...")
+        logger.info("\n Received shutdown signal...")
         logger.info("   Waiting for threads to stop...")
         
         # Give threads time to cleanup
         time.sleep(2)
         
-        logger.info("✅ Trigger service stopped")
+        logger.info(" Trigger service stopped")
 
 
 if __name__ == "__main__":

@@ -274,39 +274,39 @@ User Query: "What is the PTO policy?"
 ## Technology Justification
 
 ### Why FastAPI?
-✅ Native async support
-✅ Automatic API documentation
-✅ Fast development with Python
-✅ Built-in validation (Pydantic)
-✅ Great for ML/AI services
+[x] Native async support
+[x] Automatic API documentation
+[x] Fast development with Python
+[x] Built-in validation (Pydantic)
+[x] Great for ML/AI services
 
 ### Why Milvus?
-✅ Purpose-built for vectors
-✅ ANN algorithms (fast search)
-✅ Handles billions of vectors
-✅ Open-source and active
-✅ Production-ready
+[x] Purpose-built for vectors
+[x] ANN algorithms (fast search)
+[x] Handles billions of vectors
+[x] Open-source and active
+[x] Production-ready
 
 ### Why BGE-Large-En?
-✅ SOTA performance (MTEB)
-✅ 1024-dim embeddings
-✅ Excellent for English
-✅ Fast inference
-✅ Good generalization
+[x] SOTA performance (MTEB)
+[x] 1024-dim embeddings
+[x] Excellent for English
+[x] Fast inference
+[x] Good generalization
 
 ### Why Mistral?
-✅ Strong performance
-✅ Cost-effective
-✅ Good API reliability
-✅ Easy integration
-✅ Comparable to GPT-3.5
+[x] Strong performance
+[x] Cost-effective
+[x] Good API reliability
+[x] Easy integration
+[x] Comparable to GPT-3.5
 
 ### Why Docker Compose?
-✅ One-command deployment
-✅ Service orchestration
-✅ Consistent environments
-✅ Easy dependency management
-✅ Portable and reproducible
+[x] One-command deployment
+[x] Service orchestration
+[x] Consistent environments
+[x] Easy dependency management
+[x] Portable and reproducible
 
 ## Deployment Architecture
 

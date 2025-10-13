@@ -23,11 +23,11 @@ Zero Tolerance Approach:
 2. SCOPE AND APPLICABILITY
 
 This policy applies to:
-✓ All full-time, part-time, and contract employees
-✓ Interns, trainees, and apprentices
-✓ Consultants and third-party vendors on company premises
-✓ Remote and hybrid workers
-✓ All company events, off-site meetings, and work-related travel
+ All full-time, part-time, and contract employees
+ Interns, trainees, and apprentices
+ Consultants and third-party vendors on company premises
+ Remote and hybrid workers
+ All company events, off-site meetings, and work-related travel
 
 Protected Individuals:
 All employees and individuals working in any capacity are protected under this policy, with special provisions for vulnerable groups including women, LGBTQ+ individuals, and persons with disabilities.
@@ -88,10 +88,10 @@ External Member:
 - Minimum 50% members are women
 
 Contact Information:
-📧 Email: icc@company.com
-📱 Hotline: +91-1800-XXX-XXXX (24/7 confidential helpline)
-🌐 Portal: https://company.com/icc-portal
-📍 Office: Building A, 3rd Floor, HR Wing
+ Email: icc@company.com
+ Hotline: +91-1800-XXX-XXXX (24/7 confidential helpline)
+ Portal: https://company.com/icc-portal
+ Office: Building A, 3rd Floor, HR Wing
 
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -105,11 +105,11 @@ Complaints can be filed through multiple channels:
 - Complaint box located in HR office
 
 Complaint Requirements:
-✓ Name and contact details of complainant (unless anonymous)
-✓ Name and designation of respondent
-✓ Description of incident(s) with dates, times, and locations
-✓ Names of witnesses (if any)
-✓ Any supporting evidence (emails, messages, documents)
+ Name and contact details of complainant (unless anonymous)
+ Name and designation of respondent
+ Description of incident(s) with dates, times, and locations
+ Names of witnesses (if any)
+ Any supporting evidence (emails, messages, documents)
 
 Timeline: Complaints should be filed within 3 months of the incident. Extension may be granted for valid reasons.
 
@@ -141,11 +141,11 @@ Step 4: ICC Report and Action
 6. CONFIDENTIALITY AND PRIVACY
 
 Protection Measures:
-✓ All proceedings conducted in strict confidentiality
-✓ Information shared only on need-to-know basis
-✓ No disclosure of complainant or witness identity without consent
-✓ Separate communication channels for sensitive matters
-✓ Secure storage of complaint records
+ All proceedings conducted in strict confidentiality
+ Information shared only on need-to-know basis
+ No disclosure of complainant or witness identity without consent
+ Separate communication channels for sensitive matters
+ Secure storage of complaint records
 
 Breach Consequences:
 Any breach of confidentiality by ICC members or others will result in disciplinary action, which may include termination.
@@ -177,12 +177,12 @@ Penalty: Retaliation is treated as a separate violation with independent discipl
 During Investigation:
 The ICC may recommend interim measures to ensure complainant safety:
 
-✓ Transfer of complainant or respondent to different team/location
-✓ Granting leave to complainant (up to 3 months)
-✓ Restraining order preventing direct contact
-✓ Remote work arrangement
-✓ Access to counseling services
-✓ Flexible working hours
+ Transfer of complainant or respondent to different team/location
+ Granting leave to complainant (up to 3 months)
+ Restraining order preventing direct contact
+ Remote work arrangement
+ Access to counseling services
+ Flexible working hours
 
 These measures are precautionary and do not imply guilt.
 
@@ -232,10 +232,10 @@ ICC Member Training (8 hours):
 - Report writing and documentation
 
 Training Materials:
-📚 Employee handbook with POSH section
-🎥 Video modules on company intranet
-📱 Mobile app with quick reference guides
-📧 Quarterly newsletters with tips and updates
+ Employee handbook with POSH section
+ Video modules on company intranet
+ Mobile app with quick reference guides
+ Quarterly newsletters with tips and updates
 
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -267,11 +267,11 @@ Peer Support Network:
 12. ANNUAL COMPLIANCE REPORTING
 
 ICC Annual Report includes:
-✓ Number of complaints received and resolved
-✓ Number of pending cases
-✓ Nature of actions taken against offenders
-✓ Training programs conducted
-✓ Recommendations for policy improvements
+ Number of complaints received and resolved
+ Number of pending cases
+ Nature of actions taken against offenders
+ Training programs conducted
+ Recommendations for policy improvements
 
 Report submitted to:
 - Company Board of Directors
@@ -355,11 +355,11 @@ All employees will be notified of policy updates via email and required to ackno
 
 Employee Responsibility:
 All employees must:
-✓ Read and understand this policy
-✓ Complete mandatory training
-✓ Report any violations witnessed
-✓ Cooperate with investigations
-✓ Maintain respectful workplace behavior
+ Read and understand this policy
+ Complete mandatory training
+ Report any violations witnessed
+ Cooperate with investigations
+ Maintain respectful workplace behavior
 
 Acknowledgment:
 I acknowledge that I have read, understood, and agree to comply with the POSH Policy. I understand that violation may result in disciplinary action including termination.
@@ -368,25 +368,25 @@ I acknowledge that I have read, understood, and agree to comply with the POSH Po
 
 QUICK REFERENCE GUIDE
 
-🚨 If You Experience Harassment:
+ If You Experience Harassment:
 1. Document everything (dates, times, witnesses, evidence)
 2. Contact ICC immediately: icc@company.com
 3. Seek support from EAP: +91-1800-XXX-YYYY
 4. Know your rights - no retaliation allowed
 
-🤝 If You Witness Harassment:
+ If You Witness Harassment:
 1. Support the victim
 2. Report to ICC (you're protected as a witness)
 3. Provide truthful testimony if asked
 4. Maintain confidentiality
 
-👀 If Accused of Harassment:
+ If Accused of Harassment:
 1. Take complaint seriously
 2. Cooperate with ICC investigation
 3. Provide honest responses and evidence
 4. Respect the process
 
-📞 Emergency Contacts:
+ Emergency Contacts:
 ICC Hotline: +91-1800-XXX-XXXX (24/7)
 EAP Counseling: +91-1800-XXX-YYYY
 HR Emergency: hr-emergency@company.com

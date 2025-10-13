@@ -3,7 +3,7 @@
 
 set -e  # Exit on error
 
-echo "🧪 Testing RAG Ingestion Pipeline"
+echo " Testing RAG Ingestion Pipeline"
 echo "=================================="
 echo ""
 
@@ -75,28 +75,28 @@ Each chunk is converted to a 768-dimensional vector using BAAI/bge-base-en:
 This document should be successfully ingested and queryable after processing.
 EOF
 
-echo -e "${GREEN}✓ Test document created${NC}"
+echo -e "${GREEN} Test document created${NC}"
 echo ""
 
 # Step 2: Check if services are running
 echo -e "${BLUE}Step 2: Checking if services are running${NC}"
 
 if ! docker ps | grep -q rag-backend; then
-    echo -e "${YELLOW}⚠️  Backend not running. Start with: docker compose up -d${NC}"
+    echo -e "${YELLOW}  Backend not running. Start with: docker compose up -d${NC}"
     exit 1
 fi
 
 if ! docker ps | grep -q rag-redis; then
-    echo -e "${YELLOW}⚠️  Redis not running. Start with: docker compose up -d${NC}"
+    echo -e "${YELLOW}  Redis not running. Start with: docker compose up -d${NC}"
     exit 1
 fi
 
 if ! docker ps | grep -q rag-ingestion; then
-    echo -e "${YELLOW}⚠️  Ingestion worker not running. Start with: docker compose up -d${NC}"
+    echo -e "${YELLOW}  Ingestion worker not running. Start with: docker compose up -d${NC}"
     exit 1
 fi
 
-echo -e "${GREEN}✓ All services running${NC}"
+echo -e "${GREEN} All services running${NC}"
 echo ""
 
 # Step 3: Upload the document
@@ -111,12 +111,12 @@ echo "Response: $RESPONSE"
 JOB_ID=$(echo "$RESPONSE" | grep -o '"job_id":"[^"]*' | cut -d'"' -f4)
 
 if [ -z "$JOB_ID" ]; then
-    echo -e "${YELLOW}⚠️  Failed to extract job ID${NC}"
+    echo -e "${YELLOW}  Failed to extract job ID${NC}"
     echo "Response: $RESPONSE"
     exit 1
 fi
 
-echo -e "${GREEN}✓ Document uploaded, Job ID: $JOB_ID${NC}"
+echo -e "${GREEN} Document uploaded, Job ID: $JOB_ID${NC}"
 echo ""
 
 # Step 4: Poll for completion
@@ -133,14 +133,14 @@ while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
     
     if [ "$STATUS" = "completed" ]; then
         echo ""
-        echo -e "${GREEN}✓ Processing completed!${NC}"
+        echo -e "${GREEN} Processing completed!${NC}"
         echo ""
         echo "Result:"
         echo "$STATUS_RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$STATUS_RESPONSE"
         break
     elif [ "$STATUS" = "failed" ]; then
         echo ""
-        echo -e "${YELLOW}⚠️  Processing failed${NC}"
+        echo -e "${YELLOW}  Processing failed${NC}"
         echo "$STATUS_RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$STATUS_RESPONSE"
         exit 1
     fi
@@ -151,7 +151,7 @@ done
 
 if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
     echo ""
-    echo -e "${YELLOW}⚠️  Timeout waiting for job completion${NC}"
+    echo -e "${YELLOW}  Timeout waiting for job completion${NC}"
     exit 1
 fi
 
@@ -173,14 +173,14 @@ echo ""
 
 # Step 6: Check if answer contains expected content
 if echo "$QUERY_RESPONSE" | grep -qi "asynchronous\|processing\|workers\|redis\|milvus"; then
-    echo -e "${GREEN}✓ Query successful - answer contains expected content${NC}"
+    echo -e "${GREEN} Query successful - answer contains expected content${NC}"
 else
-    echo -e "${YELLOW}⚠️  Answer may not be accurate${NC}"
+    echo -e "${YELLOW}  Answer may not be accurate${NC}"
 fi
 
 echo ""
 echo -e "${GREEN}=================================="
-echo -e "✅ Ingestion pipeline test complete!${NC}"
+echo -e " Ingestion pipeline test complete!${NC}"
 echo -e "==================================${NC}"
 echo ""
 

@@ -1,6 +1,6 @@
-# 🎯 Phase 2 Quick Reference Card
+#  Phase 2 Quick Reference Card
 
-## 📁 Files Created (8 new)
+##  Files Created (8 new)
 
 ```
 trigger/
@@ -19,7 +19,7 @@ tests/
 └── test_trigger.sh    (320+ lines) - Automated test suite
 ```
 
-## 📝 Files Modified (6)
+##  Files Modified (6)
 
 ```
 backend/main.py                +118 lines  (webhook endpoint)
@@ -31,7 +31,7 @@ backend/.env                   +15 lines   (trigger config)
 README.md                      +85 lines   (Phase 2 section)
 ```
 
-## 🚀 Usage Cheat Sheet
+##  Usage Cheat Sheet
 
 ### Start with Auto-Triggers
 ```bash
@@ -74,7 +74,7 @@ LLEN rq:queue:ingestion
 docker compose logs -f ingestion
 ```
 
-## 🔧 Configuration Quick Reference
+##  Configuration Quick Reference
 
 ### Enable Folder Watcher
 ```bash
@@ -99,7 +99,7 @@ POST http://your-server:8000/api/webhook/confluence
 CONFLUENCE_WEBHOOK_SECRET=your-secret-key
 ```
 
-## 📊 API Endpoints (New)
+##  API Endpoints (New)
 
 ### POST `/api/webhook/confluence`
 Receive Confluence webhook events
@@ -116,7 +116,7 @@ curl -X POST http://localhost:8000/api/webhook/confluence \
   }'
 ```
 
-## 🎯 Supported File Types
+##  Supported File Types
 
 - `.txt` - Plain text
 - `.md` - Markdown
@@ -124,7 +124,7 @@ curl -X POST http://localhost:8000/api/webhook/confluence \
 - `.doc` - MS Word (old format)
 - `.docx` - MS Word (new format)
 
-## 📦 Docker Services
+##  Docker Services
 
 | Service | Port | Profile | Description |
 |---------|------|---------|-------------|
@@ -135,7 +135,7 @@ curl -X POST http://localhost:8000/api/webhook/confluence \
 | `milvus` | 19530 | default | Vector DB |
 | `frontend` | 3000 | default | React UI |
 
-## 🔄 Workflow Summary
+##  Workflow Summary
 
 ### 1. Folder Watcher
 ```
@@ -152,7 +152,7 @@ File uploaded → Event fired → Download → Redis job → Worker → Milvus
 Webhook POST → Extract URL → Redis job → Fetch content → Worker → Milvus
 ```
 
-## 🧪 Quick Test
+##  Quick Test
 
 ```bash
 # 1. Enable folder watcher
@@ -168,10 +168,10 @@ echo "Test document" > data/incoming/test.txt
 sleep 5
 docker compose logs trigger | grep test.txt
 
-# Expected: "📂 New file detected: test.txt → Enqueued job ..."
+# Expected: " New file detected: test.txt → Enqueued job ..."
 ```
 
-## 📚 Documentation Map
+##  Documentation Map
 
 | Document | Purpose | Lines |
 |----------|---------|-------|
@@ -180,27 +180,27 @@ docker compose logs trigger | grep test.txt
 | `README.md` | Main project documentation | Updated |
 | `test_trigger.sh` | Automated testing | 320+ |
 
-## 🎓 Key Concepts
+##  Key Concepts
 
 - **Trigger** = Event source (folder, S3, webhook)
 - **Job** = Redis queue entry with task details
 - **Worker** = Process that executes jobs
 - **Profile** = Docker Compose activation group
 
-## ⚡ Performance
+##  Performance
 
 - Folder detection: **< 1 second**
 - S3 event: **Near real-time**
 - Webhook response: **< 100ms**
 - Job processing: **10-30 seconds** (depends on file size)
 
-## 🔒 Security Notes
+##  Security Notes
 
 - Folder watcher: Read-only on uploads volume
 - S3 listener: Credentials in environment variables
 - Webhook: Optional secret validation (configure in production)
 
-## 🐛 Troubleshooting One-Liners
+##  Troubleshooting One-Liners
 
 ```bash
 # Check if trigger service is running
@@ -223,7 +223,7 @@ curl -X POST localhost:8000/api/webhook/confluence \
   -d '{"event":"page_created","page":{"id":"1","title":"Test","url":"http://example.com"}}'
 ```
 
-## ✅ Deployment Checklist
+## [x] Deployment Checklist
 
 - [ ] Set `ENABLE_FOLDER_WATCHER=true` or `ENABLE_S3_TRIGGER=true`
 - [ ] Configure MinIO/S3 credentials (if S3 enabled)
@@ -237,5 +237,5 @@ curl -X POST localhost:8000/api/webhook/confluence \
 ---
 
 **Version:** 2.0.0  
-**Status:** ✅ Production Ready  
+**Status:** [x] Production Ready  
 **Last Updated:** October 2024

@@ -52,7 +52,7 @@ class RAGPipeline:
         self.needs_data_loading = self.milvus_client.is_empty() and (data_dir or self.confluence_docs)
         
         if self.needs_data_loading:
-            logger.info("⏸️  Collection is empty - data loading deferred to background task")
+            logger.info("  Collection is empty - data loading deferred to background task")
         else:
             # Extract document topics if data already exists
             self._extract_document_topics()
@@ -70,12 +70,12 @@ class RAGPipeline:
         while all production document ingestion uses the proper async pipeline.
         """
         if self.needs_data_loading:
-            logger.info("📥 Loading initial SAMPLE knowledge base in background...")
-            logger.info("💡 For new documents, use: POST /api/ingest/upload")
+            logger.info(" Loading initial SAMPLE knowledge base in background...")
+            logger.info(" For new documents, use: POST /api/ingest/upload")
             self._load_initial_data()
             self._extract_document_topics()
             self.needs_data_loading = False
-            logger.info("✅ Background data loading complete")
+            logger.info(" Background data loading complete")
     
     def _clean_title_for_display(self, title: str) -> str:
         """
@@ -116,7 +116,7 @@ class RAGPipeline:
             
             # Sort and store
             self.document_topics = sorted(list(titles))
-            logger.info(f"📚 Extracted {len(self.document_topics)} document topics: {', '.join(self.document_topics[:5])}{'...' if len(self.document_topics) > 5 else ''}")
+            logger.info(f" Extracted {len(self.document_topics)} document topics: {', '.join(self.document_topics[:5])}{'...' if len(self.document_topics) > 5 else ''}")
             
         except Exception as e:
             logger.error(f"Error extracting document topics: {e}")
@@ -257,19 +257,19 @@ class RAGPipeline:
             return
         
         # Generate embeddings
-        logger.info(f"📊 Starting embedding generation for {len(texts)} document chunks...")
-        logger.info(f"⏱️  This may take 1-2 minutes on first run...")
+        logger.info(f" Starting embedding generation for {len(texts)} document chunks...")
+        logger.info(f"⏱  This may take 1-2 minutes on first run...")
         
         start_time = time.time()
         embeddings = self.embedding_model.embed_texts(texts)
         elapsed = time.time() - start_time
         
-        logger.info(f"✅ Embedding generation completed in {elapsed:.1f}s")
+        logger.info(f" Embedding generation completed in {elapsed:.1f}s")
         
         # Insert into Milvus
-        logger.info(f"💾 Inserting {len(texts)} documents into Milvus...")
+        logger.info(f" Inserting {len(texts)} documents into Milvus...")
         self.milvus_client.insert(titles, texts, embeddings)
-        logger.info(f"✅ Loaded {len(texts)} document chunks into Milvus")
+        logger.info(f" Loaded {len(texts)} document chunks into Milvus")
     
     def query(self, query: str, top_k: int = None) -> Dict[str, Any]:
         """
