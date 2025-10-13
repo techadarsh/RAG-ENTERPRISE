@@ -16,6 +16,13 @@ from rag_pipeline import RAGPipeline
 from confluence_ingest import ConfluenceIngestor
 from embeddings import EmbeddingModel
 
+# Setup logging BEFORE any logger usage
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Redis and RQ imports for job queue
 try:
     from redis import Redis
@@ -28,13 +35,6 @@ except ImportError:
 
 # Load environment variables (don't override existing ones)
 load_dotenv(override=False)
-
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(

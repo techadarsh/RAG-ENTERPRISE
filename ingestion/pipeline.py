@@ -17,6 +17,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 from embeddings import EmbeddingModel
 from milvus_client import MilvusClient
 
+# Configure logging before creating logger instance
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 

@@ -5,6 +5,7 @@ Production-grade latency optimizations for on-prem RAG Enterprise
 import os
 import time
 import logging
+import threading
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 from enum import Enum
@@ -75,12 +76,16 @@ class LLMClient:
     - Circuit breaker for fast-fail
     - Structured logging with latency metrics
     - Support for mock, Ollama, HuggingFace backends
+    - Thread-safe class-level shared state
     """
     
     # Module-level shared HTTP client (connection pool)
     _http_client: Optional[httpx.Client] = None
     _first_call = True  # Track cold start
     _breaker: Optional[CircuitBreaker] = None
+    
+    # Thread-safety locks for shared state
+    _lock = threading.Lock()  # Protects _first_call, _http_client, _breaker initialization
     
     def __init__(self):
         """Initialize LLM client with environment-based configuration"""
@@ -106,26 +111,27 @@ class LLMClient:
         self.endpoints = self._build_endpoints()
         self.backend = self._detect_backend()
         
-        # Initialize shared HTTP client (once per process)
-        if LLMClient._http_client is None and HTTPX_AVAILABLE:
-            pool_limit = int(os.getenv("HTTPX_POOL_LIMIT", "20"))
-            LLMClient._http_client = httpx.Client(
-                limits=httpx.Limits(
-                    max_keepalive_connections=pool_limit,
-                    max_connections=pool_limit
-                ),
-                headers={"Connection": "keep-alive"},
-                timeout=self.normal_timeout_ms / 1000.0
-            )
-            logger.info(f" HTTP connection pool initialized (limit={pool_limit})")
-        
-        # Initialize circuit breaker
-        if LLMClient._breaker is None and self.breaker_enabled:
-            LLMClient._breaker = CircuitBreaker(
-                failure_threshold=self.breaker_fails,
-                cooldown_seconds=self.breaker_cooldown
-            )
-            logger.info(f" Circuit breaker initialized (threshold={self.breaker_fails}, cooldown={self.breaker_cooldown}s)")
+        # Initialize shared HTTP client (once per process) - thread-safe
+        with LLMClient._lock:
+            if LLMClient._http_client is None and HTTPX_AVAILABLE:
+                pool_limit = int(os.getenv("HTTPX_POOL_LIMIT", "20"))
+                LLMClient._http_client = httpx.Client(
+                    limits=httpx.Limits(
+                        max_keepalive_connections=pool_limit,
+                        max_connections=pool_limit
+                    ),
+                    headers={"Connection": "keep-alive"},
+                    timeout=self.normal_timeout_ms / 1000.0
+                )
+                logger.info(f" HTTP connection pool initialized (limit={pool_limit})")
+            
+            # Initialize circuit breaker
+            if LLMClient._breaker is None and self.breaker_enabled:
+                LLMClient._breaker = CircuitBreaker(
+                    failure_threshold=self.breaker_fails,
+                    cooldown_seconds=self.breaker_cooldown
+                )
+                logger.info(f" Circuit breaker initialized (threshold={self.breaker_fails}, cooldown={self.breaker_cooldown}s)")
         
         logger.info(f" LLM Client initialized - Mode: {self.mode}, Backend: {self.backend}")
         logger.info(f"   Primary endpoint: {self.endpoints[0] if self.endpoints else 'None'}")
@@ -256,9 +262,10 @@ User Question: {query}
 Your Response:"""
     
     def _get_timeout(self) -> float:
-        """Get adaptive timeout based on cold/warm state"""
-        if LLMClient._first_call:
-            return self.initial_timeout_ms / 1000.0
+        """Get adaptive timeout based on cold/warm state (thread-safe)"""
+        with LLMClient._lock:
+            if LLMClient._first_call:
+                return self.initial_timeout_ms / 1000.0
         return self.normal_timeout_ms / 1000.0
     
     def _try_generate(self, url: str, payload: dict, timeout: float) -> str:
@@ -296,7 +303,8 @@ Your Response:"""
         
         # Get adaptive timeout
         timeout = self._get_timeout()
-        timeout_label = "cold" if LLMClient._first_call else "warm"
+        with LLMClient._lock:
+            timeout_label = "cold" if LLMClient._first_call else "warm"
         
         payload = {
             "model": self.model_name,
@@ -326,8 +334,9 @@ Your Response:"""
                     if self.breaker_enabled and LLMClient._breaker:
                         LLMClient._breaker.record_success()
                     
-                    # Mark as warmed up
-                    LLMClient._first_call = False
+                    # Mark as warmed up (thread-safe)
+                    with LLMClient._lock:
+                        LLMClient._first_call = False
                     
                     return response
                 else:
@@ -388,7 +397,8 @@ Your Response:"""
                 data = r.json()
             
             response_text = data[0].get("generated_text", "").strip()
-            LLMClient._first_call = False
+            with LLMClient._lock:
+                LLMClient._first_call = False
             return response_text
             
         except Exception as e:
@@ -422,7 +432,8 @@ Your Response:"""
                 
                 if response:
                     logger.info(f" LLM warmed up successfully ({latency_ms:.0f}ms)")
-                    cls._first_call = False
+                    with cls._lock:
+                        cls._first_call = False
                     return True
                     
         except Exception as e:
