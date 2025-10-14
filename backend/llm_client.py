@@ -197,15 +197,17 @@ class LLMClient:
         """
         # Build prompt with history
         full_prompt = f"{history}\n\nContext:\n{context}\n\nUser: {query}\n\nAssistant:"
-        return self.generate(full_prompt)
+        return self.generate(full_prompt, query=query, context_text=context, history=history)
     
-    def generate(self, prompt: str, context_text: Optional[str] = None) -> str:
+    def generate(self, prompt: str, context_text: Optional[str] = None, query: str = "", history: str = "") -> str:
         """
         Generate text based on current backend mode with resilience
         
         Args:
             prompt: User prompt/query
             context_text: Optional context string to include
+            query: Original user query (for dynamic timeout calculation)
+            history: Conversation history (for dynamic timeout calculation)
             
         Returns:
             Generated answer string
@@ -216,56 +218,131 @@ class LLMClient:
         else:
             full_prompt = prompt
         
+        # Use provided context or empty string for timeout calculation
+        timeout_context = context_text if context_text else ""
+        
         # Route to appropriate backend
         if self.backend == "mock":
             return self._generate_mock(prompt, context_text)
         elif self.backend == "ollama":
-            return self._generate_ollama_resilient(full_prompt)
+            return self._generate_ollama_resilient(full_prompt, query, timeout_context, history)
         elif self.backend == "huggingface":
-            return self._generate_huggingface(full_prompt)
+            return self._generate_huggingface(full_prompt, query, timeout_context, history)
         else:
             logger.warning(f"Unknown backend '{self.backend}', falling back to mock")
             return self._generate_mock(prompt, context_text)
     
     def _build_prompt(self, query: str, context: str) -> str:
-        """Build a structured RAG prompt with strict knowledge base constraints"""
+        """
+        Build a structured RAG prompt with strict knowledge base constraints
+        """
         return f"""You are an AI assistant for an enterprise knowledge base system. Your role is to help users find information from company documentation.
 
-CRITICAL RULES - NEVER VIOLATE THESE:
-1. ONLY answer using information from the Context below
-2. If the Context doesn't contain the answer, you MUST say: "I don't have that information in the knowledge base."
-3. NEVER use your general knowledge or training data
-4. NEVER make assumptions or infer information not explicitly in the Context
-5. NEVER provide advice, recommendations, or opinions unless they are explicitly stated in the Context
+        CRITICAL RULES - NEVER VIOLATE THESE:
+        1. ONLY answer using information from the Context below
+        2. If the Context doesn't contain the answer, you MUST say: "I don't have that information in the knowledge base."
+        3. NEVER use your general knowledge or training data
+        4. NEVER make assumptions or infer information not explicitly in the Context
+        5. NEVER provide advice, recommendations, or opinions unless they are explicitly stated in the Context
 
-ALLOWED BEHAVIORS:
- Answer questions directly from the Context
- Combine information from multiple parts of the Context
- Clarify or rephrase what's in the Context
- Ask for clarification if the question is ambiguous
- Admit when the Context doesn't contain enough information
- Quote relevant sections from the Context when helpful
- Be conversational and helpful in tone
+        ALLOWED BEHAVIORS:
+        Answer questions directly from the Context
+        Combine information from multiple parts of the Context
+        Clarify or rephrase what's in the Context
+        Ask for clarification if the question is ambiguous
+        Admit when the Context doesn't contain enough information
+        Quote relevant sections from the Context when helpful
+        Be conversational and helpful in tone
 
-RESPONSE GUIDELINES:
-- Start with a direct answer when possible
-- Cite which document/section you're referencing but not mention like part 1/15 because user don't understand about chunking
-- If partially answered: provide what you know, then say what's missing
-- For greeting/small-talk: respond briefly, then offer to help with knowledge base questions
-- For questions completely outside the Context: politely decline and redirect to knowledge base topics
+        RESPONSE GUIDELINES:
+        - Start with a direct answer when possible
+        - Cite which document/section you're referencing but not mention like part 1/15 because user don't understand about chunking
+        - If partially answered: provide what you know, then say what's missing
+        - For greeting/small-talk: respond briefly, then offer to help with knowledge base questions
+        - For questions completely outside the Context: politely decline and redirect to knowledge base topics
 
-Context Documents:
-{context}
+        Context Documents:
+        {context}
 
-User Question: {query}
+        User Question: {query}
 
-Your Response:"""
+        Your Response:
+        """
     
-    def _get_timeout(self) -> float:
-        """Get adaptive timeout based on cold/warm state (thread-safe)"""
+    def _calculate_dynamic_timeout(self, query: str, context: str, history: str = "") -> float:
+        """
+        Calculate dynamic timeout based on query complexity
+        
+        Factors considered:
+        1. Query length (longer queries = more thinking time)
+        2. Context size (more context = more processing)
+        3. History size (conversation context)
+        4. Question type (reasoning vs simple lookup)
+        
+        Returns:
+            Timeout in seconds
+        """
+        # Base timeout
+        base_timeout = self.normal_timeout_ms / 1000.0
+        
+        # Factor 1: Query complexity (word count, question marks)
+        query_words = len(query.split())
+        query_factor = 1.0
+        if query_words > 20:
+            query_factor = 1.3  # Complex query
+        elif query_words > 10:
+            query_factor = 1.15  # Medium query
+        
+        # Questions with "how", "why", "explain" need more time
+        reasoning_keywords = ['how', 'why', 'explain', 'compare', 'difference', 'analyze', 'improve']
+        if any(keyword in query.lower() for keyword in reasoning_keywords):
+            query_factor *= 1.2
+        
+        # Factor 2: Context size
+        context_chars = len(context)
+        context_factor = 1.0
+        if context_chars > 1500:
+            context_factor = 1.3  # Large context
+        elif context_chars > 800:
+            context_factor = 1.15  # Medium context
+        
+        # Factor 3: Conversation history
+        history_factor = 1.0
+        if history and len(history) > 500:
+            history_factor = 1.1  # Account for conversation context
+        
+        # Calculate final timeout
+        dynamic_timeout = base_timeout * query_factor * context_factor * history_factor
+        
+        # Clamp to reasonable range (min 30s, max 90s)
+        min_timeout = 30.0
+        max_timeout = 90.0
+        final_timeout = max(min_timeout, min(dynamic_timeout, max_timeout))
+        
+        logger.info(f"🕒 Dynamic timeout: {final_timeout:.1f}s (query={query_factor:.2f}x, context={context_factor:.2f}x, history={history_factor:.2f}x)")
+        
+        return final_timeout
+    
+    def _get_timeout(self, query: str = "", context: str = "", history: str = "") -> float:
+        """
+        Get adaptive timeout based on:
+        1. Cold/warm state
+        2. Query complexity (if dynamic timeout enabled)
+        """
+        # Check if dynamic timeout is enabled
+        dynamic_enabled = os.getenv("LLM_DYNAMIC_TIMEOUT", "true").lower() == "true"
+        
+        # Cold start always uses initial timeout
         with LLMClient._lock:
             if LLMClient._first_call:
+                logger.info(f"🕒 Using cold start timeout: {self.initial_timeout_ms / 1000.0:.1f}s")
                 return self.initial_timeout_ms / 1000.0
+        
+        # Warm calls: use dynamic timeout if enabled and inputs provided
+        if dynamic_enabled and query and context:
+            return self._calculate_dynamic_timeout(query, context, history)
+        
+        # Fallback to normal timeout
         return self.normal_timeout_ms / 1000.0
     
     def _try_generate(self, url: str, payload: dict, timeout: float) -> str:
@@ -291,84 +368,40 @@ Your Response:"""
         
         return response_text
     
-    def _generate_ollama_resilient(self, prompt: str) -> str:
+    def _generate_ollama_resilient(self, prompt: str, query: str = "", context: str = "", history: str = "") -> str:
         """
-        Generate using Ollama with circuit breaker, adaptive timeout, connection pooling
-        """
-        # Check circuit breaker
-        if self.breaker_enabled and LLMClient._breaker:
-            if not LLMClient._breaker.can_attempt():
-                logger.warning(f" Circuit breaker OPEN - skipping LLM call")
-                raise Exception("CircuitBreakerOpen")
+        Generate text using Ollama with circuit breaker and retry logic
         
-        # Get adaptive timeout
-        timeout = self._get_timeout()
+        Args:
+            prompt: Full prompt to send to LLM
+            query: Original user query (for dynamic timeout)
+            context: Retrieved context (for dynamic timeout)
+            history: Conversation history (for dynamic timeout)
+            
+        Returns:
+            Generated text
+        """
         with LLMClient._lock:
-            timeout_label = "cold" if LLMClient._first_call else "warm"
-        
-        payload = {
-            "model": self.model_name,
-            "prompt": prompt,
-            "options": {
-                "temperature": self.temperature,
-                "num_predict": self.max_tokens,
-            },
-            "stream": False
-        }
-        
-        last_error = None
-        start_time = time.perf_counter()
-        
-        for i, url in enumerate(self.endpoints):
-            try:
-                breaker_state = LLMClient._breaker.state.value if LLMClient._breaker else "N/A"
-                logger.info(f" [Attempt {i+1}/{len(self.endpoints)}] Trying Ollama: {url} (timeout={timeout:.1f}s {timeout_label}, breaker={breaker_state})")
-                
-                response = self._try_generate(url, payload, timeout)
-                
-                if response:
-                    latency_ms = (time.perf_counter() - start_time) * 1000
-                    logger.info(f" Ollama response received ({len(response)} chars, {latency_ms:.0f}ms) from: {url}")
-                    
-                    # Record success
-                    if self.breaker_enabled and LLMClient._breaker:
-                        LLMClient._breaker.record_success()
-                    
-                    # Mark as warmed up (thread-safe)
-                    with LLMClient._lock:
-                        LLMClient._first_call = False
-                    
-                    return response
-                else:
-                    logger.warning(f"  Ollama returned empty response from: {url}")
-                    
-            except Exception as e:
-                latency_ms = (time.perf_counter() - start_time) * 1000
-                error_type = type(e).__name__
-                logger.warning(f" Failed at {url} ({latency_ms:.0f}ms): {error_type}: {str(e)[:100]}")
-                last_error = e
-                
-                # Record failure for circuit breaker (only for primary endpoint)
-                if i == 0 and self.breaker_enabled and LLMClient._breaker:
-                    LLMClient._breaker.record_failure()
-                
-                continue
-        
-        # All endpoints failed - user-friendly message
-        error_msg = (
-            "I'm currently unable to process your request. "
-            "Please try again in a moment. If the problem persists, contact support."
-        )
-        logger.error(f" All Ollama endpoints failed. Last error: {last_error}")
-        return error_msg
+            timeout = self._get_timeout(query, context, history)
     
     def _generate_mock(self, prompt: str, context: Optional[str]) -> str:
         """Mock mode - returns placeholder with context snippet"""
         context_snippet = context[:200] if context else "No context provided"
         return f"[MOCK MODE] This is a simulated response based on: {context_snippet}..."
     
-    def _generate_huggingface(self, prompt: str) -> str:
-        """Generate using Hugging Face Inference API"""
+    def _generate_huggingface(self, prompt: str, query: str = "", context: str = "", history: str = "") -> str:
+        """
+        Generate using Hugging Face Inference API
+        
+        Args:
+            prompt: Full prompt to send to LLM
+            query: Original user query (for dynamic timeout)
+            context: Retrieved context (for dynamic timeout)
+            history: Conversation history (for dynamic timeout)
+            
+        Returns:
+            Generated text
+        """
         logger.info(f" Generating answer via HuggingFace")
         
         headers = {
@@ -385,7 +418,7 @@ Your Response:"""
         }
         
         try:
-            timeout = self._get_timeout()
+            timeout = self._get_timeout(query, context, history)
             if HTTPX_AVAILABLE and LLMClient._http_client:
                 r = LLMClient._http_client.post(self.api_url, json=payload, headers=headers, timeout=timeout)
                 r.raise_for_status()
