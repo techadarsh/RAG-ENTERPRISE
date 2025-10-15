@@ -3,6 +3,7 @@ High-performance LLM client with connection pooling, circuit breaker, and adapti
 Production-grade latency optimizations for on-prem RAG Enterprise
 """
 import os
+import re
 import time
 import logging
 import threading
@@ -221,6 +222,22 @@ class LLMClient:
         # Use provided context or empty string for timeout calculation
         timeout_context = context_text if context_text else ""
         
+        # Fast-path: handle greetings quickly without LLM
+        # Use provided query if available, else try to infer from prompt
+        user_text = (query or prompt).strip()
+        if user_text:
+            ql = user_text.lower()
+            greetings = {"hi", "hello", "hey", "howdy", "hola", "namaste"}
+            if ql in greetings or any(ql.startswith(g + " ") for g in greetings):
+                return (
+                    "Hi! I can answer questions about your knowledge base. "
+                    "Ask me about policies, onboarding, or specific docs."
+                )
+
+            # If the user asks an incomplete query like "tell me about"
+            if ql.endswith(" about") or ql in {"tell me", "tell me about"}:
+                return "What topic should I look up? Please specify the Topic or subject."
+
         # Route to appropriate backend
         if self.backend == "mock":
             return self._generate_mock(prompt, context_text)
@@ -310,17 +327,18 @@ class LLMClient:
         history_factor = 1.0
         if history and len(history) > 500:
             history_factor = 1.1  # Account for conversation context
-        
+
         # Calculate final timeout
         dynamic_timeout = base_timeout * query_factor * context_factor * history_factor
-        
-        # Clamp to reasonable range (min 30s, max 90s)
-        min_timeout = 30.0
-        max_timeout = 90.0
+
+        # Clamp to reasonable range (min 6s, max 45s)
+        # Lower values keep UI responsive for simple queries
+        min_timeout = 6.0
+        max_timeout = 45.0
         final_timeout = max(min_timeout, min(dynamic_timeout, max_timeout))
-        
+
         logger.info(f"🕒 Dynamic timeout: {final_timeout:.1f}s (query={query_factor:.2f}x, context={context_factor:.2f}x, history={history_factor:.2f}x)")
-        
+
         return final_timeout
     
     def _get_timeout(self, query: str = "", context: str = "", history: str = "") -> float:
@@ -335,7 +353,7 @@ class LLMClient:
         # Cold start always uses initial timeout
         with LLMClient._lock:
             if LLMClient._first_call:
-                logger.info(f"🕒 Using cold start timeout: {self.initial_timeout_ms / 1000.0:.1f}s")
+                logger.info(f" Using cold start timeout: {self.initial_timeout_ms / 1000.0:.1f}s")
                 return self.initial_timeout_ms / 1000.0
         
         # Warm calls: use dynamic timeout if enabled and inputs provided
@@ -367,6 +385,21 @@ class LLMClient:
         ).strip()
         
         return response_text
+
+    def _postprocess_answer(self, text: str) -> str:
+        """Clean up known artifacts like '(Part N/M)' and normalize spaces."""
+        if not text:
+            return text
+        # Remove patterns like '(Part 1/10)' or 'Part 1/10'
+        patterns = [
+            r"\(\s*Part\s+\d+\s*/\s*\d+\s*\)",
+            r"\bPart\s+\d+\s*/\s*\d+\b",
+        ]
+        for pat in patterns:
+            text = re.sub(pat, "", text, flags=re.IGNORECASE)
+        # Collapse multiple spaces and tidy punctuation spacing
+        text = re.sub(r"\s{2,}", " ", text).strip()
+        return text
     
     def _generate_ollama_resilient(self, prompt: str, query: str = "", context: str = "", history: str = "") -> str:
         """
@@ -381,8 +414,89 @@ class LLMClient:
         Returns:
             Generated text
         """
-        with LLMClient._lock:
-            timeout = self._get_timeout(query, context, history)
+        # Fast-fail if circuit breaker is open and cooldown not expired
+        if self.breaker_enabled and LLMClient._breaker and not LLMClient._breaker.can_attempt():
+            logger.warning(" LLM circuit open - skipping request")
+            return "LLM temporarily unavailable. Please try again shortly."
+
+        # Determine timeout (cold vs dynamic)
+        timeout = self._get_timeout(query, context, history)
+
+        # Decide a conservative generation length for non-streaming
+        # Large num_predict blocks until completion; cap for responsiveness
+        default_cap = int(os.getenv("LLM_MAX_TOKENS_NONSTREAM", "200"))
+        # If the query is very short or empty, keep it smaller but still adequate
+        short_query_cap = int(os.getenv("LLM_MAX_TOKENS_SHORT_QUERY", "128"))
+        effective_num_predict = min(self.max_tokens, default_cap)
+        if not query or len(query.split()) < 4:
+            effective_num_predict = min(effective_num_predict, short_query_cap)
+
+        # Build payload for Ollama /api/generate
+        payload = {
+            "model": self.model_name,
+            "prompt": prompt,
+            "options": {
+                # Keep options modest for latency; can be tuned via env if mapped later
+                "temperature": self.temperature,
+                "num_predict": effective_num_predict,
+                # No explicit stop tokens to avoid premature truncation
+            },
+            "stream": False,
+        }
+
+        last_error: Optional[Exception] = None
+        attempts = 0
+
+        # Try each endpoint with a small retry budget per endpoint
+        for endpoint_idx, url in enumerate(self.endpoints):
+            per_endpoint_retries = int(os.getenv("LLM_RETRIES_PER_ENDPOINT", "1"))
+            for retry in range(per_endpoint_retries + 1):
+                attempts += 1
+                try:
+                    logger.info(
+                        f" Generating via Ollama (endpoint {endpoint_idx+1}/{len(self.endpoints)} attempt {retry+1}, timeout {timeout:.1f}s, num_predict {effective_num_predict})"
+                    )
+                    start = time.perf_counter()
+                    response_text = self._try_generate(url, payload, timeout)
+                    latency_ms = (time.perf_counter() - start) * 1000
+
+                    # Success: reset breaker and clear cold-start flag
+                    if self.breaker_enabled and LLMClient._breaker:
+                        LLMClient._breaker.record_success()
+                    with LLMClient._lock:
+                        LLMClient._first_call = False
+
+                    logger.info(
+                        f" Ollama success in {latency_ms:.0f}ms via {url} (attempt {attempts})"
+                    )
+
+                    if response_text:
+                        return self._postprocess_answer(response_text)
+                    else:
+                        # Treat empty response as error to try fallback
+                        raise ValueError("Empty response from LLM")
+
+                except Exception as e:
+                    last_error = e
+                    # Record failure for breaker after all fallbacks? Opt to record per-failure to trip quickly.
+                    if self.breaker_enabled and LLMClient._breaker:
+                        LLMClient._breaker.record_failure()
+                    # Brief backoff only on retry within same endpoint
+                    if retry < per_endpoint_retries:
+                        backoff_ms = int(os.getenv("LLM_RETRY_BACKOFF_MS", "250"))
+                        time.sleep(backoff_ms / 1000.0)
+                    logger.warning(
+                        f" Ollama attempt failed via {url} (retry {retry}/{per_endpoint_retries}, endpoint {endpoint_idx+1}/{len(self.endpoints)}): {type(e).__name__}: {str(e)[:140]}"
+                    )
+            # Move to next endpoint if any
+
+        # If we reach here, all attempts failed
+        msg = (
+            f"Error generating response after {attempts} attempt(s). "
+            f"Last error: {type(last_error).__name__ if last_error else 'Unknown'}: {str(last_error)[:200] if last_error else ''}"
+        )
+        logger.error(msg)
+        return msg
     
     def _generate_mock(self, prompt: str, context: Optional[str]) -> str:
         """Mock mode - returns placeholder with context snippet"""
@@ -432,7 +546,7 @@ class LLMClient:
             response_text = data[0].get("generated_text", "").strip()
             with LLMClient._lock:
                 LLMClient._first_call = False
-            return response_text
+            return self._postprocess_answer(response_text)
             
         except Exception as e:
             logger.error(f"HuggingFace generation failed: {type(e).__name__}: {str(e)}")

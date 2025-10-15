@@ -23,7 +23,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}╔═══════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║   RAG Enterprise - Development Startup        ║${NC}"
+echo -e "${BLUE}║  ${YELLOW} RAG Enterprise - Development Startup   ${BLUE}     ║${NC}"
 echo -e "${BLUE}╚═══════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -72,10 +72,12 @@ echo ""
 
 # Step 4: Wait for /health/deps endpoint to be healthy
 echo -e "${BLUE} Waiting for backend health checks (max 90s)...${NC}"
-deadline=$((SECONDS + 90))
+# Use portable time calculation instead of Bash-only SECONDS
+start_time=$(date +%s)
+deadline=$(expr "$start_time" + 90)
 health_ok=false
 
-while [ $SECONDS -lt $deadline ]; do
+while [ "$(date +%s)" -lt "$deadline" ]; do
     # Try to fetch health status
     health_response=$(curl -s "http://localhost:${API_PORT}/health/deps" 2>/dev/null || echo "")
     
