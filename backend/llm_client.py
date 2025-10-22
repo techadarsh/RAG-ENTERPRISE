@@ -438,8 +438,7 @@ class LLMClient:
             "options": {
                 # Keep options modest for latency; can be tuned via env if mapped later
                 "temperature": self.temperature,
-                "num_predict": effective_num_predict,
-                # No explicit stop tokens to avoid premature truncation
+                "num_predict": self.max_tokens,
             },
             "stream": False,
         }
