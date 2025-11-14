@@ -463,9 +463,24 @@ async def ask_question(query_req: QueryRequest, request: Request) -> QueryRespon
             session_id=session_id
         )
     
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 499 for disconnection)
+        raise
     except Exception as e:
         logger.error(f"Error processing query: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        # Return user-friendly error message
+        error_msg = "I encountered an unexpected error while processing your request. Please try again."
+        
+        # Check if it's a specific known error type
+        error_str = str(e).lower()
+        if "circuit" in error_str or "breaker" in error_str:
+            error_msg = "I'm currently experiencing technical difficulties. Please try again in a moment."
+        elif "timeout" in error_str or "timed out" in error_str:
+            error_msg = "The request took too long to process. Please try asking a simpler question or try again later."
+        elif "connection" in error_str or "unreachable" in error_str:
+            error_msg = "I'm having trouble connecting to the AI service. Please try again in a moment."
+        
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 @app.post("/api/ingest/upload", response_model=IngestionJobResponse)

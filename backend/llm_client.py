@@ -307,7 +307,10 @@ Your Response:"""
             if self.breaker_enabled and LLMClient._breaker:
                 if not LLMClient._breaker.can_attempt():
                     logger.warning(f" Circuit breaker OPEN - skipping LLM call")
-                    raise Exception("CircuitBreakerOpen")
+                    return (
+                        "I'm currently experiencing technical difficulties and need a moment to recover. "
+                        "Please try again in a minute or two."
+                    )
             
             # Get adaptive timeout
             timeout = self._get_timeout()
@@ -332,7 +335,7 @@ Your Response:"""
                 with LLMClient._requests_lock:
                     if thread_id not in LLMClient._active_requests or not LLMClient._active_requests[thread_id]:
                         logger.info(f"Request cancelled - stopping Ollama attempts (tried {i}/{len(self.endpoints)})")
-                        raise Exception("RequestCancelled")
+                        return "Request cancelled. Feel free to ask me another question!"
                 
                 try:
                     breaker_state = LLMClient._breaker.state.value if LLMClient._breaker else "N/A"
