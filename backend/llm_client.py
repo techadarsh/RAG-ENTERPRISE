@@ -77,15 +77,18 @@ class LLMClient:
     - Structured logging with latency metrics
     - Support for mock and Ollama backends (on-premises only)
     - Thread-safe class-level shared state
+    - Request cancellation support
     """
     
     # Module-level shared HTTP client (connection pool)
     _http_client: Optional[httpx.Client] = None
     _first_call = True  # Track cold start
     _breaker: Optional[CircuitBreaker] = None
+    _active_requests: Dict[int, bool] = {}  # Track active requests by thread ID
     
     # Thread-safety locks for shared state
     _lock = threading.Lock()  # Protects _first_call, _http_client, _breaker initialization
+    _requests_lock = threading.Lock()  # Protects _active_requests
     
     def __init__(self):
         """Initialize LLM client with environment-based configuration"""
@@ -164,20 +167,21 @@ class LLMClient:
             return True
         return LLMClient._breaker.can_attempt()
     
-    def generate_answer(self, query: str, context: str) -> str:
+    def generate_answer(self, query: str, context: str, request=None) -> str:
         """
         Generate answer (backwards compatibility with old interface)
         
         Args:
             query: User query
             context: Retrieved context string
+            request: Optional FastAPI Request object for disconnection detection
             
         Returns:
             Generated answer
         """
-        return self.generate(query, context_text=context)
+        return self.generate(query, context_text=context, request=request)
     
-    def generate_answer_with_history(self, query: str, context: str, history: str) -> str:
+    def generate_answer_with_history(self, query: str, context: str, history: str, request=None) -> str:
         """
         Generate answer with conversation history
         
@@ -185,21 +189,23 @@ class LLMClient:
             query: Current user query
             context: Retrieved context
             history: Previous conversation (formatted)
+            request: Optional FastAPI Request object for disconnection detection
             
         Returns:
             Generated answer
         """
         # Build prompt with history
         full_prompt = f"{history}\n\nContext:\n{context}\n\nUser: {query}\n\nAssistant:"
-        return self.generate(full_prompt)
+        return self.generate(full_prompt, request=request)
     
-    def generate(self, prompt: str, context_text: Optional[str] = None) -> str:
+    def generate(self, prompt: str, context_text: Optional[str] = None, request=None) -> str:
         """
         Generate text based on current backend mode with resilience
         
         Args:
             prompt: User prompt/query
             context_text: Optional context string to include
+            request: Optional FastAPI Request object for disconnection detection
             
         Returns:
             Generated answer string
@@ -214,7 +220,7 @@ class LLMClient:
         if self.backend == "mock":
             return self._generate_mock(prompt, context_text)
         elif self.backend == "ollama":
-            return self._generate_ollama_resilient(full_prompt, query, timeout_context, history)
+            return self._generate_ollama_resilient(full_prompt, request=request)
         else:
             logger.warning(f"Unknown backend '{self.backend}', falling back to mock")
             return self._generate_mock(prompt, context_text)
@@ -283,76 +289,96 @@ Your Response:"""
         
         return response_text
     
-    def _generate_ollama_resilient(self, prompt: str) -> str:
+    def _generate_ollama_resilient(self, prompt: str, request=None) -> str:
         """
         Generate using Ollama with circuit breaker, adaptive timeout, connection pooling
+        
+        Args:
+            prompt: The prompt to send to Ollama
+            request: Optional FastAPI Request object for disconnection detection
         """
-        # Check circuit breaker
-        if self.breaker_enabled and LLMClient._breaker:
-            if not LLMClient._breaker.can_attempt():
-                logger.warning(f" Circuit breaker OPEN - skipping LLM call")
-                raise Exception("CircuitBreakerOpen")
+        # Register this request as active
+        thread_id = threading.get_ident()
+        with LLMClient._requests_lock:
+            LLMClient._active_requests[thread_id] = True
         
-        # Get adaptive timeout
-        timeout = self._get_timeout()
-        with LLMClient._lock:
-            timeout_label = "cold" if LLMClient._first_call else "warm"
-        
-        payload = {
-            "model": self.model_name,
-            "prompt": prompt,
-            "options": {
-                "temperature": self.temperature,
-                "num_predict": self.max_tokens,
-            },
-            "stream": False
-        }
-        
-        last_error = None
-        start_time = time.perf_counter()
-        
-        for i, url in enumerate(self.endpoints):
-            try:
-                breaker_state = LLMClient._breaker.state.value if LLMClient._breaker else "N/A"
-                logger.info(f" [Attempt {i+1}/{len(self.endpoints)}] Trying Ollama: {url} (timeout={timeout:.1f}s {timeout_label}, breaker={breaker_state})")
+        try:
+            # Check circuit breaker
+            if self.breaker_enabled and LLMClient._breaker:
+                if not LLMClient._breaker.can_attempt():
+                    logger.warning(f" Circuit breaker OPEN - skipping LLM call")
+                    raise Exception("CircuitBreakerOpen")
+            
+            # Get adaptive timeout
+            timeout = self._get_timeout()
+            with LLMClient._lock:
+                timeout_label = "cold" if LLMClient._first_call else "warm"
+            
+            payload = {
+                "model": self.model_name,
+                "prompt": prompt,
+                "options": {
+                    "temperature": self.temperature,
+                    "num_predict": self.max_tokens,
+                },
+                "stream": False
+            }
+            
+            last_error = None
+            start_time = time.perf_counter()
+            
+            for i, url in enumerate(self.endpoints):
+                # Check if request was cancelled before trying next endpoint
+                with LLMClient._requests_lock:
+                    if thread_id not in LLMClient._active_requests or not LLMClient._active_requests[thread_id]:
+                        logger.info(f"Request cancelled - stopping Ollama attempts (tried {i}/{len(self.endpoints)})")
+                        raise Exception("RequestCancelled")
                 
-                response = self._try_generate(url, payload, timeout)
-                
-                if response:
+                try:
+                    breaker_state = LLMClient._breaker.state.value if LLMClient._breaker else "N/A"
+                    logger.info(f" [Attempt {i+1}/{len(self.endpoints)}] Trying Ollama: {url} (timeout={timeout:.1f}s {timeout_label}, breaker={breaker_state})")
+                    
+                    response = self._try_generate(url, payload, timeout)
+                    
+                    if response:
+                        latency_ms = (time.perf_counter() - start_time) * 1000
+                        logger.info(f" Ollama response received ({len(response)} chars, {latency_ms:.0f}ms) from: {url}")
+                        
+                        # Record success
+                        if self.breaker_enabled and LLMClient._breaker:
+                            LLMClient._breaker.record_success()
+                        
+                        # Mark as warmed up (thread-safe)
+                        with LLMClient._lock:
+                            LLMClient._first_call = False
+                        
+                        return response
+                    else:
+                        logger.warning(f"  Ollama returned empty response from: {url}")
+                        
+                except Exception as e:
                     latency_ms = (time.perf_counter() - start_time) * 1000
-                    logger.info(f" Ollama response received ({len(response)} chars, {latency_ms:.0f}ms) from: {url}")
+                    error_type = type(e).__name__
+                    logger.warning(f" Failed at {url} ({latency_ms:.0f}ms): {error_type}: {str(e)[:100]}")
+                    last_error = e
                     
-                    # Record success
-                    if self.breaker_enabled and LLMClient._breaker:
-                        LLMClient._breaker.record_success()
+                    # Record failure for circuit breaker (only for primary endpoint)
+                    if i == 0 and self.breaker_enabled and LLMClient._breaker:
+                        LLMClient._breaker.record_failure()
                     
-                    # Mark as warmed up (thread-safe)
-                    with LLMClient._lock:
-                        LLMClient._first_call = False
-                    
-                    return response
-                else:
-                    logger.warning(f"  Ollama returned empty response from: {url}")
-                    
-            except Exception as e:
-                latency_ms = (time.perf_counter() - start_time) * 1000
-                error_type = type(e).__name__
-                logger.warning(f" Failed at {url} ({latency_ms:.0f}ms): {error_type}: {str(e)[:100]}")
-                last_error = e
-                
-                # Record failure for circuit breaker (only for primary endpoint)
-                if i == 0 and self.breaker_enabled and LLMClient._breaker:
-                    LLMClient._breaker.record_failure()
-                
-                continue
-        
-        # All endpoints failed - user-friendly message
-        error_msg = (
-            "I'm currently unable to process your request. "
-            "Please try again in a moment. If the problem persists, contact support."
-        )
-        logger.error(f" All Ollama endpoints failed. Last error: {last_error}")
-        return error_msg
+                    continue
+            
+            # All endpoints failed - user-friendly message
+            error_msg = (
+                "I'm currently unable to process your request. "
+                "Please try again in a moment. If the problem persists, contact support."
+            )
+            logger.error(f" All Ollama endpoints failed. Last error: {last_error}")
+            return error_msg
+        finally:
+            # Clean up active request tracking
+            with LLMClient._requests_lock:
+                LLMClient._active_requests.pop(thread_id, None)
     
     def _generate_mock(self, prompt: str, context: Optional[str]) -> str:
         """Mock mode - returns placeholder with context snippet"""

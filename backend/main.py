@@ -8,7 +8,7 @@ import threading
 import uuid
 import shutil
 from typing import Dict, Any, List, Optional
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -35,6 +35,11 @@ except ImportError:
 
 # Load environment variables (don't override existing ones)
 load_dotenv(override=False)
+
+# Health check cache (TTL: 10 seconds)
+_health_cache = {"data": None, "timestamp": 0}
+_health_cache_lock = threading.Lock()
+HEALTH_CACHE_TTL = 10  # seconds
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -377,19 +382,19 @@ async def llm_health_check() -> Dict[str, Any]:
 
 
 @app.post("/ask", response_model=QueryResponse)
-async def ask_question(request: QueryRequest) -> QueryResponse:
+async def ask_question(query_req: QueryRequest, request: Request) -> QueryResponse:
     """
     Process a user query through the RAG pipeline with conversational memory
     """
     if not rag_pipeline:
         raise HTTPException(status_code=503, detail="RAG pipeline not initialized")
     
-    if not request.query or not request.query.strip():
+    if not query_req.query or not query_req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     
     # Generate session ID if not provided
     import uuid
-    session_id = request.session_id or str(uuid.uuid4())
+    session_id = query_req.session_id or str(uuid.uuid4())
     
     # Get conversation history for this session
     history = chat_sessions.get(session_id, [])
@@ -398,12 +403,22 @@ async def ask_question(request: QueryRequest) -> QueryResponse:
     start_time = time.perf_counter()
     
     try:
-        # Process query with conversation context
+        # Check if client is still connected before processing
+        if await request.is_disconnected():
+            logger.info(f"Client disconnected before processing (session: {session_id[:8]}...)")
+            raise HTTPException(status_code=499, detail="Client disconnected")
+        
+        # Process query with conversation context and request object for disconnection detection
         if history:
-            result = rag_pipeline.generate_with_context(request.query, history)
+            result = rag_pipeline.generate_with_context(query_req.query, history, request=request)
         else:
             # First message in conversation - use standard query
-            result = rag_pipeline.query(request.query)
+            result = rag_pipeline.query(query_req.query, request=request)
+        
+        # Check again after generation (in case it took long)
+        if await request.is_disconnected():
+            logger.info(f"Client disconnected after generation (session: {session_id[:8]}...)")
+            raise HTTPException(status_code=499, detail="Client disconnected")
         
         # Calculate latency
         end_time = time.perf_counter()
@@ -415,7 +430,7 @@ async def ask_question(request: QueryRequest) -> QueryResponse:
         
         chat_sessions[session_id].append({
             "role": "user",
-            "content": request.query
+            "content": query_req.query
         })
         chat_sessions[session_id].append({
             "role": "assistant",
