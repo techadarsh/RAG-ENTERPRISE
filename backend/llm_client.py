@@ -75,7 +75,7 @@ class LLMClient:
     - Adaptive timeouts (cold start vs warm)
     - Circuit breaker for fast-fail
     - Structured logging with latency metrics
-    - Support for mock, Ollama, HuggingFace backends
+    - Support for mock and Ollama backends (on-premises only)
     - Thread-safe class-level shared state
     """
     
@@ -102,10 +102,6 @@ class LLMClient:
         self.breaker_enabled = os.getenv("LLM_BREAKER_ENABLED", "true").lower() == "true"
         self.breaker_fails = int(os.getenv("LLM_BREAKER_FAILS", "3"))
         self.breaker_cooldown = int(os.getenv("LLM_BREAKER_COOLDOWN_S", "90"))
-        
-        # Legacy support
-        self.api_url = os.getenv("MISTRAL_API_URL", f"http://{self.llm_host}:{self.llm_port}/api/generate")
-        self.api_key = os.getenv("MISTRAL_API_KEY", "")
         
         # Build endpoint list
         self.endpoints = self._build_endpoints()
@@ -155,12 +151,10 @@ class LLMClient:
         return endpoints
     
     def _detect_backend(self) -> str:
-        """Detect which backend to use based on mode and URL"""
+        """Detect which backend to use based on mode"""
         if self.mode == "mock":
             return "mock"
-        elif "huggingface" in self.api_url.lower():
-            return "huggingface"
-        elif self.mode == "api" or "ollama" in self.api_url.lower() or f":{self.llm_port}" in self.api_url:
+        elif self.mode == "api":
             return "ollama"
         return "mock"
     
@@ -220,9 +214,7 @@ class LLMClient:
         if self.backend == "mock":
             return self._generate_mock(prompt, context_text)
         elif self.backend == "ollama":
-            return self._generate_ollama_resilient(full_prompt)
-        elif self.backend == "huggingface":
-            return self._generate_huggingface(full_prompt)
+            return self._generate_ollama_resilient(full_prompt, query, timeout_context, history)
         else:
             logger.warning(f"Unknown backend '{self.backend}', falling back to mock")
             return self._generate_mock(prompt, context_text)
@@ -366,44 +358,6 @@ Your Response:"""
         """Mock mode - returns placeholder with context snippet"""
         context_snippet = context[:200] if context else "No context provided"
         return f"[MOCK MODE] This is a simulated response based on: {context_snippet}..."
-    
-    def _generate_huggingface(self, prompt: str) -> str:
-        """Generate using Hugging Face Inference API"""
-        logger.info(f" Generating answer via HuggingFace")
-        
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "inputs": prompt,
-            "parameters": {
-                "temperature": self.temperature,
-                "max_new_tokens": self.max_tokens,
-            }
-        }
-        
-        try:
-            timeout = self._get_timeout()
-            if HTTPX_AVAILABLE and LLMClient._http_client:
-                r = LLMClient._http_client.post(self.api_url, json=payload, headers=headers, timeout=timeout)
-                r.raise_for_status()
-                data = r.json()
-            else:
-                import requests
-                r = requests.post(self.api_url, json=payload, headers=headers, timeout=timeout)
-                r.raise_for_status()
-                data = r.json()
-            
-            response_text = data[0].get("generated_text", "").strip()
-            with LLMClient._lock:
-                LLMClient._first_call = False
-            return response_text
-            
-        except Exception as e:
-            logger.error(f"HuggingFace generation failed: {type(e).__name__}: {str(e)}")
-            return f"Error generating response: {str(e)}"
     
     @classmethod
     def warmup(cls, test_prompt: str = "ping") -> bool:

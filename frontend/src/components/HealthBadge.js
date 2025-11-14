@@ -3,6 +3,13 @@ import './HealthBadge.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
+// Health Icon SVG
+const HealthIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+  </svg>
+);
+
 function HealthBadge({ onDegraded, position = 'bottom' }) {
   const [deps, setDeps] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,7 +73,7 @@ function HealthBadge({ onDegraded, position = 'bottom' }) {
     return (
       <aside className={`health-badge-container ${position}`}>
         <div className="health-header">
-          <span className="health-icon"></span>
+          <span className="health-icon"><HealthIcon /></span>
           <span className="health-title">System</span>
         </div>
         <div className="health-items">
@@ -95,7 +102,7 @@ function HealthBadge({ onDegraded, position = 'bottom' }) {
   return (
     <aside className={`health-badge-container ${position}`}>
       <div className="health-header">
-        <span className="health-icon"></span>
+        <span className="health-icon"><HealthIcon /></span>
         <span className="health-title">System Health</span>
       </div>
       

@@ -319,9 +319,9 @@ class RAGPipeline:
         sources = []
         sources_for_display = []  # Only top 3 for user
         
-        # Context compression settings
-        MAX_CONTEXT_CHARS = int(os.getenv("MAX_CONTEXT_CHARS", "2000"))  # ~500 tokens
-        MAX_CHUNK_CHARS = int(os.getenv("MAX_CHUNK_CHARS", "800"))  # ~200 tokens per chunk
+        # Context compression settings (affects quality vs speed trade-off)
+        MAX_CONTEXT_CHARS = int(os.getenv("MAX_CONTEXT_CHARS", "2000"))  # Total context limit: ~500 tokens (1 token ≈ 4 chars)
+        MAX_CHUNK_CHARS = int(os.getenv("MAX_CHUNK_CHARS", "800"))  # Per-chunk limit: ~200 tokens to prevent overly long individual chunks
         
         for i, result in enumerate(results, 1):
             # Trim individual chunks to prevent overly long context
