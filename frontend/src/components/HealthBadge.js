@@ -46,8 +46,8 @@ function HealthBadge({ onDegraded, position = 'bottom' }) {
     // Fetch immediately
     fetchHealth();
     
-    // Poll every 5 seconds
-    const intervalId = setInterval(fetchHealth, 5000);
+    // Poll every 15 seconds (reduced from 5s for better performance)
+    const intervalId = setInterval(fetchHealth, 15000);
 
     return () => {
       active = false;

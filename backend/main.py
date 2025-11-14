@@ -202,9 +202,17 @@ async def health_check() -> Dict[str, str]:
 @app.get("/health/deps")
 async def health_check_dependencies() -> Dict[str, Any]:
     """
-    Comprehensive dependency health check for all critical services.
+    Comprehensive dependency health check for all critical services with caching.
     Returns ok/fail status for: Milvus, Etcd, Minio, Redis, Ollama, Embeddings, Backend
+    
+    Cached for 10 seconds to reduce load (health badge polls every 15s).
     """
+    # Check cache first
+    with _health_cache_lock:
+        if _health_cache["data"] and time.time() - _health_cache["timestamp"] < HEALTH_CACHE_TTL:
+            return _health_cache["data"]
+    
+    # Cache miss - perform health checks
     results = {
         "backend": "ok",
         "milvus": "fail",
@@ -313,6 +321,11 @@ async def health_check_dependencies() -> Dict[str, Any]:
     except Exception as e:
         logger.warning(f"Embeddings health check failed: {e}")
         results["embeddings"] = "fail"
+    
+    # Update cache
+    with _health_cache_lock:
+        _health_cache["data"] = results
+        _health_cache["timestamp"] = time.time()
     
     return results
 
