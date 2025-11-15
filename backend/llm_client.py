@@ -314,8 +314,6 @@ Your Response:"""
                         continue
                 # Any other error, raise immediately
                 raise
-        
-        return response_text
     
     def _generate_ollama_resilient(self, prompt: str) -> str:
         """
@@ -366,14 +364,14 @@ Your Response:"""
             for i, url in enumerate(self.endpoints):
                 # Check if request was cancelled before trying next endpoint
                 with LLMClient._requests_lock:
-                    if thread_id not in LLMClient._active_requests or not LLMClient._active_requests[thread_id]:
+                    if not LLMClient._active_requests.get(thread_id, False):
                         logger.info(f"Request cancelled - stopping Ollama attempts (tried {i}/{len(self.endpoints)})")
                         return "Request cancelled. Feel free to ask me another question!"
                 
                 # Create cancellation check function
                 def is_cancelled():
                     with LLMClient._requests_lock:
-                        return thread_id not in LLMClient._active_requests or not LLMClient._active_requests[thread_id]
+                        return not LLMClient._active_requests.get(thread_id, False)
                 
                 try:
                     breaker_state = LLMClient._breaker.state.value if LLMClient._breaker else "N/A"

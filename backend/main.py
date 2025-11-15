@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from rag_pipeline import RAGPipeline
 from confluence_ingest import ConfluenceIngestor
 from embeddings import EmbeddingModel
+from llm_client import LLMClient
 import asyncio
 import json
 
@@ -450,8 +451,8 @@ async def ask_question(query_req: QueryRequest, request: Request) -> QueryRespon
     # Measure latency
     start_time = time.perf_counter()
     
-    # Register thread ID for cancellation tracking
-    thread_id = threading.get_ident()
+    # We'll capture thread_id inside the executor thread
+    thread_id_holder = {'id': None}
     
     try:
         # Check if client is still connected before processing
@@ -462,41 +463,53 @@ async def ask_question(query_req: QueryRequest, request: Request) -> QueryRespon
         # Start background task to monitor disconnection and update cancellation flag
         async def monitor_disconnection():
             try:
+                # Wait a bit for thread_id to be captured
+                await asyncio.sleep(0.1)
                 while True:
                     await asyncio.sleep(0.5)  # Check every 500ms
                     if await request.is_disconnected():
                         # Mark this thread's request as cancelled
-                        from llm_client import LLMClient
-                        with LLMClient._requests_lock:
-                            if thread_id in LLMClient._active_requests:
-                                LLMClient._active_requests[thread_id] = False
-                                logger.info(f"Client disconnected during processing - marked for cancellation (session: {session_id[:8]}...)")
+                        thread_id = thread_id_holder['id']
+                        if thread_id:
+                            with LLMClient._requests_lock:
+                                if thread_id in LLMClient._active_requests:
+                                    LLMClient._active_requests[thread_id] = False
+                                    logger.info(f"Client disconnected during processing - marked for cancellation (session: {session_id[:8]}...)")
                         break
             except Exception as e:
                 logger.debug(f"Disconnection monitor error (expected on completion): {e}")
         
         # Start monitoring task
-        import asyncio
         monitor_task = asyncio.create_task(monitor_disconnection())
         
-        # Process query with conversation context
-        if history:
-            result = rag_pipeline.generate_with_context(query_req.query, history)
-        else:
-            # First message in conversation - use standard query
-            result = rag_pipeline.query(query_req.query)
-        
-        # Cancel monitoring task
-        monitor_task.cancel()
         try:
-            await monitor_task
-        except asyncio.CancelledError:
-            pass
-        
-        # Check again after generation (in case it took long)
-        if await request.is_disconnected():
-            logger.info(f"Client disconnected after generation (session: {session_id[:8]}...)")
-            raise HTTPException(status_code=499, detail="Client disconnected")
+            # Wrapper to run RAG pipeline in thread and capture thread_id
+            def run_rag_query():
+                # Capture thread ID in the executor thread
+                thread_id_holder['id'] = threading.get_ident()
+                
+                # Process query with conversation context
+                if history:
+                    return rag_pipeline.generate_with_context(query_req.query, history)
+                else:
+                    # First message in conversation - use standard query
+                    return rag_pipeline.query(query_req.query)
+            
+            # Run synchronous RAG pipeline in thread pool to avoid blocking event loop
+            result = await asyncio.to_thread(run_rag_query)
+            
+            # Check again after generation (in case it took long)
+            if await request.is_disconnected():
+                logger.info(f"Client disconnected after generation (session: {session_id[:8]}...)")
+                raise HTTPException(status_code=499, detail="Client disconnected")
+        finally:
+            # Always cancel monitoring task to prevent resource leak
+            monitor_task.cancel()
+            try:
+                await monitor_task
+            except asyncio.CancelledError:
+                # Expected exception when cancelling task; safe to ignore
+                pass
         
         # Calculate latency
         end_time = time.perf_counter()
