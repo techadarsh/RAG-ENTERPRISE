@@ -271,14 +271,13 @@ class RAGPipeline:
         self.milvus_client.insert(titles, texts, embeddings)
         logger.info(f" Loaded {len(texts)} document chunks into Milvus")
     
-    def query(self, query: str, top_k: int = None, request=None) -> Dict[str, Any]:
+    def query(self, query: str, top_k: int = None) -> Dict[str, Any]:
         """
         Process a query through the RAG pipeline
         
         Args:
             query: User query string
             top_k: Number of documents to retrieve (defaults to RETRIEVAL_TOP_K env var)
-            request: Optional FastAPI Request object for disconnection detection
             
         Returns:
             Dictionary with answer, sources, and metadata
@@ -355,7 +354,7 @@ class RAGPipeline:
             logger.info(f"Context trimmed to {MAX_CONTEXT_CHARS} chars for faster LLM generation")
         
         # 5. Generate answer with LLM (with strict prompt to only use context)
-        answer = self.llm_client.generate_answer(query, context, request=request)
+        answer = self.llm_client.generate_answer(query, context)
         
         return {
             "answer": answer,
@@ -363,7 +362,7 @@ class RAGPipeline:
             "context": context
         }
     
-    def generate_with_context(self, query: str, history: List[Dict[str, str]], top_k: int = None, request=None) -> Dict[str, Any]:
+    def generate_with_context(self, query: str, history: List[Dict[str, str]], top_k: int = None) -> Dict[str, Any]:
         """
         Process a query through the RAG pipeline with conversation history
         
@@ -371,7 +370,6 @@ class RAGPipeline:
             query: Current user query string
             history: List of previous conversation turns [{"role": "user/assistant", "content": "..."}]
             top_k: Number of documents to retrieve (defaults to RETRIEVAL_TOP_K env var)
-            request: Optional FastAPI Request object for disconnection detection
             
         Returns:
             Dictionary with answer, sources, and metadata
@@ -435,7 +433,7 @@ class RAGPipeline:
         ])
         
         # 5. Generate answer with LLM using history + context
-        answer = self.llm_client.generate_answer_with_history(query, context, history_text, request=request)
+        answer = self.llm_client.generate_answer_with_history(query, context, history_text)
         
         return {
             "answer": answer,

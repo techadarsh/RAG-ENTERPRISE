@@ -406,7 +406,6 @@ async def ask_question(query_req: QueryRequest, request: Request) -> QueryRespon
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     
     # Generate session ID if not provided
-    import uuid
     session_id = query_req.session_id or str(uuid.uuid4())
     
     # Get conversation history for this session
@@ -415,18 +414,48 @@ async def ask_question(query_req: QueryRequest, request: Request) -> QueryRespon
     # Measure latency
     start_time = time.perf_counter()
     
+    # Register thread ID for cancellation tracking
+    thread_id = threading.get_ident()
+    
     try:
         # Check if client is still connected before processing
         if await request.is_disconnected():
             logger.info(f"Client disconnected before processing (session: {session_id[:8]}...)")
             raise HTTPException(status_code=499, detail="Client disconnected")
         
-        # Process query with conversation context and request object for disconnection detection
+        # Start background task to monitor disconnection and update cancellation flag
+        async def monitor_disconnection():
+            try:
+                while True:
+                    await asyncio.sleep(0.5)  # Check every 500ms
+                    if await request.is_disconnected():
+                        # Mark this thread's request as cancelled
+                        from llm_client import LLMClient
+                        with LLMClient._requests_lock:
+                            if thread_id in LLMClient._active_requests:
+                                LLMClient._active_requests[thread_id] = False
+                                logger.info(f"Client disconnected during processing - marked for cancellation (session: {session_id[:8]}...)")
+                        break
+            except Exception as e:
+                logger.debug(f"Disconnection monitor error (expected on completion): {e}")
+        
+        # Start monitoring task
+        import asyncio
+        monitor_task = asyncio.create_task(monitor_disconnection())
+        
+        # Process query with conversation context
         if history:
-            result = rag_pipeline.generate_with_context(query_req.query, history, request=request)
+            result = rag_pipeline.generate_with_context(query_req.query, history)
         else:
             # First message in conversation - use standard query
-            result = rag_pipeline.query(query_req.query, request=request)
+            result = rag_pipeline.query(query_req.query)
+        
+        # Cancel monitoring task
+        monitor_task.cancel()
+        try:
+            await monitor_task
+        except asyncio.CancelledError:
+            pass
         
         # Check again after generation (in case it took long)
         if await request.is_disconnected():
@@ -468,19 +497,12 @@ async def ask_question(query_req: QueryRequest, request: Request) -> QueryRespon
         raise
     except Exception as e:
         logger.error(f"Error processing query: {e}", exc_info=True)
-        # Return user-friendly error message
-        error_msg = "I encountered an unexpected error while processing your request. Please try again."
-        
-        # Check if it's a specific known error type
-        error_str = str(e).lower()
-        if "circuit" in error_str or "breaker" in error_str:
-            error_msg = "I'm currently experiencing technical difficulties. Please try again in a moment."
-        elif "timeout" in error_str or "timed out" in error_str:
-            error_msg = "The request took too long to process. Please try asking a simpler question or try again later."
-        elif "connection" in error_str or "unreachable" in error_str:
-            error_msg = "I'm having trouble connecting to the AI service. Please try again in a moment."
-        
-        raise HTTPException(status_code=500, detail=error_msg)
+        # LLM client already returns user-friendly messages for common errors
+        # This handler only catches unexpected exceptions
+        raise HTTPException(
+            status_code=500,
+            detail="I encountered an unexpected error while processing your request. Please try again."
+        )
 
 
 @app.post("/api/ingest/upload", response_model=IngestionJobResponse)

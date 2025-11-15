@@ -167,21 +167,20 @@ class LLMClient:
             return True
         return LLMClient._breaker.can_attempt()
     
-    def generate_answer(self, query: str, context: str, request=None) -> str:
+    def generate_answer(self, query: str, context: str) -> str:
         """
         Generate answer (backwards compatibility with old interface)
         
         Args:
             query: User query
             context: Retrieved context string
-            request: Optional FastAPI Request object for disconnection detection
             
         Returns:
             Generated answer
         """
-        return self.generate(query, context_text=context, request=request)
+        return self.generate(query, context_text=context)
     
-    def generate_answer_with_history(self, query: str, context: str, history: str, request=None) -> str:
+    def generate_answer_with_history(self, query: str, context: str, history: str) -> str:
         """
         Generate answer with conversation history
         
@@ -189,23 +188,21 @@ class LLMClient:
             query: Current user query
             context: Retrieved context
             history: Previous conversation (formatted)
-            request: Optional FastAPI Request object for disconnection detection
             
         Returns:
             Generated answer
         """
         # Build prompt with history
         full_prompt = f"{history}\n\nContext:\n{context}\n\nUser: {query}\n\nAssistant:"
-        return self.generate(full_prompt, request=request)
+        return self.generate(full_prompt)
     
-    def generate(self, prompt: str, context_text: Optional[str] = None, request=None) -> str:
+    def generate(self, prompt: str, context_text: Optional[str] = None) -> str:
         """
         Generate text based on current backend mode with resilience
         
         Args:
             prompt: User prompt/query
             context_text: Optional context string to include
-            request: Optional FastAPI Request object for disconnection detection
             
         Returns:
             Generated answer string
@@ -220,7 +217,7 @@ class LLMClient:
         if self.backend == "mock":
             return self._generate_mock(prompt, context_text)
         elif self.backend == "ollama":
-            return self._generate_ollama_resilient(full_prompt, request=request)
+            return self._generate_ollama_resilient(full_prompt)
         else:
             logger.warning(f"Unknown backend '{self.backend}', falling back to mock")
             return self._generate_mock(prompt, context_text)
@@ -289,13 +286,18 @@ Your Response:"""
         
         return response_text
     
-    def _generate_ollama_resilient(self, prompt: str, request=None) -> str:
+    def _generate_ollama_resilient(self, prompt: str) -> str:
         """
-        Generate using Ollama with circuit breaker, adaptive timeout, connection pooling
+        Generate using Ollama with circuit breaker, adaptive timeout, connection pooling.
+        
+        Request cancellation is handled via thread-based tracking updated by the async
+        disconnection monitor in main.py.
         
         Args:
             prompt: The prompt to send to Ollama
-            request: Optional FastAPI Request object for disconnection detection
+            
+        Returns:
+            Generated text or user-friendly error message
         """
         # Register this request as active
         thread_id = threading.get_ident()
