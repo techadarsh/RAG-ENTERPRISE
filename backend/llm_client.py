@@ -263,26 +263,57 @@ Your Response:"""
                 return self.initial_timeout_ms / 1000.0
         return self.normal_timeout_ms / 1000.0
     
-    def _try_generate(self, url: str, payload: dict, timeout: float) -> str:
-        """Attempt generation with a single endpoint"""
-        if HTTPX_AVAILABLE and LLMClient._http_client:
-            # Use shared connection pool
-            r = LLMClient._http_client.post(url, json=payload, timeout=timeout)
-            r.raise_for_status()
-            data = r.json()
-        else:
-            import requests
-            r = requests.post(url, json=payload, timeout=timeout)
-            r.raise_for_status()
-            data = r.json()
+    def _try_generate(self, url: str, payload: dict, timeout: float, check_cancellation_fn=None) -> str:
+        """
+        Attempt generation with a single endpoint.
+        Uses multiple short timeout attempts to allow for cancellation checks.
         
-        # Handle different response formats
-        response_text = (
-            data.get("response") or 
-            data.get("text") or 
-            data.get("generated_text") or 
-            ""
-        ).strip()
+        Args:
+            url: Ollama endpoint URL
+            payload: Request payload
+            timeout: Total timeout duration
+            check_cancellation_fn: Function that returns True if request was cancelled
+        """
+        # Break timeout into shorter chunks for cancellation checking
+        chunk_timeout = 2.0  # 2 seconds per attempt
+        attempts = max(1, int(timeout / chunk_timeout))
+        
+        for attempt in range(attempts):
+            # Check if cancelled before each chunk
+            if check_cancellation_fn and check_cancellation_fn():
+                raise Exception("RequestCancelledDuringGeneration")
+            
+            try:
+                if HTTPX_AVAILABLE and LLMClient._http_client:
+                    # Use shared connection pool with short timeout
+                    r = LLMClient._http_client.post(url, json=payload, timeout=chunk_timeout)
+                    r.raise_for_status()
+                    data = r.json()
+                else:
+                    import requests
+                    r = requests.post(url, json=payload, timeout=chunk_timeout)
+                    r.raise_for_status()
+                    data = r.json()
+                
+                # Handle different response formats
+                response_text = (
+                    data.get("response") or 
+                    data.get("text") or 
+                    data.get("generated_text") or 
+                    ""
+                ).strip()
+                
+                return response_text
+                
+            except Exception as e:
+                error_str = str(e).lower()
+                # If timeout, continue to next attempt (unless it's the last one)
+                if "timeout" in error_str or "timed out" in error_str:
+                    if attempt < attempts - 1:
+                        logger.debug(f"Timeout attempt {attempt + 1}/{attempts}, retrying...")
+                        continue
+                # Any other error, raise immediately
+                raise
         
         return response_text
     
@@ -339,11 +370,16 @@ Your Response:"""
                         logger.info(f"Request cancelled - stopping Ollama attempts (tried {i}/{len(self.endpoints)})")
                         return "Request cancelled. Feel free to ask me another question!"
                 
+                # Create cancellation check function
+                def is_cancelled():
+                    with LLMClient._requests_lock:
+                        return thread_id not in LLMClient._active_requests or not LLMClient._active_requests[thread_id]
+                
                 try:
                     breaker_state = LLMClient._breaker.state.value if LLMClient._breaker else "N/A"
                     logger.info(f" [Attempt {i+1}/{len(self.endpoints)}] Trying Ollama: {url} (timeout={timeout:.1f}s {timeout_label}, breaker={breaker_state})")
                     
-                    response = self._try_generate(url, payload, timeout)
+                    response = self._try_generate(url, payload, timeout, check_cancellation_fn=is_cancelled)
                     
                     if response:
                         latency_ms = (time.perf_counter() - start_time) * 1000
@@ -364,7 +400,14 @@ Your Response:"""
                 except Exception as e:
                     latency_ms = (time.perf_counter() - start_time) * 1000
                     error_type = type(e).__name__
-                    logger.warning(f" Failed at {url} ({latency_ms:.0f}ms): {error_type}: {str(e)[:100]}")
+                    error_msg = str(e)
+                    
+                    # Handle cancellation during generation
+                    if "RequestCancelledDuringGeneration" in error_msg or "cancelled" in error_msg.lower():
+                        logger.info(f"Request cancelled during LLM generation (after {latency_ms:.0f}ms)")
+                        return "Request cancelled. Feel free to ask me another question!"
+                    
+                    logger.warning(f" Failed at {url} ({latency_ms:.0f}ms): {error_type}: {error_msg[:100]}")
                     last_error = e
                     
                     # Record failure for circuit breaker (only for primary endpoint)
