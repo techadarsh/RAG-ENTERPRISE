@@ -10,11 +10,14 @@ import shutil
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from rag_pipeline import RAGPipeline
 from confluence_ingest import ConfluenceIngestor
 from embeddings import EmbeddingModel
+import asyncio
+import json
 
 # Setup logging BEFORE any logger usage
 logging.basicConfig(
@@ -328,6 +331,39 @@ async def health_check_dependencies() -> Dict[str, Any]:
         _health_cache["timestamp"] = time.time()
     
     return results
+
+
+@app.get("/health/stream")
+async def health_stream():
+    """
+    Server-Sent Events (SSE) endpoint for real-time health updates.
+    Pushes health status every 15 seconds instead of client polling.
+    """
+    async def event_generator():
+        try:
+            while True:
+                # Get health status (uses cache)
+                health_data = await health_check_dependencies()
+                
+                # Send as SSE event
+                yield f"data: {json.dumps(health_data)}\n\n"
+                
+                # Wait 15 seconds before next update
+                await asyncio.sleep(15)
+                
+        except asyncio.CancelledError:
+            logger.info("Health stream connection closed by client")
+            raise
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"  # Disable nginx buffering
+        }
+    )
 
 
 @app.get("/llm/health")

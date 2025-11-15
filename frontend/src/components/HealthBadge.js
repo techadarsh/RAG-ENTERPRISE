@@ -13,29 +13,34 @@ const HealthIcon = () => (
 function HealthBadge({ onDegraded, position = 'bottom' }) {
   const [deps, setDeps] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [useSSE, setUseSSE] = useState(true); // Try SSE first, fallback to polling
 
   useEffect(() => {
     let active = true;
-    
+    let eventSource = null;
+    let fallbackInterval = null;
+
+    const updateHealth = (data) => {
+      if (active) {
+        setDeps(data);
+        setIsLoading(false);
+        
+        // Notify parent if LLM is degraded
+        if (onDegraded) {
+          onDegraded(data?.ollama !== 'ok');
+        }
+      }
+    };
+
     const fetchHealth = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/health/deps`);
         const data = await response.json();
-        
-        if (active) {
-          setDeps(data);
-          setIsLoading(false);
-          
-          // Notify parent if LLM is degraded
-          if (onDegraded) {
-            onDegraded(data?.ollama !== 'ok');
-          }
-        }
+        updateHealth(data);
       } catch (error) {
         console.error('Health check failed:', error);
         if (active) {
           setIsLoading(false);
-          // On error, assume degraded
           if (onDegraded) {
             onDegraded(true);
           }
@@ -43,17 +48,48 @@ function HealthBadge({ onDegraded, position = 'bottom' }) {
       }
     };
 
-    // Fetch immediately
-    fetchHealth();
-    
-    // Poll every 15 seconds (reduced from 5s for better performance)
-    const intervalId = setInterval(fetchHealth, 15000);
+    // Try Server-Sent Events first (more efficient)
+    if (useSSE) {
+      try {
+        eventSource = new EventSource(`${API_BASE_URL}/health/stream`);
+        
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            updateHealth(data);
+          } catch (e) {
+            console.error('Failed to parse SSE data:', e);
+          }
+        };
+        
+        eventSource.onerror = (error) => {
+          console.warn('SSE connection failed, falling back to polling:', error);
+          eventSource.close();
+          setUseSSE(false); // Fallback to polling
+        };
+        
+      } catch (error) {
+        console.warn('SSE not supported, using polling:', error);
+        setUseSSE(false);
+      }
+    }
+
+    // Fallback: Traditional polling (only if SSE fails)
+    if (!useSSE) {
+      fetchHealth(); // Immediate fetch
+      fallbackInterval = setInterval(fetchHealth, 15000);
+    }
 
     return () => {
       active = false;
-      clearInterval(intervalId);
+      if (eventSource) {
+        eventSource.close();
+      }
+      if (fallbackInterval) {
+        clearInterval(fallbackInterval);
+      }
     };
-  }, [onDegraded]);
+  }, [onDegraded, useSSE]);
 
   const StatusDot = ({ status }) => {
     const isOk = status === 'ok';
