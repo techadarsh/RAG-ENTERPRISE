@@ -1,0 +1,1271 @@
+# Remote Work & Flexible Work Arrangements Policy
+
+## Executive Summary
+
+This policy provides comprehensive guidelines for remote work, hybrid arrangements, and flexible schedules. It ensures employees have the flexibility to work effectively while maintaining productivity, collaboration, and work-life balance.
+
+**Document Version**: 3.1
+**Effective Date**: January 2025
+**Last Updated**: October 2025
+**Applies To**: All eligible full-time and part-time employees
+**Review Cycle**: Annual
+
+---
+
+## Table of Contents
+
+1. Remote Work Options & Eligibility
+2. Home Office Requirements
+3. Equipment & Technology
+4. Communication & Collaboration
+5. Work Hours & Availability
+6. Performance & Productivity
+7. Security & Data Protection
+8. Expenses & Reimbursement
+9. Ergonomics & Health
+10. Tax & Legal Considerations
+11. Transitioning Between Arrangements
+12. International Remote Work
+
+---
+
+## 1. Remote Work Options & Eligibility
+
+### 1.1 Work Arrangement Types
+
+**Fully Remote (100% Remote)**:
+- Work from home or approved location 100% of time
+- No assigned office desk
+- Must attend quarterly in-person gatherings (company-paid travel)
+- Available for most engineering, product, and some support roles
+
+**Hybrid (2-3 Days Office)**:
+- Office days: Tuesday & Wednesday (core collaboration days) + 1 flexible day
+- Remote days: Monday, Thursday, Friday (choose 2)
+- Assigned desk or hot-desking (depending on office space)
+- Default arrangement for most roles
+
+**Flexible In-Office**:
+- Primarily office-based but can work remotely occasionally
+- Remote work requires manager approval (1-2 days/week)
+- Assigned permanent desk
+- Required for some roles (IT support, facilities, lab equipment)
+
+**Fully In-Office**:
+- 5 days per week in office
+- Required for specific positions (receptionist, lab technicians)
+- No regular remote work
+
+### 1.2 Eligibility Criteria
+
+**Eligible for Remote/Hybrid**:
+-  Completed 90-day probationary period
+-  "Meets Expectations" or higher performance rating
+-  Role can be performed remotely (manager determination)
+-  No active performance improvement plan (PIP)
+-  Demonstrated self-motivation and time management
+-  Reliable internet and home office setup
+
+**Ineligible**:
+-  Probationary employees (first 90 days)
+-  Roles requiring physical presence (lab work, reception, facilities)
+-  Performance issues (rating <3)
+-  Inadequate home office setup
+-  Not meeting productivity/collaboration expectations
+
+**Example Eligible Roles**:
+- Software engineers
+- Data scientists
+- Product managers
+- Designers
+- Marketing team
+- Customer success (phone-based)
+- Finance/accounting
+- HR (most positions)
+
+**Example Ineligible Roles**:
+- Receptionist (needs physical presence)
+- Lab technicians (equipment access)
+- Facilities management
+- IT hardware support (hands-on)
+- Some managerial roles (team-building)
+
+### 1.3 Application Process
+
+**How to Request**:
+1. Discuss with manager (gauge receptiveness)
+2. Submit formal request via HR portal (Workday)
+3. Include:
+   - Desired arrangement (fully remote, hybrid, flexible)
+   - Start date
+   - Home office details (internet speed, workspace)
+   - Communication plan (how you'll stay connected)
+   - Productivity measures (how success will be tracked)
+
+**Approval Process**:
+- Manager reviews (considers role, performance, team needs)
+- HR reviews (verifies eligibility)
+- Decision within 10 business days
+- If approved: 30-day trial period
+
+**Trial Period (30 Days)**:
+- Test arrangement for fit
+- Manager assesses: Productivity, communication, collaboration
+- Check-in at 2 weeks and 4 weeks
+- Outcomes:
+  - **Success**: Arrangement becomes permanent
+  - **Issues**: Modify arrangement or revert to office
+  - **Failure**: Return to office full-time
+
+**Denial Appeals**:
+- If denied, can appeal to HR within 10 days
+- VP of HR reviews
+- Decision final
+
+### 1.4 Changes to Arrangement
+
+**Employee-Initiated Changes**:
+- Can request change every 6 months
+- Follow same application process
+- Business needs permitting
+
+**Company-Initiated Changes**:
+- Company may change arrangement with 30 days' notice
+- Reasons: Business needs, performance issues, role changes
+- If moving to more office days, assist with transition
+
+**Temporary Changes**:
+- Travel: Can work remotely temporarily (notify manager)
+- Office renovation: May work remotely temporarily
+- Personal circumstances: Discuss with manager (case-by-case)
+
+---
+
+## 2. Home Office Requirements
+
+### 2.1 Workspace Requirements
+
+**Dedicated Workspace**:
+-  Separate room or dedicated area (not kitchen table long-term)
+-  Quiet environment (minimal background noise for calls)
+-  Adequate lighting (natural + task lighting)
+-  Ergonomic setup (proper desk height, chair support)
+-  Professional background for video calls
+-  Not shared space where frequent interruptions occur
+
+**Photos Required**:
+- Submit 2 photos of workspace during application
+- Shows: Desk setup, lighting, background for video calls
+- HR reviews for adequacy
+
+**Examples**:
+
+ **Acceptable Workspace**:
+- Spare bedroom converted to office
+- Finished basement with desk area
+- Corner of living room with room divider (quiet, professional)
+
+ **Not Acceptable Workspace**:
+- Kitchen table (unless dedicated office not possible + approved)
+- Bedroom with bed visible in video background
+- Hallway or high-traffic area
+- Unfinished basement (poor lighting, unprofessional)
+
+### 2.2 Internet Requirements
+
+**Minimum Speeds**:
+- **Download**: 50 Mbps (minimum), 100 Mbps (recommended)
+- **Upload**: 10 Mbps (minimum), 25 Mbps (recommended)
+- **Latency**: <50ms (for VPN, video calls)
+
+**Testing**:
+- Test at www.speedtest.net
+- Submit screenshot during application
+- Test during typical work hours (not 2 AM)
+
+**Insufficient Internet**:
+- If below minimum, consider:
+  - Upgrading plan (company may reimburse)
+  - Using mobile hotspot as backup
+  - Working from coworking space (reimbursed)
+  - Hybrid arrangement (office 3-4 days)
+
+**Backup Internet**:
+- Recommended: Mobile hotspot as backup (for outages)
+- Company provides: Backup 4G/5G dongle for critical roles (IT, on-call engineers)
+
+### 2.3 Safety & Environment
+
+**Home Office Safety**:
+- Free from hazards (no tripping hazards, proper electrical setup)
+- Smoke detector in room
+- Proper ventilation
+- Emergency exit accessible
+- First aid kit nearby (recommended)
+
+**Environmental Considerations**:
+- Temperature controlled (68-76°F ideal)
+- Adequate humidity (40-60%)
+- No mold, allergens, or air quality issues
+- Proper electrical outlets (no overloaded power strips)
+
+**Inspections**:
+- No physical home inspections (privacy respected)
+- Virtual inspection if ergonomic assessment requested
+- Employee attests workspace meets requirements
+
+---
+
+## 3. Equipment & Technology
+
+### 3.1 Company-Provided Equipment
+
+**Standard Remote Work Setup**:
+
+**Laptop**:
+- MacBook Pro M3 (14" or 16") OR
+- Dell XPS 15 (Windows)
+- Employee choice during onboarding
+- Refresh every 3 years
+
+**Monitor**:
+- 27" 4K monitor (Dell UltraSharp or LG)
+- Provided if requested
+- Can use personal monitor if preferred (no reimbursement)
+
+**Peripherals**:
+- Ergonomic keyboard (Logitech, Microsoft, or Apple)
+- Ergonomic mouse (vertical mouse available)
+- Laptop stand (raises screen to eye level)
+- Webcam (if laptop webcam inadequate)
+- USB-C dock/hub (for connectivity)
+
+**Audio**:
+- Noise-canceling headphones (up to $300)
+- Options: Sony WH-1000XM5, Bose QC45, AirPods Max
+- OR desktop mic/speaker setup (Jabra, Blue Yeti)
+
+**Optional Equipment** (if requested):
+- Second monitor (for dual-monitor setup)
+- Ergonomic chair (up to $500 reimbursement)
+- Desk (up to $300 reimbursement)
+- Standing desk converter (up to $200)
+- Footrest, wrist rests, lumbar support
+- Ring light (for video quality)
+- USB-C adapters
+
+**Ordering Equipment**:
+1. Submit request via IT portal
+2. IT approves based on role and justification
+3. Equipment shipped to home address (typically 3-5 days)
+4. Self-setup (IT support available via phone/video)
+
+**Return Policy**:
+- All company equipment must be returned if:
+  - Employment ends
+  - Transitioning to office-based role
+  - Upgrading to new equipment
+- Prepaid shipping label provided
+- Must return within 10 days of separation
+
+### 3.2 Software & Access
+
+**Pre-Installed Software**:
+- Operating system (macOS or Windows)
+- Productivity suite (Google Workspace or Microsoft 365)
+- Communication (Slack, Zoom)
+- Development tools (VS Code, PyCharm, Docker, Git)
+- VPN (Cisco AnyConnect or OpenVPN)
+- Security (Antivirus, MDM - Mobile Device Management)
+
+**Access Provisioning**:
+- VPN access (required for all remote work)
+- Cloud services (AWS, Google Cloud)
+- Internal tools (Jira, Confluence, GitHub)
+- Databases (read-only access for most, write for authorized)
+- Admin access (limited, requires justification)
+
+**Software Requests**:
+- Submit ticket to IT helpdesk
+- Include: Software name, version, business justification
+- Approval within 2 business days (routine requests)
+- Licensed software (company purchases, no personal licenses)
+
+### 3.3 Personal Equipment
+
+**Using Personal Devices**:
+-  **Prohibited**: Using personal laptop for work (security risk)
+-  **Allowed**: Using personal monitor, keyboard, mouse (peripherals)
+-  **Conditional**: Personal phone for work (must install MDM if accessing work email)
+
+**Reimbursement for Personal Equipment**:
+- Not reimbursed if company equipment available
+- Reimbursed only in special cases (manager + VP approval)
+- Examples: Specialized equipment (mechanical keyboard, trackball mouse)
+
+**BYOD (Bring Your Own Device) - Mobile**:
+- Can use personal phone for work (Slack, email)
+- Must install MDM (MobileIron or Jamf)
+- MDM allows: Remote wipe of work data (not personal), enforce passcode
+- Monthly stipend: $50 for personal phone usage
+- Alternative: Company-provided phone (iPhone or Android)
+
+---
+
+## 4. Communication & Collaboration
+
+### 4.1 Communication Channels
+
+**Primary Tools**:
+
+**Slack** (Instant Messaging):
+- Real-time communication
+- Channels: #engineering, #general, #random, #help-desk
+- Direct messages for quick questions
+- Response expectation: Within 1 hour during work hours
+- Status: Update when away (lunch, meeting, busy)
+
+**Email** (Asynchronous):
+- Formal communications
+- External communications (customers, vendors)
+- Documentation (proposals, contracts)
+- Response expectation: Within 24 hours (work days)
+
+**Zoom** (Video Conferencing):
+- Meetings (1-on-1s, team meetings, all-hands)
+- Video ON for internal meetings (builds rapport)
+- Video optional for large meetings (>20 people)
+- Screen sharing for presentations
+- Recording: Ask permission before recording
+
+**GitHub** (Code Collaboration):
+- Pull requests (code reviews)
+- Issues (bug tracking, feature requests)
+- Discussions (technical discussions)
+- Response expectation: PR reviews within 24 hours
+
+**Jira** (Project Management):
+- Task tracking
+- Sprint planning
+- Status updates (In Progress, In Review, Done)
+- Update tasks daily
+
+**Confluence** (Documentation):
+- Knowledge base
+- Project documentation
+- Meeting notes
+- Runbooks
+
+### 4.2 Communication Best Practices
+
+**Response Times**:
+
+```
+CHANNEL          | URGENCY  | EXPECTED RESPONSE
+-----------------|----------|------------------------------------------
+Slack DM         | High     | Within 1 hour (work hours)
+Slack channel    | Medium   | Within 2-4 hours (work hours)
+Email            | Low      | Within 24 hours (work days)
+Jira comment     | Low      | Within 1-2 business days
+Phone call       | Urgent   | Immediate (if available)
+```
+
+**Overcommunication Encouraged**:
+Remote work requires MORE communication than office:
+- Update team on progress (daily standup)
+- Share blockers early (don't wait till deadline)
+- Ask questions proactively (don't assume)
+- Document decisions (don't rely on verbal)
+
+**Asynchronous Communication**:
+- Default to async (respects time zones, focus time)
+- Don't expect immediate responses
+- Provide context (don't just say "hi")
+- Use threads (keep conversations organized)
+
+**Example Good Messages**:
+
+ **Good**:
+> "Hey @john, I'm working on the authentication feature and need your input on the API design. I've drafted a proposal here: [link]. Can you review by EOD tomorrow? No rush if you're busy, just ping me when you get to it. Thanks!"
+
+ **Bad**:
+> "Hi"
+> (waits for response)
+> "Are you there?"
+> "I need help"
+> (person finally responds 2 hours later)
+> "Never mind, figured it out"
+
+### 4.3 Meetings & Video Calls
+
+**Video Call Etiquette**:
+
+**Before Meeting**:
+- Test audio/video (join 2 minutes early)
+- Check background (tidy, professional)
+- Good lighting (face lit, not backlit)
+- Mute notifications (silence phone, close email)
+
+**During Meeting**:
+-  Video ON (builds rapport, shows engagement)
+-  Mute when not speaking (reduces background noise)
+-  Look at camera when speaking (eye contact)
+-  Use chat for questions (don't interrupt)
+-  Raise hand feature (for turn-taking)
+-  Multitasking (no email, coding, browsing)
+-  Eating (unless explicitly a lunch meeting)
+-  Lying in bed (unprofessional)
+
+**After Meeting**:
+- Send summary (action items, decisions, next steps)
+- Update Jira/Confluence (document outcomes)
+- Follow up on commitments
+
+**Meeting Scheduling**:
+- Use calendar (Google Calendar)
+- Include: Agenda, Zoom link, meeting goals
+- Schedule during core hours (10 AM - 4 PM)
+- Respect time zones (use Calendly for async scheduling)
+- Include "no-meeting" blocks (focus time)
+
+**Meeting Types**:
+
+**Daily Standup** (15 min):
+- What I did yesterday
+- What I'm doing today
+- Any blockers
+- Video optional, async acceptable (post in Slack)
+
+**Weekly 1-on-1** (30 min):
+- Career development
+- Feedback (both directions)
+- Questions, concerns
+- Video required (builds relationship)
+
+**Sprint Planning** (1-2 hours):
+- Review last sprint
+- Plan next sprint
+- Estimate tasks
+- Video required
+
+**All-Hands** (1 hour monthly):
+- Company updates
+- Q&A with leadership
+- Team recognition
+- Video required (or attend in-person)
+
+### 4.4 Collaboration Tools
+
+**Screen Sharing**:
+- Use for: Debugging, presentations, demos
+- Optimize: Close unnecessary tabs/apps
+- Annotate: Use Zoom's annotation tools
+
+**Virtual Whiteboarding**:
+- Tools: Miro, Mural, Jamboard
+- Use for: Brainstorming, diagramming, planning
+- Async collaboration (team can contribute anytime)
+
+**Pair Programming**:
+- Tools: VS Code Live Share, Tuple, Screen
+- Real-time collaboration on code
+- Great for onboarding, debugging, knowledge sharing
+
+**Document Collaboration**:
+- Google Docs (real-time editing)
+- Suggesting mode (for reviews)
+- Comment for questions (resolved when addressed)
+
+---
+
+## 5. Work Hours & Availability
+
+### 5.1 Core Hours
+
+**Core Hours**: 10:00 AM - 4:00 PM (employee's local time)
+- Must be available during core hours (responsive on Slack, available for meetings)
+- All meetings scheduled during core hours (exceptions with advance notice)
+
+**Flexible Hours Outside Core**:
+- Start anytime: 7:00 AM - 10:00 AM
+- End anytime: 4:00 PM - 8:00 PM
+- Total: 40 hours per week
+
+**Example Schedules**:
+
+```
+EARLY BIRD:
+7:00 AM - 4:00 PM (includes 1-hour lunch)
+
+STANDARD:
+9:00 AM - 5:00 PM (includes 1-hour lunch)
+
+NIGHT OWL:
+10:00 AM - 7:00 PM (includes 1-hour lunch)
+
+PARENT-FRIENDLY (broken day):
+8:00 AM - 12:00 PM (work)
+12:00 PM - 3:00 PM (school pickup, errands)
+3:00 PM - 7:00 PM (work)
+```
+
+### 5.2 Time Tracking
+
+**Exempt Employees** (salaried):
+- No time tracking required (honor system)
+- Expected to work ~40-45 hours/week
+- Occasionally more during crunch times (compensated with comp time)
+
+**Non-Exempt Employees** (hourly):
+- Must track time via system (Clockify, Harvest)
+- Clock in/out for shifts
+- Log breaks (lunch, rest breaks)
+- Overtime pre-approved (time-and-a-half for >40 hours/week)
+
+**Breaks**:
+- Lunch: 30-60 minutes (unpaid if >30 min)
+- Rest breaks: 15 minutes every 4 hours (paid)
+- No need to announce breaks (just update Slack status)
+
+### 5.3 Availability Indicators
+
+**Slack Status**:
+Update status to indicate availability:
+-  Available (default during work hours)
+-  Busy (in meeting, deep work)
+-  Away (lunch, break, errands)
+-  Offline (out of office, end of day)
+
+**Custom Status Examples**:
+- "In meeting until 3 PM"
+- "Lunch break - back at 1:30 PM"
+- "Focus time - DM for urgent matters"
+- "OOO - see [backup person] for urgent matters"
+
+**Calendar**:
+- Keep calendar updated (shows availability)
+- Block focus time (meetings won't be scheduled)
+- Set working hours (prevents meetings outside hours)
+- Decline meetings that conflict
+
+**Email Signature**:
+Include working hours in email signature:
+> "I work flexible hours. If you receive this email outside your working hours, please don't feel obligated to respond until you're back."
+
+### 5.4 Overtime & On-Call
+
+**Overtime** (non-exempt only):
+- Requires pre-approval
+- Paid at 1.5x hourly rate
+- Capped at 10 hours/week (unless exceptional circumstances)
+
+**On-Call Rotation** (engineers):
+- 1 week every 8 weeks
+- Compensation: $500/week + overtime for actual incidents
+- Must respond within 15 minutes
+- Backup engineer available (escalation)
+- Handoff: Monday 9 AM
+
+**On-Call Expectations**:
+-  Must be near computer (with internet access)
+-  Phone notifications enabled
+-  Respond within 15 minutes (acknowledge, provide ETA)
+-  Escalate if can't resolve in 1 hour
+-  Cannot consume alcohol (may need to respond)
+-  Cannot travel without backup coverage arranged
+
+---
+
+## 6. Performance & Productivity
+
+### 6.1 Performance Expectations
+
+**Same Standards**:
+- Remote employees held to same performance standards as office employees
+- No distinction in evaluations
+
+**Key Performance Indicators**:
+- **Deliverables**: Meeting deadlines, quality of work
+- **Communication**: Responsiveness, clarity, proactiveness
+- **Collaboration**: Team engagement, code reviews, helping others
+- **Initiative**: Identifying improvements, self-directed learning
+- **Reliability**: Availability during core hours, attending meetings
+
+### 6.2 Productivity Tracking
+
+**Output-Based** (not time-based):
+- Measured by: Completed tasks, shipped features, resolved tickets
+- Not measured by: Hours logged, activity indicators, mouse movements
+
+**Tools Used**:
+- Jira (task completion, velocity)
+- GitHub (commits, PRs, code reviews)
+- Sprint goals (team capacity planning)
+- Quarterly OKRs (individual goals)
+
+**No Surveillance Software**:
+- Company does NOT use:
+  - Keystroke loggers
+  - Screenshot tools
+  - Mouse movement trackers
+  - Time tracking software (except for non-exempt)
+- We trust employees to manage their time
+
+### 6.3 Productivity Tips
+
+**Focus Time**:
+- Block 2-4 hours daily for deep work (no meetings)
+- Use Pomodoro technique (25 min work, 5 min break)
+- Turn off notifications during focus time
+- Communicate focus time to team (Slack status)
+
+**Task Management**:
+- Prioritize: Use Eisenhower Matrix (urgent/important)
+- Break large tasks into small chunks (< 4 hours)
+- Tackle hardest task first (morning energy peak)
+- Close open loops (finish before starting new)
+
+**Environment Optimization**:
+- Noise: Use noise-canceling headphones or white noise
+- Temperature: Keep room cool (68-72°F optimal)
+- Lighting: Natural light + task lighting
+- Clutter: Keep desk tidy (reduces cognitive load)
+
+**Boundaries**:
+- Physical: Leave workspace at end of day (don't work from bed)
+- Temporal: Set hard start/stop times (prevent overwork)
+- Mental: Close Slack outside work hours (use "Do Not Disturb")
+
+### 6.4 Addressing Performance Issues
+
+**Early Intervention**:
+- Manager reaches out if performance concerns (don't wait for annual review)
+- 1-on-1 to discuss: specific issues, expectations, support needed
+
+**Performance Improvement Plan** (if issues persist):
+- 60-90 day plan with specific goals
+- Weekly check-ins with manager
+- Additional support (training, mentorship, resources)
+- Outcomes: Improvement → regular status; No improvement → termination
+
+**Remote-Specific Issues**:
+- Lack of communication → Set explicit response time expectations
+- Missing meetings → Adjust schedule, clarify expectations
+- Isolation → Increase 1-on-1 frequency, assign buddy
+- Distractions → Discuss home environment, consider hybrid/coworking
+
+---
+
+## 7. Security & Data Protection
+
+### 7.1 VPN Usage
+
+**Mandatory VPN**:
+-  Required when accessing:
+  - Company network resources
+  - Internal tools (Jira, Confluence, databases)
+  - Customer data
+  - Code repositories (if not on GitHub.com)
+-  Required when on:
+  - Public Wi-Fi (coffee shops, libraries, airports)
+  - Hotel Wi-Fi
+  - Any untrusted network
+
+**VPN Setup**:
+- Installed during onboarding (IT assists)
+- Auto-connect configured (seamless)
+- Split tunneling: Work traffic via VPN, personal traffic direct (faster for streaming, etc.)
+
+**VPN Troubleshooting**:
+- Can't connect → Restart VPN client, check internet, contact IT
+- Slow performance → Try different VPN server location
+- Disconnects frequently → Update VPN client, check router settings
+
+### 7.2 Device Security
+
+**Company Devices**:
+- **Encryption**: Full disk encryption (FileVault on Mac, BitLocker on Windows)
+- **Passwords**: Strong password (12+ characters) + 2FA
+- **Screen Lock**: Auto-lock after 5 minutes idle
+- **Updates**: Install security updates within 7 days
+- **Antivirus**: Company-provided (Sophos, CrowdStrike)
+- **MDM**: Mobile Device Management enrolled (allows remote wipe if lost)
+
+**Physical Security**:
+-  Keep laptop secure (don't leave unattended in public)
+-  Lock laptop when away (even at home)
+-  Don't let family/friends use work laptop
+-  Store laptop safely when traveling (hotel safe)
+-  Don't leave laptop in car (visible target)
+
+**Lost or Stolen Device**:
+1. Report immediately to security@company.com (within 1 hour)
+2. IT remotely wipes device (protects company data)
+3. File police report (if stolen)
+4. Replacement device shipped (next business day)
+
+### 7.3 Data Handling
+
+**Data Classification**:
+
+**Public**:
+- Marketing materials, press releases
+- Public blog posts, open-source code
+- Can share freely
+
+**Internal**:
+- Code, technical documentation
+- Internal communications (Slack, email)
+- Company policies
+- Share only with employees
+
+**Confidential**:
+- Customer data, PII
+- Financial data (revenue, salaries)
+- Product roadmaps, business strategies
+- Share only on need-to-know basis
+
+**Restricted**:
+- Payment card data (PCI)
+- Health information (HIPAA)
+- Social Security Numbers
+- Access requires special authorization
+
+**Handling Guidelines**:
+-  Store on company devices only (not personal)
+-  Use encrypted tools (Google Drive, not Dropbox personal)
+-  Delete when no longer needed (don't hoard)
+-  Shred paper documents (don't throw in trash)
+-  Don't email sensitive data (use secure file sharing)
+-  Don't discuss confidential matters in public (cafes, elevators)
+-  Don't store on USB drives (unless encrypted)
+
+### 7.4 Network Security
+
+**Home Network**:
+-  Change router default password
+-  Use WPA3 encryption (or WPA2 if router older)
+-  Disable WPS (security vulnerability)
+-  Update router firmware regularly
+-  Use guest network for IoT devices (separate from work devices)
+
+**Public Wi-Fi**:
+-  Avoid if possible (use phone hotspot instead)
+-  If must use: Always connect via VPN
+-  Don't access sensitive data (customer records, financial data)
+-  Don't log into important accounts (banking, payroll)
+
+### 7.5 Phishing & Social Engineering
+
+**Be Vigilant**:
+-  Hover over links before clicking (verify URL)
+-  Check sender email carefully (look for typos)
+-  Verify requests via secondary channel (if urgent wire transfer request, call person)
+-  Report suspicious emails (forward to phishing@company.com)
+-  Don't click links in unexpected emails
+-  Don't download attachments from unknown senders
+-  Don't provide passwords or sensitive info via email
+
+**Common Phishing Examples**:
+- "Your password will expire, click here to reset" → Phishing
+- "Package delivery failed, click to reschedule" → Phishing
+- "Your account has been suspended, verify now" → Phishing
+- "CEO urgently needs wire transfer" → Business Email Compromise (verify via phone!)
+
+**If You Click a Phishing Link**:
+1. Don't panic
+2. Disconnect from internet (Wi-Fi off)
+3. Report to security@company.com immediately
+4. Change password (after IT confirms safe)
+5. IT scans device for malware
+
+---
+
+## 8. Expenses & Reimbursement
+
+### 8.1 Reimbursable Expenses
+
+**Internet** (required for remote work):
+- Reimbursement: $50/month (or actual cost if less)
+- Submit monthly (via Expensify)
+- Requires: Copy of bill highlighting amount
+
+**Phone** (if using personal phone for work):
+- Reimbursement: $50/month
+- OR company provides phone (iPhone or Android)
+
+**Home Office Setup** (one-time):
+- Reimbursement: Up to $500
+- Eligible: Desk, chair, lamp, monitor stand
+- Submit within 90 days of starting remote work
+- Requires: Receipts (itemized)
+
+**Coworking Space** (if poor home internet or need change of scenery):
+- Reimbursement: Up to $200/month (or 4 day passes)
+- Requires: Manager approval + receipt
+- Popular: WeWork, Industrious, local coworking spaces
+
+**Office Supplies**:
+- Reimbursement: Up to $50/month
+- Eligible: Pens, notebooks, printer paper, toner
+- Not eligible: Personal items (coffee, snacks)
+
+**Printing/Shipping**:
+- Occasional printing/shipping for work reimbursed
+- Pre-approval for large jobs (>$50)
+
+### 8.2 Reimbursement Process
+
+**Submit via Expensify**:
+1. Log in to Expensify (expensify.com)
+2. Upload receipt (photo or PDF)
+3. Select category (Internet, Phone, Office Supplies, etc.)
+4. Add description ("March 2025 internet - remote work")
+5. Submit report
+6. Manager approves (within 5 business days)
+7. Reimbursed in next paycheck
+
+**Deadlines**:
+- Submit within 30 days of expense
+- Late submissions may be denied
+
+**Tax Considerations**:
+- Reimbursements are NOT taxable income (IRS qualified expense)
+- Company reports total reimbursements (W-2 reporting)
+
+### 8.3 Non-Reimbursable Expenses
+
+**Not Reimbursed**:
+-  Coffee, snacks, meals (except client meals)
+-  Commuting costs (if hybrid, your choice to live far)
+-  Home rent/mortgage (office space portion not reimbursed per IRS rules)
+-  Utilities (electricity, water) except internet
+-  Personal equipment (if company equipment available)
+-  Home office decor (plants, artwork, rugs)
+-  Ergonomic equipment beyond policy limits ($500 cap)
+
+---
+
+## 9. Ergonomics & Health
+
+### 9.1 Ergonomic Setup
+
+**Proper Workstation Setup**:
+
+**Monitor**:
+- Top of screen at or slightly below eye level
+- 20-30 inches from eyes (arm's length)
+- Screen tilted 10-20 degrees back
+- Reduce glare (position away from windows, use anti-glare screen)
+
+**Chair**:
+- Feet flat on floor (or footrest)
+- Knees at 90-degree angle
+- Hips slightly higher than knees
+- Lumbar support (curve fits lower back)
+- Armrests at desk height (shoulders relaxed)
+
+**Keyboard & Mouse**:
+- Elbows at 90-degree angle
+- Wrists straight (not bent up/down or side-to-side)
+- Keyboard directly in front of you (not off to side)
+- Mouse close to keyboard (avoid reaching)
+
+**Laptop Users**:
+- Use external keyboard + mouse + laptop stand
+- OR use external monitor + laptop closed
+- Never use laptop on lap (poor posture, overheating)
+
+**Diagram**:
+```
+        [Monitor at eye level]
+              |
+    [Keyboard & Mouse]
+              |
+    [Chair with lumbar]
+              |
+    [Feet flat on floor]
+```
+
+### 9.2 Ergonomic Assessment
+
+**Free Assessment**:
+- Request via HR (ergonomics@company.com)
+- Conducted virtually (video call with ergonomics specialist)
+- Duration: 30 minutes
+- Outcome: Recommendations for equipment/adjustments
+
+**When to Request**:
+- Experiencing discomfort (neck, back, wrist pain)
+- New to remote work (setup assistance)
+- Changed workspace
+- After injury (return to work accommodations)
+
+**Follow-Up**:
+- Equipment recommendations (company purchases)
+- Re-assessment in 30 days (verify improvements)
+
+### 9.3 Health & Wellness
+
+**Take Breaks**:
+- **20-20-20 Rule**: Every 20 minutes, look 20 feet away for 20 seconds (eye strain)
+- **Stretch**: Every hour, stand and stretch (2-5 minutes)
+- **Move**: Walk around house, do light exercises
+- **Lunch break**: Leave desk, eat away from workspace
+
+**Movement**:
+- Walking meetings (take calls while walking)
+- Desk exercises (chair yoga, stretches)
+- Standing desk or converter (alternate sitting/standing)
+- Evening walk or exercise (transition from work mode)
+
+**Mental Health**:
+- Combat isolation:
+  - Virtual coffee chats (random pairing tool)
+  - Join interest-based Slack channels (#running, #gaming, #cooking)
+  - Attend company social events (in-person or virtual)
+- Set boundaries (see section 6.3)
+- Use EAP (6 free counseling sessions)
+- Take PTO (don't hoard, mental health important)
+
+**Vision**:
+- Annual eye exam (covered by vision insurance)
+- Blue light glasses (optional, reimbursed up to $100)
+- Proper screen brightness (match room lighting)
+
+---
+
+## 10. Tax & Legal Considerations
+
+### 10.1 Work Location Restrictions
+
+**Allowed Locations**:
+- Primary residence (address on file with HR)
+- Temporary locations (travel, visiting family) up to 30 days
+- Coworking spaces (within same state)
+
+**Prior Approval Required**:
+- Moving to new state (notify HR at least 30 days before)
+- Working from different state for >30 days
+- Working from another country (see section 12)
+
+**Why Approval Needed**:
+- **Tax implications**: Nexus, withholding, multi-state taxation
+- **Legal compliance**: Labor laws vary by state
+- **Compensation**: Salaries adjusted based on location (cost of living)
+- **Equipment**: Shipping, retrieval logistics
+
+### 10.2 Tax Implications
+
+**State Income Tax**:
+- Withheld based on work location (not home state in some cases)
+- Multi-state workers: May owe taxes to multiple states (consult CPA)
+- Company handles withholding (you file returns in April)
+
+**Home Office Deduction**:
+- **W-2 Employees**: NOT eligible for home office deduction (TCJA 2017 eliminated)
+- **1099 Contractors**: Can claim home office (consult CPA)
+- Company reimbursements: NOT taxable (separate from deduction)
+
+**Moving to Different State**:
+- Notify HR (update address, tax withholding)
+- Salary may be adjusted (lower or higher based on location)
+- Example: Moving from SF to Austin → Salary may decrease (lower COL)
+
+### 10.3 Workers' Compensation
+
+**Coverage**:
+- Work-from-home injuries covered (if occurred during work hours, performing work duties)
+- Examples: Tripping over laptop cable, carpal tunnel from typing
+
+**Reporting Injuries**:
+1. Report to manager and HR within 24 hours
+2. Fill out injury report (online form)
+3. Seek medical treatment (urgent care, ER if serious)
+4. Follow up with workers' comp claim (HR assists)
+
+**Not Covered**:
+- Injuries during breaks (lunch, personal errands)
+- Pre-existing conditions (unless work aggravated)
+- Injuries due to intoxication or willful misconduct
+
+### 10.4 Unemployment Insurance
+
+**State UI Tax**:
+- Company pays unemployment insurance (you don't pay)
+- Based on work location state
+
+**Eligibility**:
+- If laid off: File for unemployment (state agency)
+- If quit: Generally NOT eligible (exceptions: constructive discharge, unsafe conditions)
+
+---
+
+## 11. Transitioning Between Arrangements
+
+### 11.1 Remote to Office
+
+**Reasons for Transition**:
+- Employee preference (prefers office environment)
+- Performance issues (productivity concerns)
+- Role change (new role requires office presence)
+- Business needs (team co-location, client-facing)
+
+**Process**:
+1. Discuss with manager (understand reasons)
+2. Determine timeline (typically 30 days notice)
+3. HR facilitates (desk assignment, office access)
+4. Return remote-specific equipment (monitor, chair if company-provided)
+5. Adjust benefits (stop internet reimbursement)
+
+**Transition Support**:
+- Gradual: Start 2-3 days/week, increase to 5 (if desired)
+- Parking: Company-subsidized parking or transit pass
+- Re-acclimation: May feel overwhelming initially (normal)
+
+### 11.2 Office to Remote
+
+**Reasons for Transition**:
+- Relocation (moving to area without office)
+- Personal circumstances (caregiving, health)
+- Performance improvement (fewer distractions)
+- Pandemic or emergency (company-initiated)
+
+**Process**:
+1. Request via HR portal (follow section 1.3)
+2. Trial period (30 days)
+3. Home office setup (order equipment)
+4. Training (remote work best practices)
+5. Ongoing check-ins (weekly for first month)
+
+**Benefits**:
+- Internet reimbursement ($50/month)
+- Home office stipend ($500 one-time)
+- Increased flexibility
+
+### 11.3 Full-Time to Part-Time
+
+**Remote Part-Time**:
+- Allowed (20-30 hours/week)
+- Prorated PTO, no health insurance (unless >30 hours)
+- Flexibility on days/hours (coordinate with team)
+- Salary adjusted (prorated)
+
+**Process**:
+1. Discuss with manager (ensure role can be part-time)
+2. HR approval (benefits impact explained)
+3. Update employment agreement (hours, compensation)
+4. Effective date (typically 30 days out)
+
+**Returning to Full-Time**:
+- Request anytime (business need permitting)
+- May need to wait for open req (not automatic)
+
+---
+
+## 12. International Remote Work
+
+### 12.1 Policy Overview
+
+**General Rule**: International remote work NOT permitted (due to complexity)
+
+**Exceptions** (rare, case-by-case):
+- Short-term (< 30 days): May be approved for personal travel
+- Long-term (> 30 days): Requires executive approval, legal review, tax implications
+
+**Why Restricted**:
+- **Tax**: Permanent establishment, transfer pricing, double taxation
+- **Legal**: Labor laws, work permits, visas
+- **Compliance**: Data protection (GDPR, CCPA, etc.)
+- **Payroll**: Complex multi-country payroll setup
+- **Equipment**: Shipping, retrieval, customs
+- **Time Zones**: Collaboration challenges
+
+### 12.2 Short-Term International Work
+
+**Permitted** (with approval):
+- Working from abroad for up to 30 days/year
+- "Workcation" (working while traveling)
+
+**Approval Process**:
+1. Submit request at least 30 days before travel
+2. Manager approval (consider time zones, collaboration needs)
+3. Legal review (certain countries prohibited: China, Russia, Iran, North Korea)
+4. Tax review (ensure no permanent establishment risk)
+5. IT review (VPN, network access)
+
+**Requirements**:
+- Stable internet (minimum 50 Mbps)
+- Availability during overlap with team (min 4 hours)
+- Same performance standards
+- VPN required (secure connection)
+
+**Example**:
+- Employee in US wants to work from Portugal for 3 weeks
+- Submit request → Approved
+- Requirements: Available 1-5 PM EST (6-10 PM Portugal), VPN, daily check-ins
+
+### 12.3 Long-Term International Work
+
+**Permanent Relocation to Another Country**:
+- Generally NOT supported (employee would need to resign)
+- Exception: Company has entity in that country (e.g., UK, Canada, Germany)
+- Process: Transfer to local entity (new employment contract, local benefits)
+
+**Digital Nomad**:
+- Rotating between countries every few months
+- NOT supported (tax complexity, inconsistent work environment)
+- Alternative: Take unpaid leave or sabbatical
+
+**Visa & Immigration**:
+- Company does NOT sponsor work permits for remote work abroad
+- If you have citizenship/right to work abroad: Discuss with HR (may be possible)
+
+### 12.4 Prohibited Countries
+
+**Cannot Work From** (even short-term):
+- China (data restrictions, VPN issues)
+- Russia (sanctions, security concerns)
+- Iran, North Korea, Syria (sanctions)
+- Countries with US sanctions or trade restrictions
+
+**Restricted Countries** (requires VP approval):
+- Countries with weak data protection
+- Countries with unstable internet infrastructure
+- Countries in conflict zones
+
+---
+
+## Appendices
+
+### Appendix A: Remote Work Checklist
+
+**Before Starting Remote Work**:
+-  Request approved (manager + HR)
+-  Home office setup complete (desk, chair, lighting)
+-  Internet speed tested (>50 Mbps down, >10 Mbps up)
+-  Equipment received (laptop, monitor, headphones)
+-  Software installed (VPN, Slack, Zoom)
+-  Accounts provisioned (VPN, AWS, GitHub)
+-  Calendar working hours set
+-  Email signature updated (includes working hours)
+-  Ergonomic assessment scheduled (if needed)
+-  Attended remote work orientation
+
+### Appendix B: Home Office Setup Examples
+
+**Minimum Setup** (budget-friendly):
+- Desk: IKEA LINNMON/ALEX ($150)
+- Chair: IKEA MARKUS ($200)
+- Lamp: LED desk lamp ($30)
+- Monitor: 24" 1080p ($150)
+- Total: ~$530
+
+**Standard Setup** (recommended):
+- Desk: Uplift Standing Desk ($600)
+- Chair: Herman Miller Aeron ($800, company reimburses $500)
+- Lamp: BenQ ScreenBar ($100)
+- Monitor: 27" 4K Dell UltraSharp ($400)
+- Accessories: Laptop stand, cable management ($50)
+- Total: ~$1,950 (company covers $900)
+
+**Premium Setup** (power user):
+- Desk: Fully Jarvis Bamboo Standing Desk ($750)
+- Chair: Herman Miller Embody ($1,500, company reimburses $500)
+- Lamp: Dyson Lightcycle ($600)
+- Monitors: Dual 32" 4K monitors ($800 each)
+- Accessories: USB-C dock, mechanical keyboard ($400)
+- Total: ~$4,850 (company covers $1,400)
+
+### Appendix C: Communication Response Times
+
+```
+URGENCY    | EXAMPLE                               | CHANNEL        | RESPONSE TIME
+-----------|---------------------------------------|----------------|------------------
+CRITICAL   | Production down, data breach          | Phone call     | Immediate
+URGENT     | Blocker, demo in 2 hours              | Slack DM       | < 15 minutes
+HIGH       | Code review, question on task         | Slack DM       | < 1 hour
+MEDIUM     | Feature discussion, design feedback   | Slack channel  | < 4 hours
+LOW        | FYI, nice-to-have, documentation      | Email          | < 24 hours
+```
+
+### Appendix D: Reimbursement Summary
+
+```
+EXPENSE              | AMOUNT        | FREQUENCY  | REQUIRES
+---------------------|---------------|------------|------------------
+Internet             | $50/month     | Monthly    | Bill copy
+Phone                | $50/month     | Monthly    | Bill copy
+Home office setup    | $500          | One-time   | Receipts
+Coworking space      | $200/month    | Monthly    | Manager approval + receipt
+Office supplies      | $50/month     | Monthly    | Receipts
+Ergonomic equipment  | Case-by-case  | One-time   | Ergonomic assessment
+```
+
+### Appendix E: Remote Work Resources
+
+**Internal Resources**:
+- Remote Work Guide (Confluence): confluence.company.com/remote-work
+- Ergonomics Handbook (PDF): drive.google.com/ergonomics-guide
+- IT Support (Helpdesk): helpdesk@company.com | (555) 123-4568
+- HR Remote Work Team: remote-work@company.com
+
+**External Resources**:
+- GitLab Remote Work Guide: about.gitlab.com/company/culture/all-remote
+- Remote Work University: remote.co
+- Ergonomics Guide (OSHA): osha.gov/ergonomics
+
+**Tools**:
+- Time Zone Converter: worldtimebuddy.com
+- Internet Speed Test: speedtest.net
+- Coworking Space Finder: coworker.com
+- Focus Timer (Pomodoro): pomofocus.io
+
+**Books**:
+- "Remote: Office Not Required" by Jason Fried & DHH
+- "The Year Without Pants" by Scott Berkun
+- "Deep Work" by Cal Newport
+
+### Appendix F: Frequently Asked Questions
+
+**Q: Can I work from a coffee shop?**
+A: Yes, occasionally (use VPN). Not recommended for confidential work or video calls (privacy concerns).
+
+**Q: Can I work from another state temporarily?**
+A: Yes, up to 30 days (notify manager). More than 30 days requires HR approval (tax implications).
+
+**Q: What if my internet goes down?**
+A: 1) Use mobile hotspot (backup), 2) Go to coworking space, 3) Notify manager (use PTO if cannot work).
+
+**Q: Do I get a company phone?**
+A: You can request one, or use personal phone with $50/month stipend.
+
+**Q: Can I work from abroad?**
+A: Short-term (< 30 days) with approval. Long-term generally not permitted.
+
+**Q: Am I required to have video on for meetings?**
+A: Internal meetings: yes (builds rapport). Large meetings (>20): optional. External meetings: yes (professional).
+
+**Q: Can I use my personal laptop?**
+A: No, company laptop required (security, compliance).
+
+**Q: What if I'm not productive at home?**
+A: Discuss with manager. Options: Hybrid arrangement, coworking space, office-based.
+
+**Q: Can my family use my work laptop?**
+A: No, company devices for authorized users only.
+
+**Q: Do I need to request PTO to work from a different location?**
+A: No, as long as you're working your normal hours (notify manager).
+
+---
+
+**Document Version**: 3.1
+**Effective Date**: January 2025
+**Next Review**: January 2026
+**Approved by**: Chief People Officer & VP of Operations
+**Classification**: Internal - All Employees
+
+---
+
+**END OF REMOTE WORK & FLEXIBLE WORK ARRANGEMENTS POLICY**

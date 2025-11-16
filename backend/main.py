@@ -37,8 +37,15 @@ except ImportError:
     REDIS_AVAILABLE = False
     logger.warning("  Redis/RQ not available - ingestion API will be disabled")
 
-# Load environment variables (don't override existing ones)
-load_dotenv(override=False)
+# Load environment variables - check for .env.local first (for local development)
+import os
+from pathlib import Path
+env_local_path = Path(__file__).parent.parent / '.env.local'
+if env_local_path.exists():
+    load_dotenv(env_local_path, override=True)
+    logger.info(f" Loaded local environment from {env_local_path}")
+else:
+    load_dotenv(override=False)
 
 # Health check cache (TTL: 10 seconds)
 _health_cache = {"data": None, "timestamp": 0}
@@ -105,9 +112,18 @@ chat_sessions: Dict[str, List[Dict[str, str]]] = {}
 redis_conn = None
 ingestion_queue = None
 
-# Upload directory
-UPLOAD_DIR = "/app/uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# Upload directory - support both Docker and local paths
+DATA_DIR = os.getenv("DATA_DIR", "./data")
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", os.path.join(DATA_DIR, "uploads"))
+
+# Create upload directory if it doesn't exist
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    logger.info(f" Upload directory: {UPLOAD_DIR}")
+except Exception as e:
+    logger.warning(f"⚠️  Could not create upload directory {UPLOAD_DIR}: {e}")
+    UPLOAD_DIR = "./uploads"  # Fallback
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 def warmup_embeddings():
@@ -244,31 +260,41 @@ async def health_check_dependencies() -> Dict[str, Any]:
         logger.warning(f"Milvus health check failed: {e}")
         results["milvus"] = "fail"
     
-    # Check Etcd (Milvus dependency)
-    try:
-        import httpx
-        etcd_host = os.getenv("ETCD_HOST", "etcd")
-        etcd_port = os.getenv("ETCD_PORT", "2379")
-        with httpx.Client(timeout=2.0) as client:
-            resp = client.get(f"http://{etcd_host}:{etcd_port}/health")
-            if resp.status_code == 200:
-                results["etcd"] = "ok"
-    except Exception as e:
-        logger.warning(f"Etcd health check failed: {e}")
-        results["etcd"] = "fail"
+    # Check Etcd (Milvus dependency) - Skip if using embedded Etcd (local/standalone mode)
+    etcd_embedded = os.getenv("ETCD_USE_EMBED", "false").lower() == "true"
+    if not etcd_embedded:
+        try:
+            import httpx
+            etcd_host = os.getenv("ETCD_HOST", "etcd")
+            etcd_port = os.getenv("ETCD_PORT", "2379")
+            with httpx.Client(timeout=2.0) as client:
+                resp = client.get(f"http://{etcd_host}:{etcd_port}/health")
+                if resp.status_code == 200:
+                    results["etcd"] = "ok"
+        except Exception as e:
+            logger.warning(f"Etcd health check failed: {e}")
+            results["etcd"] = "fail"
+    else:
+        # Embedded Etcd - mark as ok if Milvus is ok
+        results["etcd"] = "ok" if results["milvus"] == "ok" else "fail"
     
-    # Check Minio (Milvus storage)
-    try:
-        import httpx
-        minio_host = os.getenv("MINIO_HOST", "minio")
-        minio_port = os.getenv("MINIO_PORT", "9000")
-        with httpx.Client(timeout=2.0) as client:
-            resp = client.get(f"http://{minio_host}:{minio_port}/minio/health/live")
-            if resp.status_code == 200:
-                results["minio"] = "ok"
-    except Exception as e:
-        logger.warning(f"Minio health check failed: {e}")
-        results["minio"] = "fail"
+    # Check Minio (Milvus storage) - Skip if using local storage (standalone mode)
+    storage_type = os.getenv("COMMON_STORAGETYPE", "minio").lower()
+    if storage_type != "local":
+        try:
+            import httpx
+            minio_host = os.getenv("MINIO_HOST", "minio")
+            minio_port = os.getenv("MINIO_PORT", "9000")
+            with httpx.Client(timeout=2.0) as client:
+                resp = client.get(f"http://{minio_host}:{minio_port}/minio/health/live")
+                if resp.status_code == 200:
+                    results["minio"] = "ok"
+        except Exception as e:
+            logger.warning(f"Minio health check failed: {e}")
+            results["minio"] = "fail"
+    else:
+        # Local storage - mark as ok if Milvus is ok
+        results["minio"] = "ok" if results["milvus"] == "ok" else "fail"
     
     # Check Ollama (try multiple endpoints with fallback)
     llm_host = os.getenv("LLM_HOST", "ollama")

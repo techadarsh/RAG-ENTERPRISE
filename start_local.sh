@@ -1,0 +1,700 @@
+#!/bin/bash
+
+# RAG Enterprise Chatbot - Local Mac Startup Script
+# Automatically checks, installs, and starts all required services on Mac
+# Usage: ./start_local.sh [start|stop|status|clean]
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║  RAG Enterprise - Local Mac Launcher       ║${NC}"
+echo -e "${BLUE}╚════════════════════════════════════════════╝${NC}"
+echo ""
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$PROJECT_DIR"
+
+# Function to check and install Homebrew
+check_homebrew() {
+    echo -e "${BLUE}[1/8] Checking Homebrew...${NC}"
+    if ! command -v brew &> /dev/null; then
+        echo -e "${YELLOW}⚠️  Homebrew not found. Installing...${NC}"
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        echo -e "${GREEN}✅ Homebrew installed${NC}"
+    else
+        echo -e "${GREEN}✅ Homebrew found: $(brew --version | head -n1)${NC}"
+    fi
+}
+
+# Function to check and install Python 3.11
+check_python() {
+    echo -e "${BLUE}[2/8] Checking Python 3.11...${NC}"
+    if ! command -v python3.11 &> /dev/null; then
+        echo -e "${YELLOW}⚠️  Python 3.11 not found. Installing...${NC}"
+        brew install python@3.11
+        echo -e "${GREEN}✅ Python 3.11 installed${NC}"
+    else
+        echo -e "${GREEN}✅ Python 3.11 found: $(python3.11 --version)${NC}"
+    fi
+    
+    # Check/create virtual environment
+    if [ ! -d "venv" ]; then
+        echo -e "${YELLOW}⚠️  Virtual environment not found. Creating...${NC}"
+        python3.11 -m venv venv
+        echo -e "${GREEN}✅ Virtual environment created${NC}"
+    fi
+    
+    # Activate venv and install dependencies
+    source venv/bin/activate
+    echo -e "${BLUE}   Installing Python dependencies...${NC}"
+    pip install --upgrade pip > /dev/null 2>&1
+    
+    if [ -f "backend/requirements.txt" ]; then
+        pip install -r backend/requirements.txt > /dev/null 2>&1
+        echo -e "${GREEN}✅ Python dependencies installed${NC}"
+    fi
+}
+
+# Function to check and install Node.js
+check_node() {
+    echo -e "${BLUE}[3/8] Checking Node.js...${NC}"
+    if ! command -v node &> /dev/null; then
+        echo -e "${YELLOW}⚠️  Node.js not found. Installing...${NC}"
+        brew install node
+        echo -e "${GREEN}✅ Node.js installed${NC}"
+    else
+        echo -e "${GREEN}✅ Node.js found: $(node --version)${NC}"
+    fi
+    
+    # Install frontend dependencies
+    if [ ! -d "frontend/node_modules" ]; then
+        echo -e "${BLUE}   Installing frontend dependencies...${NC}"
+        cd frontend
+        npm install > /dev/null 2>&1
+        cd ..
+        echo -e "${GREEN}✅ Frontend dependencies installed${NC}"
+    fi
+}
+
+# Function to check and install Ollama
+check_ollama() {
+    echo -e "${BLUE}[4/8] Checking Ollama...${NC}"
+    if ! command -v ollama &> /dev/null; then
+        echo -e "${YELLOW}⚠️  Ollama not found. Installing...${NC}"
+        brew install ollama
+        echo -e "${GREEN}✅ Ollama installed${NC}"
+    else
+        echo -e "${GREEN}✅ Ollama found${NC}"
+    fi
+}
+
+# Function to check and install Redis
+check_redis() {
+    echo -e "${BLUE}[5/8] Checking Redis...${NC}"
+    if ! command -v redis-server &> /dev/null; then
+        echo -e "${YELLOW}⚠️  Redis not found. Installing...${NC}"
+        brew install redis
+        echo -e "${GREEN}✅ Redis installed${NC}"
+    else
+        echo -e "${GREEN}✅ Redis found: $(redis-server --version | head -n1)${NC}"
+    fi
+}
+
+# Function to check Docker (for Milvus)
+check_docker() {
+    echo -e "${BLUE}[6/8] Checking Docker...${NC}"
+    if ! command -v docker &> /dev/null; then
+        echo -e "${RED}❌ Docker not found!${NC}"
+        echo -e "${YELLOW}   Please install Docker Desktop from: https://www.docker.com/products/docker-desktop${NC}"
+        exit 1
+    fi
+    
+    if ! docker info > /dev/null 2>&1; then
+        echo -e "${RED}❌ Docker is not running!${NC}"
+        echo -e "${YELLOW}   Please start Docker Desktop and try again${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✅ Docker found and running${NC}"
+}
+
+# Function to create required directories
+create_directories() {
+    echo -e "${BLUE}[7/8] Creating required directories...${NC}"
+    mkdir -p data/uploads
+    mkdir -p data/sample_confluence_pages
+    mkdir -p data/incoming
+    mkdir -p ~/milvus-data
+    echo -e "${GREEN}✅ Directories created${NC}"
+}
+
+# Function to create .env.local
+create_env_local() {
+    echo -e "${BLUE}[8/8] Setting up local environment...${NC}"
+    
+    if [ ! -f ".env.local" ]; then
+        cat > .env.local << 'EOF'
+# Local Development Configuration - Mac M4 Pro
+
+# LLM Configuration (Local Ollama)
+LLM_MODE=api
+LLM_HOST=localhost
+LLM_PORT=11434
+LLM_MODEL=mistral
+LLM_TEMPERATURE=0.2
+LLM_MAX_TOKENS=1024
+LLM_TIMEOUT_WARM=60000
+LLM_TIMEOUT_COLD=90000
+
+# Milvus Configuration (Docker)
+MILVUS_HOST=localhost
+MILVUS_PORT=19530
+COLLECTION_NAME=enterprise_docs
+
+# Redis Configuration (Local)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+
+# Embedding Model
+EMBEDDING_MODEL=BAAI/bge-base-en
+EMBEDDING_DIM=768
+
+# Document Processing
+CHUNK_SIZE=512
+CHUNK_OVERLAP=50
+RETRIEVAL_TOP_K=5
+MAX_CONTEXT_CHARS=2000
+
+# Confluence Configuration
+CONFLUENCE_MODE=local
+CONFLUENCE_LOCAL_DIR=data/sample_confluence_pages
+
+# Data Directories
+DATA_DIR=./data
+UPLOAD_DIR=./data/uploads
+
+# Etcd/Minio Configuration (Milvus standalone uses embedded versions)
+ETCD_USE_EMBED=true
+COMMON_STORAGETYPE=local
+ETCD_HOST=localhost
+ETCD_PORT=2379
+MINIO_HOST=localhost
+MINIO_PORT=9000
+EOF
+        echo -e "${GREEN}✅ .env.local created${NC}"
+    else
+        echo -e "${GREEN}✅ .env.local already exists${NC}"
+    fi
+    
+    # Create frontend .env.local
+    if [ ! -f "frontend/.env.local" ]; then
+        echo "REACT_APP_API_URL=http://localhost:8000" > frontend/.env.local
+        echo -e "${GREEN}✅ frontend/.env.local created${NC}"
+    fi
+}
+
+# Function to create backend/run_local.py
+create_run_local() {
+    if [ ! -f "backend/run_local.py" ]; then
+        cat > backend/run_local.py << 'EOF'
+#!/usr/bin/env python3
+"""
+Local development server for Mac
+Runs without Docker, using local services
+"""
+import os
+import sys
+from pathlib import Path
+
+# Add backend to path
+sys.path.insert(0, str(Path(__file__).parent))
+
+# Load local environment
+from dotenv import load_dotenv
+load_dotenv('.env.local')
+
+# Create required directories
+DATA_DIR = os.getenv("DATA_DIR", "./data")
+UPLOAD_DIR = os.path.join(DATA_DIR, "uploads")
+CONFLUENCE_DIR = os.path.join(DATA_DIR, "sample_confluence_pages")
+
+Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+Path(CONFLUENCE_DIR).mkdir(parents=True, exist_ok=True)
+
+import uvicorn
+
+if __name__ == "__main__":
+    print("🚀 Starting RAG Enterprise Backend (Local Mode)")
+    print(f"📍 Ollama: http://localhost:11434")
+    print(f"📍 Milvus: http://localhost:19530")
+    print(f"📍 Redis: http://localhost:6379")
+    print(f"📍 Backend: http://localhost:8000")
+    print(f"📍 API Docs: http://localhost:8000/docs")
+    print("")
+    
+    # Import app after environment is loaded
+    from main import app
+    
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info"
+    )
+EOF
+        chmod +x backend/run_local.py
+    fi
+}
+
+# Function to start Ollama service
+start_ollama() {
+    echo -e "${BLUE}Starting Ollama service...${NC}"
+    
+    # Check if Ollama is already running
+    if pgrep -x "ollama" > /dev/null; then
+        echo -e "${GREEN}✅ Ollama already running${NC}"
+    else
+        # Start Ollama in background
+        ollama serve > /tmp/ollama.log 2>&1 &
+        sleep 3
+        
+        if pgrep -x "ollama" > /dev/null; then
+            echo -e "${GREEN}✅ Ollama started${NC}"
+        else
+            echo -e "${RED}❌ Failed to start Ollama${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Check if Mistral model exists
+    echo -e "${BLUE}Checking Mistral model...${NC}"
+    if ollama list | grep -q "mistral"; then
+        echo -e "${GREEN}✅ Mistral model ready${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Downloading Mistral model (4.4GB)...${NC}"
+        echo -e "${YELLOW}   This may take 5-15 minutes...${NC}"
+        ollama pull mistral
+        echo -e "${GREEN}✅ Mistral model downloaded${NC}"
+    fi
+}
+
+# Function to start Redis
+start_redis() {
+    echo -e "${BLUE}Starting Redis...${NC}"
+    
+    # Check if Redis is already running
+    if redis-cli ping > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ Redis already running${NC}"
+    else
+        # Start Redis as a service
+        brew services start redis > /dev/null 2>&1
+        sleep 2
+        
+        if redis-cli ping > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ Redis started${NC}"
+        else
+            echo -e "${RED}❌ Failed to start Redis${NC}"
+            exit 1
+        fi
+    fi
+}
+
+# Function to start Milvus
+start_milvus() {
+    echo -e "${BLUE}Starting Milvus...${NC}"
+    
+    # Check if Milvus container exists
+    if docker ps -a | grep -q milvus-standalone; then
+        # Container exists, check if running
+        if docker ps | grep -q milvus-standalone; then
+            echo -e "${GREEN}✅ Milvus already running${NC}"
+        else
+            # Start existing container
+            docker start milvus-standalone > /dev/null 2>&1
+            echo -e "${GREEN}✅ Milvus started${NC}"
+        fi
+    else
+        # Create and start new container
+        docker run -d \
+          --name milvus-standalone \
+          -p 19530:19530 \
+          -p 9091:9091 \
+          -v ~/milvus-data:/var/lib/milvus \
+          -e ETCD_USE_EMBED=true \
+          -e COMMON_STORAGETYPE=local \
+          milvusdb/milvus:v2.3.3 \
+          milvus run standalone > /dev/null 2>&1
+        
+        echo -e "${GREEN}✅ Milvus started${NC}"
+    fi
+    
+    # Wait for Milvus to be ready
+    echo -e "${BLUE}   Waiting for Milvus to be ready...${NC}"
+    for i in {1..30}; do
+        if curl -s http://localhost:9091/healthz > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ Milvus is ready${NC}"
+            break
+        fi
+        sleep 2
+    done
+}
+
+# Function to start backend
+start_backend() {
+    echo -e "${BLUE}Starting Backend...${NC}"
+    
+    source venv/bin/activate
+    cd backend
+    python run_local.py > /tmp/rag-backend.log 2>&1 &
+    BACKEND_PID=$!
+    cd ..
+    
+    # Save PID for later
+    echo $BACKEND_PID > /tmp/rag-backend.pid
+    
+    echo -e "${GREEN}✅ Backend started (PID: $BACKEND_PID)${NC}"
+    echo -e "${BLUE}   Backend is initializing (loading documents, extracting topics)...${NC}"
+    echo -e "${BLUE}   This may take 60-90 seconds. Monitor: tail -f /tmp/rag-backend.log${NC}"
+    
+    # Wait for backend to be ready (increased timeout for topic extraction)
+    echo -e "${BLUE}   Waiting for backend health endpoint...${NC}"
+    for i in {1..60}; do
+        if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ Backend is ready at http://localhost:8000${NC}"
+            return 0
+        fi
+        sleep 2
+    done
+    
+    echo -e "${YELLOW}⚠️  Backend health check timed out (still initializing)${NC}"
+    echo -e "${YELLOW}   Check logs: tail -f /tmp/rag-backend.log${NC}"
+    echo -e "${YELLOW}   The backend may still become ready in a few moments${NC}"
+}
+
+# Function to start frontend
+start_frontend() {
+    echo -e "${BLUE}Starting Frontend...${NC}"
+    
+    cd frontend
+    
+    # Create a simple start script that fixes the localStorage issue
+    cat > start_local.sh << 'FRONTEND_SCRIPT'
+#!/bin/bash
+export PORT=3000
+export BROWSER=none
+export SKIP_PREFLIGHT_CHECK=true
+export NODE_OPTIONS="--localstorage-file=/tmp/node-localstorage"
+npm start
+FRONTEND_SCRIPT
+    
+    chmod +x start_local.sh
+    
+    # Start frontend with proper environment
+    ./start_local.sh > /tmp/rag-frontend.log 2>&1 &
+    FRONTEND_PID=$!
+    cd ..
+    
+    # Save PID for later
+    echo $FRONTEND_PID > /tmp/rag-frontend.pid
+    
+    echo -e "${GREEN}✅ Frontend started (PID: $FRONTEND_PID)${NC}"
+    echo -e "${BLUE}   Waiting for frontend to compile (this may take 30-60 seconds)...${NC}"
+    
+    # Wait for frontend to be ready
+    for i in {1..60}; do
+        if curl -s http://localhost:3000 > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ Frontend is ready at http://localhost:3000${NC}"
+            return 0
+        fi
+        sleep 2
+    done
+    
+    echo -e "${YELLOW}⚠️  Frontend may still be compiling. Check logs: tail -f /tmp/rag-frontend.log${NC}"
+}
+
+# Function to load sample documents into Milvus
+load_sample_documents() {
+    echo -e "${BLUE}Loading sample documents into Milvus...${NC}"
+    
+    # Check recursively for .txt files in data directory
+    CONFLUENCE_DIR="data/sample_confluence_pages"
+    
+    if [ -d "$CONFLUENCE_DIR" ]; then
+        # Count .txt files recursively
+        TXT_COUNT=$(find "$CONFLUENCE_DIR" -type f -name "*.txt" 2>/dev/null | wc -l | tr -d ' ')
+        
+        if [ "$TXT_COUNT" -gt 0 ]; then
+            echo -e "${BLUE}   Found $TXT_COUNT sample documents in $CONFLUENCE_DIR${NC}"
+            
+            # List some of the files found
+            echo -e "${BLUE}   Sample files:${NC}"
+            find "$CONFLUENCE_DIR" -type f -name "*.txt" 2>/dev/null | head -5 | while read file; do
+                echo -e "${BLUE}     - $(basename "$file")${NC}"
+            done
+            
+            echo -e "${BLUE}   Waiting for backend to be fully ready for ingestion...${NC}"
+            
+            # Wait up to 2 minutes for backend to complete initialization
+            BACKEND_READY=false
+            for i in {1..60}; do
+                if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+                    BACKEND_READY=true
+                    echo -e "${GREEN}✅ Backend is ready${NC}"
+                    break
+                fi
+                sleep 2
+            done
+            
+            if [ "$BACKEND_READY" = false ]; then
+                echo -e "${YELLOW}⚠️  Backend not ready yet. Documents were auto-loaded during startup.${NC}"
+                echo -e "${YELLOW}   The backend loads sample documents automatically on initialization.${NC}"
+                echo -e "${YELLOW}   Check: tail -f /tmp/rag-backend.log${NC}"
+                return 0
+            fi
+            
+            # Call the ingestion endpoint
+            echo -e "${BLUE}   Checking document ingestion status via API...${NC}"
+            RESPONSE=$(curl -s -X POST http://localhost:8000/ingest/confluence \
+                -H "Content-Type: application/json" \
+                -d '{"mode": "local"}' 2>&1)
+            
+            # Check response for success indicators
+            if echo "$RESPONSE" | grep -q "success\|ingested\|loaded\|pages"; then
+                echo -e "${GREEN}✅ Documents confirmed in Milvus${NC}"
+                echo -e "${GREEN}   $(echo "$RESPONSE" | head -c 200)${NC}"
+            else
+                echo -e "${YELLOW}⚠️  Documents may already be loaded${NC}"
+                echo -e "${YELLOW}   $(echo "$RESPONSE" | head -c 200)${NC}"
+            fi
+        else
+            echo -e "${YELLOW}⚠️  No .txt files found in $CONFLUENCE_DIR${NC}"
+            echo -e "${YELLOW}   Add .txt files and restart, or use the upload API${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️  Directory $CONFLUENCE_DIR not found${NC}"
+        echo -e "${YELLOW}   Creating directory...${NC}"
+        mkdir -p "$CONFLUENCE_DIR"
+        echo -e "${YELLOW}   Add .txt files to $CONFLUENCE_DIR and restart${NC}"
+    fi
+}
+
+# Function to stop all services
+stop_services() {
+    echo -e "${BLUE}Stopping all services...${NC}"
+    
+    # Stop backend
+    if [ -f /tmp/rag-backend.pid ]; then
+        BACKEND_PID=$(cat /tmp/rag-backend.pid)
+        kill $BACKEND_PID 2>/dev/null || true
+        rm /tmp/rag-backend.pid
+        echo -e "${GREEN}✅ Backend stopped${NC}"
+    fi
+    
+    # Stop frontend
+    if [ -f /tmp/rag-frontend.pid ]; then
+        FRONTEND_PID=$(cat /tmp/rag-frontend.pid)
+        kill $FRONTEND_PID 2>/dev/null || true
+        rm /tmp/rag-frontend.pid
+        echo -e "${GREEN}✅ Frontend stopped${NC}"
+    fi
+    
+    # Stop Ollama
+    pkill -x ollama 2>/dev/null || true
+    echo -e "${GREEN}✅ Ollama stopped${NC}"
+    
+    # Stop Redis
+    brew services stop redis > /dev/null 2>&1
+    echo -e "${GREEN}✅ Redis stopped${NC}"
+    
+    # Stop Milvus
+    docker stop milvus-standalone > /dev/null 2>&1 || true
+    echo -e "${GREEN}✅ Milvus stopped${NC}"
+}
+
+# Function to show status
+show_status() {
+    echo -e "${BLUE}Service Status:${NC}"
+    echo ""
+    
+    # Ollama
+    if pgrep -x "ollama" > /dev/null; then
+        echo -e "${GREEN}✅ Ollama: Running${NC}"
+    else
+        echo -e "${RED}❌ Ollama: Stopped${NC}"
+    fi
+    
+    # Redis
+    if redis-cli ping > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ Redis: Running${NC}"
+    else
+        echo -e "${RED}❌ Redis: Stopped${NC}"
+    fi
+    
+    # Milvus
+    if docker ps | grep -q milvus-standalone; then
+        echo -e "${GREEN}✅ Milvus: Running${NC}"
+    else
+        echo -e "${RED}❌ Milvus: Stopped${NC}"
+    fi
+    
+    # Backend
+    if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ Backend: Running (http://localhost:8000)${NC}"
+    else
+        echo -e "${RED}❌ Backend: Stopped${NC}"
+    fi
+    
+    # Frontend
+    if curl -s http://localhost:3000 > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ Frontend: Running (http://localhost:3000)${NC}"
+    else
+        echo -e "${RED}❌ Frontend: Stopped${NC}"
+    fi
+    
+    echo ""
+    echo -e "${BLUE}Access URLs:${NC}"
+    echo "  Frontend:  http://localhost:3000"
+    echo "  Backend:   http://localhost:8000"
+    echo "  API Docs:  http://localhost:8000/docs"
+}
+
+# Function to clean everything
+clean_all() {
+    echo -e "${YELLOW}⚠️  Warning: This will remove all data and containers${NC}"
+    read -p "Are you sure? (yes/no): " -r
+    if [[ $REPLY =~ ^[Yy]es$ ]]; then
+        stop_services
+        
+        # Remove Milvus container and data
+        docker rm -f milvus-standalone 2>/dev/null || true
+        rm -rf ~/milvus-data
+        
+        # Remove Redis data
+        rm -rf /usr/local/var/db/redis
+        
+        # Remove logs
+        rm -f /tmp/rag-*.log /tmp/rag-*.pid /tmp/ollama.log
+        
+        echo -e "${GREEN}✅ Cleanup complete${NC}"
+    else
+        echo "Cancelled"
+    fi
+}
+
+# Main command handler
+COMMAND=${1:-start}
+
+case $COMMAND in
+    start)
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${BLUE}  STEP 1: Checking Prerequisites${NC}"
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        check_homebrew
+        check_python
+        check_node
+        check_ollama
+        check_redis
+        check_docker
+        create_directories
+        create_env_local
+        create_run_local
+        
+        echo ""
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${BLUE}  STEP 2: Starting Services${NC}"
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        start_ollama
+        start_redis
+        start_milvus
+        start_backend
+        start_frontend
+        
+        echo ""
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${BLUE}  STEP 3: Loading Sample Documents${NC}"
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        load_sample_documents
+        
+        echo ""
+        echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${GREEN}  ✅ All services started successfully!${NC}"
+        echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        echo -e "${BLUE}📍 Access URLs:${NC}"
+        echo "   Frontend:  http://localhost:3000"
+        echo "   Backend:   http://localhost:8000"
+        echo "   API Docs:  http://localhost:8000/docs"
+        echo ""
+        echo -e "${YELLOW}📝 Logs:${NC}"
+        echo "   Backend:  tail -f /tmp/rag-backend.log"
+        echo "   Frontend: tail -f /tmp/rag-frontend.log"
+        echo "   Ollama:   tail -f /tmp/ollama.log"
+        echo ""
+        echo -e "${BLUE}🛑 To stop: ./start_local.sh stop${NC}"
+        ;;
+    
+    stop)
+        stop_services
+        echo -e "${GREEN}✅ All services stopped${NC}"
+        ;;
+    
+    status)
+        show_status
+        ;;
+    
+    restart)
+        stop_services
+        sleep 2
+        $0 start
+        ;;
+    
+    clean)
+        clean_all
+        ;;
+    
+    logs)
+        SERVICE=${2:-backend}
+        if [ "$SERVICE" = "backend" ]; then
+            tail -f /tmp/rag-backend.log
+        elif [ "$SERVICE" = "frontend" ]; then
+            tail -f /tmp/rag-frontend.log
+        elif [ "$SERVICE" = "ollama" ]; then
+            tail -f /tmp/ollama.log
+        else
+            echo "Unknown service. Use: backend, frontend, or ollama"
+        fi
+        ;;
+    
+    help|--help|-h)
+        echo "Usage: ./start_local.sh [command]"
+        echo ""
+        echo "Commands:"
+        echo "  start              Check prerequisites, install if needed, and start all services"
+        echo "  stop               Stop all services"
+        echo "  restart            Restart all services"
+        echo "  status             Show service status"
+        echo "  logs [service]     View logs (backend|frontend|ollama)"
+        echo "  clean              Remove all data and containers"
+        echo "  help               Show this help message"
+        echo ""
+        echo "Examples:"
+        echo "  ./start_local.sh start             # Start everything"
+        echo "  ./start_local.sh status            # Check status"
+        echo "  ./start_local.sh logs backend      # View backend logs"
+        echo "  ./start_local.sh stop              # Stop everything"
+        ;;
+    
+    *)
+        echo -e "${RED}❌ Unknown command: $COMMAND${NC}"
+        echo "Run './start_local.sh help' for usage information"
+        exit 1
+        ;;
+esac

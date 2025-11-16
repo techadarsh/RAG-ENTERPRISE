@@ -71,3 +71,7 @@ ollama_data/
 vector_data/
 model_data/
 uploads/
+
+# ---- Virtual Environments at Root Level ---
+venv/
+venv*/

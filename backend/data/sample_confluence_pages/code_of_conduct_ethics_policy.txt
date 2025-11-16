@@ -1,0 +1,1229 @@
+# Company Code of Conduct & Ethics Policy
+
+## Purpose & Scope
+
+This Code of Conduct outlines the ethical standards and behavioral expectations for all employees, contractors, interns, and representatives of our company. It serves as a guide for making ethical decisions and maintaining our reputation for integrity.
+
+**Document Version**: 2.5
+**Effective Date**: January 2025
+**Last Updated**: October 2025
+**Applies To**: All employees, contractors, board members, consultants
+**Mandatory Training**: Annual compliance training required
+
+---
+
+## Table of Contents
+
+1. Core Values & Principles
+2. Workplace Conduct Standards
+3. Anti-Harassment & Discrimination
+4. Conflicts of Interest
+5. Confidentiality & Data Protection
+6. Intellectual Property Rights
+7. Financial Integrity & Fraud Prevention
+8. Gifts, Entertainment & Bribery
+9. Social Media & Public Communications
+10. Health, Safety & Substance Abuse
+11. Reporting Violations & Non-Retaliation
+12. Enforcement & Disciplinary Actions
+
+---
+
+## 1. Core Values & Principles
+
+### 1.1 Our Core Values
+
+**RESPECT**:
+- Treat everyone with dignity, regardless of position or background
+- Value diverse perspectives and experiences
+- Listen actively and communicate respectfully
+- Foster inclusive environment where all feel welcome
+
+**INTEGRITY**:
+- Be honest in all communications and actions
+- Admit mistakes and take responsibility
+- Keep commitments and promises
+- Do the right thing even when no one is watching
+
+**COLLABORATION**:
+- Work together toward common goals
+- Share knowledge and help teammates succeed
+- Give credit where credit is due
+- Resolve conflicts constructively
+
+**EXCELLENCE**:
+- Strive for high-quality work
+- Continuously improve skills and processes
+- Take pride in deliverables
+- Hold self and others accountable
+
+**INNOVATION**:
+- Embrace new ideas and approaches
+- Challenge status quo respectfully
+- Learn from failures
+- Experiment and take calculated risks
+
+### 1.2 Ethical Decision-Making Framework
+
+When facing ethical dilemmas, ask yourself:
+
+1. **Is it legal?** Does it comply with laws and regulations?
+2. **Is it ethical?** Does it align with our values?
+3. **How would it look?** Would I be comfortable if this appeared in the news?
+4. **Is it fair?** Would I want to be treated this way?
+5. **Long-term impact?** What are the consequences?
+
+**If uncertain**, consult with:
+- Manager
+- HR department
+- Legal team
+- Ethics hotline (anonymous)
+
+---
+
+## 2. Workplace Conduct Standards
+
+### 2.1 Professional Behavior
+
+**Communication Standards**:
+
+ **DO**:
+- Use respectful language in all communications
+- Be clear, concise, and constructive
+- Respond to emails/messages within 24 hours (work hours)
+- Use appropriate channels (Slack for quick questions, email for formal)
+- Proofread before sending
+
+ **DON'T**:
+- Use profanity, insults, or aggressive language
+- Make personal attacks or belittling comments
+- Send messages when angry (wait, cool down, then respond)
+- Use all caps (perceived as shouting)
+- Share confidential information in public channels
+
+**Meeting Etiquette**:
+- Arrive on time (5 minutes early is on time)
+- Come prepared (read materials in advance)
+- Mute when not speaking (video calls)
+- Video on for internal meetings (unless bandwidth issues)
+- No multitasking (close email, focus on discussion)
+- Respect speaking time (don't monopolize)
+- End on time (respect others' schedules)
+
+**Punctuality & Attendance**:
+- Arrive on time for work (within 15-minute grace period)
+- Notify manager if running late (before start time)
+- No more than 2 late arrivals per month
+- Unexcused absences not tolerated (call/text before shift)
+- If sick, notify manager ASAP (before 9 AM)
+
+### 2.2 Teamwork & Collaboration
+
+**Expected Behaviors**:
+- Offer help to teammates proactively
+- Share knowledge (documentation, mentoring)
+- Give constructive feedback (focus on behavior, not person)
+- Receive feedback gracefully (don't be defensive)
+- Credit team contributions publicly
+- Support team decisions even if you initially disagreed
+- Resolve disagreements privately first
+
+**Code Review Etiquette**:
+- Review within 24 hours of assignment
+- Be respectful and constructive ("Consider refactoring" vs "This is wrong")
+- Explain reasoning behind suggestions
+- Accept that reviewers may be right
+- Approve when code meets standards (don't nitpick)
+
+### 2.3 Accountability & Ownership
+
+**Taking Responsibility**:
+- Own your commitments (meet deadlines)
+- If you'll miss a deadline, notify ASAP (at least 48 hours before)
+- Admit mistakes promptly (no cover-ups)
+- Propose solutions, not just problems
+- Follow through on action items
+- Update task status regularly (Jira/Asana)
+
+**Quality Standards**:
+- Test code before submitting PR
+- Write clear documentation
+- Don't cut corners to meet deadlines
+- Ask for help when stuck (after trying for 2 hours)
+- Review own work before asking others
+
+---
+
+## 3. Anti-Harassment & Discrimination
+
+### 3.1 Zero Tolerance Policy
+
+**Statement**:
+Our company has a **zero-tolerance policy** for harassment and discrimination. We are committed to providing a workplace free from harassment, discrimination, and retaliation based on any protected characteristic.
+
+**Protected Characteristics**:
+- Race, color, ethnicity, national origin
+- Sex, gender, gender identity, gender expression
+- Sexual orientation
+- Religion, creed
+- Age (40 and older)
+- Disability (physical or mental)
+- Pregnancy, childbirth, related conditions
+- Marital status
+- Military or veteran status
+- Genetic information
+- Any other characteristic protected by law
+
+### 3.2 Harassment Defined
+
+**Sexual Harassment**:
+Unwelcome sexual advances, requests for sexual favors, or other verbal/physical conduct of a sexual nature when:
+- Submission is made explicitly or implicitly a term of employment
+- Submission or rejection affects employment decisions
+- Conduct unreasonably interferes with work performance or creates intimidating/hostile environment
+
+**Examples**:
+- Unwanted touching, hugging, kissing, or other physical contact
+- Sexual jokes, comments, or innuendos
+- Sharing sexually explicit images, videos, or materials
+- Staring, leering, or making sexual gestures
+- Asking about sexual history or preferences
+- Unwanted romantic or sexual advances
+- Retaliation for rejecting advances
+
+**General Harassment**:
+Unwelcome conduct based on protected characteristics that creates intimidating, hostile, or offensive environment.
+
+**Examples**:
+- Offensive jokes, slurs, epithets about protected characteristics
+- Displaying offensive symbols, posters, or materials
+- Mocking accents, clothing, or cultural practices
+- Exclusion or isolation based on protected characteristics
+- Physical assaults, threats, or intimidation
+- Interference with work performance based on protected characteristics
+
+### 3.3 Discrimination Defined
+
+**Direct Discrimination**:
+Treating someone less favorably because of a protected characteristic.
+
+**Examples**:
+- Not hiring qualified candidate due to race, gender, age
+- Paying women less than men for same role
+- Denying promotion due to pregnancy
+- Terminating older employees first during layoffs
+- Refusing reasonable accommodations for disabilities
+
+**Indirect Discrimination**:
+Policies or practices that appear neutral but disproportionately affect protected groups.
+
+**Examples**:
+- Requiring certain height/weight (excludes some ethnicities/genders)
+- Mandatory evening meetings (affects parents disproportionately)
+- Promoting only those who socialize after hours (excludes some groups)
+
+### 3.4 Bullying & Intimidation
+
+**Defined**:
+Repeated, unreasonable behavior directed toward an employee that creates risk to health and safety.
+
+**Examples**:
+- Yelling, screaming, or aggressive behavior
+- Public humiliation or belittling
+- Spreading rumors or gossip
+- Deliberately sabotaging work
+- Exclusion from meetings or communications
+- Excessive criticism or impossible demands
+- Taking credit for others' work
+
+**Note**: Bullying is prohibited even if not based on protected characteristic.
+
+### 3.5 Reporting Harassment or Discrimination
+
+**How to Report**:
+
+1. **Direct Report to HR**:
+   - Email: hr@company.com
+   - Phone: (555) 123-4567
+   - In-person: HR office (3rd floor)
+
+2. **Report to Manager** (if comfortable):
+   - Manager will escalate to HR
+   - Manager must report within 24 hours
+
+3. **Anonymous Hotline**:
+   - 1-800-REPORT-IT (1-800-737-6784)
+   - Available 24/7
+   - Managed by third-party service
+   - Fully confidential
+
+4. **Online Portal**:
+   - company.ethicspoint.com
+   - Submit written complaint
+   - Can remain anonymous
+
+**What to Include**:
+- Names of individuals involved
+- Dates and times of incidents
+- Location where incidents occurred
+- Witnesses (if any)
+- Detailed description of what happened
+- Any supporting evidence (emails, messages, photos)
+
+**Investigation Process**:
+1. HR receives complaint (acknowledges within 2 business days)
+2. Preliminary review (assess severity, immediate actions needed)
+3. Investigation begins (within 5 business days)
+4. Interviews conducted (complainant, accused, witnesses)
+5. Evidence reviewed (emails, messages, video footage)
+6. Findings documented (substantiated, unsubstantiated, or inconclusive)
+7. Decision communicated (within 30 days of complaint)
+8. Disciplinary action taken (if warranted)
+
+**During Investigation**:
+- Confidentiality maintained (only those who need to know)
+- Both parties treated fairly and respectfully
+- Interim measures may be taken (temporary reassignment, remote work)
+- No retaliation against complainant or witnesses
+
+**Possible Outcomes**:
+- **Substantiated**: Harassment/discrimination occurred → Disciplinary action (warning to termination)
+- **Unsubstantiated**: Insufficient evidence → No action, possibly mediation or training
+- **Inconclusive**: Cannot determine → Monitoring, possibly additional training
+
+### 3.6 Bystander Intervention
+
+**Responsibility**:
+If you witness harassment or discrimination, you have a responsibility to act.
+
+**How to Intervene**:
+1. **Direct**: "That comment is inappropriate. Please stop."
+2. **Distract**: Change the subject or redirect conversation
+3. **Delegate**: Report to manager or HR if uncomfortable intervening
+4. **Support Victim**: Check in privately, offer support, encourage them to report
+
+**Not Intervening**:
+Witnesses who fail to report serious misconduct may face disciplinary action.
+
+---
+
+## 4. Conflicts of Interest
+
+### 4.1 Definition
+
+A **conflict of interest** occurs when personal interests interfere, or appear to interfere, with company interests.
+
+**Key Principle**: Always act in the company's best interest, not personal gain.
+
+### 4.2 Common Conflicts
+
+**Outside Employment**:
+- Working for competitor (prohibited)
+- Working for customer or vendor (must disclose)
+- Freelancing that uses company resources (prohibited)
+- Side business that competes with company (prohibited)
+
+**Financial Interests**:
+- Owning significant stock in competitor, customer, or vendor (must disclose if >10%)
+- Investing in companies you make business decisions about (prohibited)
+- Personal loans from customers or vendors (prohibited)
+
+**Personal Relationships**:
+- Hiring, supervising, or evaluating family member or romantic partner (must disclose, reassignment may be required)
+- Awarding contracts to companies owned by family/friends (must disclose, recuse from decision)
+- Dating within reporting line (prohibited - one party must transfer)
+
+**Gifts & Entertainment**:
+- Accepting gifts >$100 from vendors (must report)
+- Lavish entertainment from vendors (must report)
+- Cash gifts from any business partner (prohibited)
+
+**Board Positions**:
+- Serving on board of competitor (prohibited)
+- Serving on board of customer/vendor (must disclose and get approval)
+
+### 4.3 Disclosure Requirements
+
+**When to Disclose**:
+- When conflict arises or potentially could arise
+- Immediately upon awareness
+- Don't wait for annual review
+
+**How to Disclose**:
+1. Email hr-conflicts@company.com with subject "Conflict of Interest Disclosure"
+2. Include:
+   - Nature of conflict
+   - Parties involved
+   - Financial interests (if applicable)
+   - Proposed resolution
+3. HR reviews and responds within 10 business days
+4. May require recusal, divestment, or reassignment
+
+**Annual Disclosure**:
+- All employees complete annual conflict of interest questionnaire (January)
+- Disclose any new conflicts that arose during year
+- Update on previously disclosed conflicts
+
+### 4.4 Managing Conflicts
+
+**Acceptable Management**:
+- Recuse yourself from decisions involving conflict
+- Assign decision to another manager
+- Create firewall (no involvement in relevant matters)
+- Disclose to all parties and get written approval
+
+**Unacceptable**:
+- Hiding the conflict
+- Proceeding without disclosure
+- Using inside information for personal gain
+- Letting personal interests influence business decisions
+
+**Example Scenario**:
+```
+SITUATION: Your brother-in-law's company submits bid for company contract. You're on selection committee.
+
+ CORRECT ACTION:
+1. Immediately disclose relationship to manager and HR
+2. Recuse yourself from selection committee
+3. Don't discuss bid with brother-in-law
+4. Document recusal in meeting notes
+
+ INCORRECT ACTION:
+1. Participate in selection without disclosure
+2. Share insider information with brother-in-law
+3. Advocate for his company's bid
+```
+
+---
+
+## 5. Confidentiality & Data Protection
+
+### 5.1 Confidential Information
+
+**Defined**:
+Any non-public information that could harm company or provide advantage to competitors if disclosed.
+
+**Types of Confidential Information**:
+- **Trade Secrets**: Algorithms, source code, technical designs, formulas
+- **Business Information**: Strategies, financial data, pricing, customer lists, contract terms
+- **Employee Information**: Salaries, performance reviews, medical records, social security numbers
+- **Customer Data**: Contact info, purchase history, payment details, PII (Personally Identifiable Information)
+- **Proprietary Data**: Research, product roadmaps, marketing plans, competitive analysis
+
+### 5.2 Handling Confidential Information
+
+**Protection Requirements**:
+-  Store on encrypted company devices only
+-  Use password-protected files (minimum 12 characters)
+-  Share only with those who need to know (least privilege)
+-  Mark documents as "Confidential" or "Internal"
+-  Use secure channels (company email, Slack DMs, not SMS)
+-  Shred paper documents (don't throw in trash)
+-  Lock screen when away from desk
+-  Use VPN when accessing from public networks
+
+**Prohibited Actions**:
+-  Discussing confidential matters in public places (elevators, cafes, transportation)
+-  Sending company data to personal email
+-  Storing customer data on personal devices
+-  Sharing login credentials
+-  Taking confidential documents home (unless necessary and approved)
+-  Posting confidential information on social media
+-  Discussing confidential matters with family/friends
+
+### 5.3 Data Breach Response
+
+**If You Suspect Data Breach**:
+1. **Immediately** notify security@company.com (within 1 hour)
+2. Do NOT investigate on your own (may destroy evidence)
+3. Do NOT discuss with anyone except security team
+4. Preserve evidence (don't delete logs, emails, etc.)
+
+**What is a Data Breach?**:
+- Unauthorized access to customer data
+- Accidental email to wrong recipient containing PII
+- Lost/stolen device with company data
+- Ransomware or malware infection
+- Suspicious account activity
+
+**Timeline**:
+- Report within **1 hour** of discovery
+- Security team investigates within **2 hours**
+- Affected parties notified within **72 hours** (GDPR requirement)
+- Post-incident review within **1 week**
+
+### 5.4 Clean Desk Policy
+
+**Requirements**:
+- Lock confidential documents in drawer or cabinet when not in use
+- Don't leave documents on printer or in meeting rooms
+- Clear whiteboards after meetings with confidential info
+- Dispose of drafts and notes securely (shred)
+- Log out of computer when leaving desk for >5 minutes
+
+### 5.5 Confidentiality After Employment
+
+**Obligations Continue**:
+- NDA survives employment termination (perpetual)
+- Cannot disclose confidential information to new employer
+- Must return all company property (laptop, documents, access badges)
+- Cannot solicit company customers or employees for 12 months (non-solicitation)
+- Cannot compete directly for 12 months (non-compete, if signed)
+
+**Exit Interview**:
+- Reminder of confidentiality obligations
+- Return of all company property
+- Deactivation of accounts and access
+- Final paycheck includes unused PTO
+
+---
+
+## 6. Intellectual Property Rights
+
+### 6.1 Ownership of Work Product
+
+**Company Owns**:
+All work created during employment belongs to company:
+- Source code written for company projects
+- Documentation, technical designs, architecture diagrams
+- Inventions, discoveries, improvements related to company business
+- Patents, copyrights, trademarks, trade secrets
+- Presentations, blog posts, articles about company work
+
+**Applies to**:
+- Work done during work hours
+- Work done using company resources (laptop, software, office)
+- Work related to company's business (even if done at home after hours)
+
+**Examples**:
+-  Company Owns: Developing new feature for company's product (even if idea came on weekend)
+-  Company Owns: Writing internal tool to automate task (even if during lunch break)
+-  Company Does NOT Own: Personal blog about gardening (unrelated to work)
+-  Company Does NOT Own: Novel written on own time without company resources
+
+### 6.2 Personal Projects
+
+**Allowed If**:
+1. Completely unrelated to company's business
+2. Done entirely outside work hours
+3. No use of company resources (devices, software, data, office space)
+4. Doesn't compete with company
+5. Doesn't use company confidential information
+
+**Disclosure Recommended**:
+While not required, it's wise to disclose personal projects to manager/HR to avoid future disputes.
+
+**Disclosure Form**:
+```
+Personal Project Disclosure Form
+- Project name and description
+- How it relates (or doesn't) to company business
+- Resources used (own laptop, own time)
+- Intent (hobby, side income, future startup)
+- Signature and date
+```
+
+**Approval Process**:
+- Submit disclosure form to HR
+- HR reviews (5-10 business days)
+- Approved, conditional approval, or denied
+- Conditions might include: regular updates, restrictions on use
+
+### 6.3 Open Source Contributions
+
+**Company Policy**:
+Employees may contribute to open source projects with approval.
+
+**Approval Required For**:
+- Contributing company code to open source
+- Open sourcing internal tools
+- Using company time for contributions (even if related to work)
+
+**No Approval Needed For**:
+- Personal contributions on own time (unrelated to company work)
+- Bug fixes to libraries used by company (encouraged!)
+- Answering questions on Stack Overflow
+
+**How to Get Approval**:
+1. Submit request via opensource@company.com
+2. Include: Project name, license, what you'll contribute, why it benefits company
+3. Legal reviews (5-10 business days)
+4. Approval granted or denied
+
+### 6.4 Using Third-Party IP
+
+**Software Licenses**:
+Before using third-party libraries/code, verify license compatibility:
+-  **Permissive Licenses** (MIT, Apache 2.0, BSD): Generally okay, minimal restrictions
+-  **Weak Copyleft** (LGPL, MPL): Okay if used as library (not modified)
+-  **Strong Copyleft** (GPL, AGPL): Prohibited for proprietary software (requires legal review)
+
+**License Review Process**:
+1. Check license file in repository
+2. If permissive → Okay to use (document in dependencies)
+3. If copyleft or uncertain → Submit to legal@company.com for review
+4. Wait for approval before using
+
+**Prohibited Actions**:
+- Copying code from Stack Overflow without attribution (plagiarism)
+- Using cracked/pirated software
+- Violating license terms (e.g., removing attribution)
+
+---
+
+## 7. Financial Integrity & Fraud Prevention
+
+### 7.1 Accurate Record Keeping
+
+**Requirements**:
+- All business records must be accurate, complete, and timely
+- Expense reports must reflect actual expenses
+- Time tracking must be honest (no rounding up)
+- Financial reports must comply with GAAP (Generally Accepted Accounting Principles)
+
+**Examples of Violations**:
+- Inflating expenses or submitting false receipts
+- Logging time not actually worked
+- Falsifying sales numbers or revenue
+- Hiding losses or liabilities
+- Backdating documents
+
+**Consequences**:
+- Immediate termination
+- Criminal charges (fraud)
+- Repayment of fraudulent amounts
+- Permanent disqualification from rehire
+
+### 7.2 Expense Reimbursement
+
+**Eligible Expenses**:
+- Business travel (flights, hotels, rental cars)
+- Client meals and entertainment
+- Conference registrations
+- Professional development (books, courses)
+- Home office equipment (if remote)
+
+**Limits**:
+- Meals: $50/day domestic, $75/day international
+- Hotels: Up to $250/night (standard business hotels)
+- Flights: Economy class (business class if >6 hours with approval)
+- Rental cars: Standard/midsize (no luxury vehicles)
+
+**Receipt Requirements**:
+- Required for expenses >$25
+- Must be itemized (not just credit card receipt)
+- Submit within 30 days of expense
+- Include business purpose and attendees (for meals)
+
+**Prohibited Expenses**:
+- Personal meals (not with clients)
+- Alcoholic beverages (unless client meal)
+- Entertainment (movies, concerts) unless client-related
+- Spouse/family travel
+- First-class flights without approval
+- Luxury hotels or rental cars
+
+**Submitting Expenses**:
+1. Log into expense system (Expensify)
+2. Upload receipts (photo or PDF)
+3. Categorize expense (travel, meals, etc.)
+4. Add business purpose
+5. Submit for approval
+6. Manager approves within 5 days
+7. Reimbursed in next paycheck
+
+### 7.3 Fraud Prevention
+
+**Definition of Fraud**:
+Intentional deception for personal gain or to harm company.
+
+**Types of Fraud**:
+- **Expense Fraud**: Inflated or fake expense reports
+- **Time Fraud**: Logging hours not worked
+- **Procurement Fraud**: Kickbacks from vendors, fake invoices
+- **Financial Fraud**: Embezzlement, misappropriation of funds
+- **Payroll Fraud**: Ghost employees, overstating hours
+
+**Red Flags**:
+- Living beyond means (unexplained wealth)
+- Reluctance to take vacation (fear of discovery)
+- Control freak (won't delegate or share duties)
+- Unusual vendor relationships (always chooses same vendor)
+- Missing documents or records
+
+**Reporting Suspected Fraud**:
+- Report to fraud@company.com or anonymous hotline
+- Investigation by internal audit team
+- Protection for whistleblowers (non-retaliation)
+- Confidentiality maintained
+
+### 7.4 Anti-Money Laundering & Sanctions
+
+**Prohibited Activities**:
+- Accepting cash payments >$10,000
+- Doing business with sanctioned countries (North Korea, Iran, Syria, etc.)
+- Transactions with terrorists or criminal organizations
+- Structuring payments to avoid reporting (smurfing)
+
+**Know Your Customer (KYC)**:
+- Verify customer identity before onboarding
+- Screen against sanctions lists (OFAC)
+- Monitor transactions for suspicious activity
+- Report suspicious activity to compliance (suspicious activity report - SAR)
+
+---
+
+## 8. Gifts, Entertainment & Bribery
+
+### 8.1 Gifts & Entertainment Policy
+
+**Receiving Gifts**:
+
+```
+VALUE          | ACTION REQUIRED
+$0-$25         | Accept, no reporting
+$26-$100       | Accept, report to manager
+$101-$250      | Report to manager, approval required
+>$250          | Decline or seek VP approval
+Cash (any amt) | Decline (always prohibited)
+```
+
+**Giving Gifts**:
+- Maximum $100 per recipient per year
+- Must have legitimate business purpose
+- No cash or cash equivalents
+- Pre-approval for gifts >$50
+
+**Entertainment**:
+- Meals, sporting events, conferences allowed if reasonable
+- Must include business discussion
+- Should not create obligation or appearance of impropriety
+- Lavish entertainment (>$500) requires VP approval
+
+**Prohibited**:
+- Cash or cash equivalents (gift cards, checks, stock)
+- Gifts to government officials (any amount, see FCPA)
+- Gifts during contract negotiations
+- Gifts given with expectation of favor
+
+**Examples**:
+
+ **Acceptable**:
+- Vendor sends $50 fruit basket during holidays → Accept, report to manager
+- Client invites you to baseball game ($75 tickets) → Accept, must discuss business
+- Vendor offers coffee mug with company logo ($10) → Accept, no reporting
+
+ **Not Acceptable**:
+- Vendor offers $500 gift card for choosing their product → Decline, report to compliance
+- Government official expects expensive meal for contract approval → Decline, report to legal
+- Vendor offers free vacation ($5,000 value) → Decline immediately
+
+### 8.2 Anti-Bribery & Corruption (FCPA Compliance)
+
+**Foreign Corrupt Practices Act (FCPA)**:
+US law prohibiting bribing foreign government officials to obtain or retain business.
+
+**Prohibited**:
+- Paying, offering, or promising anything of value to foreign government official
+- Using third-party (agent, consultant) to make such payments
+- "Facilitating payments" to expedite routine government actions (even if small)
+
+**Who is a "Government Official"?**:
+- Elected officials and civil servants
+- Employees of state-owned enterprises (SOEs)
+- Political party officials
+- Employees of public international organizations (UN, World Bank)
+
+**Examples of Violations**:
+- Paying customs official to expedite shipment
+- Offering gift to procurement officer to win contract
+- Hiring government official's relative as "consultant" (no real work)
+- Donating to charity controlled by government official (to gain favor)
+
+**Consequences**:
+- Fines up to $2 million (company), $250,000 (individual)
+- Prison up to 5 years
+- Debarment from government contracts
+- Reputational damage
+
+**If Approached for Bribe**:
+1. Refuse politely ("Company policy prohibits")
+2. Document conversation (date, time, person, request)
+3. Report immediately to legal@company.com
+4. Do NOT make payment (even if it means losing deal)
+
+### 8.3 Due Diligence on Third Parties
+
+**Before Hiring Agent/Consultant/Vendor**:
+- Conduct background check
+- Review contracts for red flags (unusual commissions, vague services)
+- Include anti-bribery clauses in contracts
+- Monitor payments and activities
+
+**Red Flags**:
+- Request for cash payments
+- Payments to offshore accounts
+- Unusual payment structures (large upfront fees)
+- Family relationship with government official
+- Reputation for corruption
+
+---
+
+## 9. Social Media & Public Communications
+
+### 9.1 Personal Social Media Use
+
+**Guidelines**:
+-  You may discuss work in general terms ("Excited about new project!")
+-  You may share company's public content (retweet, share blog posts)
+-  You may list company as employer on LinkedIn
+-  Do NOT share confidential information (code, product roadmaps, financials)
+-  Do NOT speak on behalf of company (unless authorized)
+-  Do NOT post derogatory comments about company, colleagues, or customers
+-  Do NOT post content that violates code of conduct (harassment, discrimination)
+
+**Disclaimer Required**:
+If discussing work-related topics, include disclaimer:
+> "Opinions are my own and do not represent my employer."
+
+**Best Practices**:
+- Think before posting (would you be okay with manager/customer seeing it?)
+- Be respectful and professional
+- Correct mistakes promptly
+- Don't engage in online arguments about company
+- Consider if post could damage company reputation
+
+**Examples**:
+
+ **Acceptable**:
+- "Proud of what we shipped today! Great teamwork. #productlaunch"
+- Sharing company's blog post about new feature
+- LinkedIn post: "Learned a lot about Docker this week"
+
+ **Not Acceptable**:
+- Posting screenshot of internal Slack conversation
+- Tweeting about company's upcoming acquisition (confidential)
+- Complaining about manager on Facebook
+- Sharing customer data or PII
+
+### 9.2 Speaking on Behalf of Company
+
+**Authorization Required**:
+Only authorized spokespeople may speak to media or represent company publicly.
+
+**Authorized Spokespeople**:
+- CEO
+- VP of Marketing
+- PR team
+
+**Media Inquiries**:
+If contacted by media:
+1. Do NOT answer questions
+2. Say: "I'll connect you with our communications team"
+3. Forward inquiry to pr@company.com immediately
+4. Include: Reporter name, outlet, topic, deadline
+
+**Speaking at Conferences**:
+- Must get approval from manager and marketing
+- Company logo on slides requires brand team approval
+- Don't share confidential information
+- Focus on industry trends, technical topics (not company strategy)
+
+### 9.3 Internal Communications
+
+**Email & Slack**:
+- Be professional (company can monitor all communications)
+- No expectation of privacy on company systems
+- Avoid gossip, rumors, or negative comments about colleagues
+- Use appropriate channels (public vs. private)
+- Follow retention policies (don't delete emails related to legal matters)
+
+**Meeting Communications**:
+- Respect confidentiality of internal discussions
+- Don't record meetings without permission
+- Mark sensitive documents as "Internal" or "Confidential"
+
+---
+
+## 10. Health, Safety & Substance Abuse
+
+### 10.1 Workplace Safety
+
+**Employee Responsibilities**:
+- Follow safety procedures and guidelines
+- Use equipment properly (no shortcuts)
+- Report hazards immediately (facilities@company.com)
+- Participate in fire drills and safety training
+- Wear required safety equipment (if applicable)
+
+**Ergonomics**:
+- Set up workstation properly (monitor at eye level, chair adjusted)
+- Take breaks every hour (stand, stretch, rest eyes)
+- Request ergonomic assessment if experiencing discomfort
+
+**Emergency Procedures**:
+- Know emergency exits (at least 2 from your location)
+- Know assembly point (parking lot across street)
+- Follow evacuation instructions (don't collect belongings)
+- Don't re-enter building until all-clear given
+
+**Reporting Incidents**:
+- Report all injuries, no matter how minor
+- Report near-misses (helps prevent future incidents)
+- Fill out incident report within 24 hours
+- Seek medical attention if needed (workers' comp covers)
+
+### 10.2 Substance Abuse Policy
+
+**Prohibited Substances**:
+- Illegal drugs (marijuana, cocaine, etc.) - even if legal in state
+- Alcohol during work hours (except company-sanctioned events)
+- Prescription drugs that impair performance (if not prescribed to you)
+
+**Testing**:
+- Pre-employment drug test (all candidates)
+- Random testing (safety-sensitive positions only)
+- Post-accident testing (if reasonable suspicion)
+- Reasonable suspicion testing (if behavior indicates impairment)
+
+**Signs of Impairment**:
+- Slurred speech, bloodshot eyes, odor of alcohol
+- Erratic behavior, mood swings
+- Decreased coordination, slow reaction time
+- Frequent absences or tardiness
+
+**Consequences**:
+- First offense: Mandatory EAP enrollment, suspension pending completion
+- Second offense: Final warning, continued EAP participation
+- Third offense: Termination
+
+**Exceptions**:
+- Company events where alcohol served (happy hours, holiday party) - okay in moderation
+- Client dinners - okay if reasonable (1-2 drinks)
+- Prescription medications legally prescribed to you - allowed, but notify manager if it may impair performance
+
+### 10.3 Smoking Policy
+
+**Designated Areas Only**:
+- Smoking (including vaping) allowed only in designated outdoor areas
+- Minimum 25 feet from building entrances
+- Must dispose of cigarette butts properly
+
+**Prohibited**:
+- Smoking inside building (anywhere)
+- Smoking in company vehicles
+- Smoking within 25 feet of doors/windows
+
+**Smoking Cessation Support**:
+- EAP counseling available
+- Nicotine replacement therapy (NRT) covered by health insurance
+- Smoking cessation programs reimbursed
+
+---
+
+## 11. Reporting Violations & Non-Retaliation
+
+### 11.1 Duty to Report
+
+**Mandatory Reporting**:
+All employees have a duty to report:
+- Violations of this Code of Conduct
+- Illegal or unethical behavior
+- Harassment or discrimination
+- Safety hazards
+- Fraud or financial misconduct
+- Conflicts of interest
+- Data breaches or security incidents
+
+**Failure to Report**:
+- Disciplinary action for failing to report known violations
+- Especially for managers (higher duty to report)
+
+### 11.2 Reporting Channels
+
+**Option 1: Direct Manager**:
+- Most issues resolved at this level
+- Manager required to escalate serious issues to HR
+
+**Option 2: HR Department**:
+- hr@company.com
+- (555) 123-4567
+- In-person (3rd floor)
+
+**Option 3: Anonymous Hotline**:
+- 1-800-REPORT-IT (1-800-737-6784)
+- Available 24/7
+- Managed by third-party (EthicsPoint)
+- Fully anonymous (not tracked or recorded)
+- Can follow up on case with provided reference number
+
+**Option 4: Online Portal**:
+- company.ethicspoint.com
+- Submit written report
+- Can attach supporting documents
+- Can remain anonymous or provide contact info
+
+**Option 5: Legal Department**:
+- For legal/compliance matters
+- legal@company.com
+
+**Option 6: Executive Team**:
+- If issue involves direct manager or HR
+- VP contact info available on intranet
+
+### 11.3 Good Faith Reporting
+
+**Good Faith** means:
+- You honestly believe a violation occurred
+- You report based on facts, not rumors
+- You're not making false accusations intentionally
+
+**Protected Even If Mistaken**:
+- If you report in good faith but investigation finds no violation, you're still protected
+- No retaliation for good faith reports
+
+**Bad Faith Reporting**:
+- Knowingly making false accusations
+- Reporting to harm someone (malicious)
+- Consequences: Disciplinary action up to termination
+
+### 11.4 Non-Retaliation Policy
+
+**Strict Prohibition**:
+Company strictly prohibits retaliation against anyone who:
+- Reports violation in good faith
+- Participates in investigation
+- Refuses to participate in wrongdoing
+- Exercises legal rights (files workers' comp claim, takes FMLA leave)
+
+**Retaliation Defined**:
+Any adverse action taken because of reporting or participating in investigation:
+- Termination, demotion, suspension
+- Reduced pay or hours
+- Negative performance review
+- Exclusion from meetings or projects
+- Social isolation or hostility
+- Threats or intimidation
+
+**Zero Tolerance**:
+- Retaliation is grounds for immediate termination
+- Applies to all employees (including executives)
+- Applies even if original complaint was unsubstantiated
+
+**Reporting Retaliation**:
+- Report to HR immediately
+- Investigation within 5 business days
+- Interim protective measures (reassignment, remote work)
+
+### 11.5 Investigation Process
+
+**Timeline**:
+- Acknowledgment within 2 business days
+- Investigation begins within 5 business days
+- Completion within 30 days (may extend for complex cases)
+- Follow-up with reporter within 5 days of conclusion
+
+**Process**:
+1. HR receives report
+2. Preliminary assessment (severity, urgency)
+3. Investigation team assigned (HR + legal if needed)
+4. Interviews conducted (complainant, accused, witnesses)
+5. Evidence reviewed (emails, documents, video)
+6. Findings documented
+7. Decision made (substantiated, unsubstantiated, inconclusive)
+8. Disciplinary action taken (if warranted)
+9. Follow-up and monitoring
+
+**Confidentiality**:
+- Only those who need to know are informed
+- Investigators bound by confidentiality
+- Complainant identity protected (unless disclosure necessary for investigation)
+
+**Fair Process**:
+- Both parties treated with respect
+- Accused given opportunity to respond
+- Witnesses interviewed impartially
+- Decision based on evidence, not bias
+
+---
+
+## 12. Enforcement & Disciplinary Actions
+
+### 12.1 Disciplinary Process
+
+**Progressive Discipline**:
+For most violations, we use progressive discipline:
+
+1. **Verbal Warning**:
+   - Informal discussion with manager
+   - Explain violation and expected behavior
+   - Documented in manager's notes
+
+2. **Written Warning**:
+   - Formal written notice placed in personnel file
+   - Detailed description of violation
+   - Consequences if behavior continues
+   - Employee signs acknowledgment
+
+3. **Suspension**:
+   - Unpaid suspension (1-5 days)
+   - Time to reflect on behavior
+   - Final chance to correct course
+
+4. **Termination**:
+   - Employment ended
+   - Exit interview
+   - Final paycheck includes unused PTO (if eligible)
+
+**Exceptions (Immediate Termination)**:
+Some violations are so serious they result in immediate termination:
+- Violence or threats
+- Theft or fraud
+- Serious harassment or discrimination
+- Illegal activity (drug dealing, embezzlement)
+- Gross negligence causing harm
+- Disclosure of trade secrets
+
+### 12.2 Factors Considered
+
+**Aggravating Factors** (increase severity):
+- Intent (deliberate vs. accidental)
+- Harm caused (financial loss, reputational damage)
+- Prior warnings or violations
+- Position (managers held to higher standard)
+- Attempted cover-up
+
+**Mitigating Factors** (decrease severity):
+- First offense
+- Self-reported
+- Cooperation in investigation
+- Genuine remorse
+- Steps taken to prevent recurrence
+
+### 12.3 Appeals
+
+**Right to Appeal**:
+Employee may appeal disciplinary decision within 10 business days.
+
+**Process**:
+1. Submit written appeal to VP of HR
+2. Include: Why decision was wrong, new evidence, mitigating factors
+3. VP reviews case independently
+4. Decision within 15 business days
+5. VP decision is final (no further appeals)
+
+**Grounds for Appeal**:
+- New evidence not available during investigation
+- Procedural errors in investigation
+- Punishment disproportionate to violation
+- Bias or conflict of interest in investigation
+
+### 12.4 Recordkeeping
+
+**Documentation**:
+- All disciplinary actions documented in personnel file
+- Includes: Date, violation, evidence, decision, employee response
+- Retained for 7 years after employment ends
+
+**Confidentiality**:
+- Access restricted (HR, direct manager, executives)
+- Not disclosed to other employees
+- May be disclosed if legally required (subpoena, audit)
+
+---
+
+## Acknowledgment
+
+By signing below, I acknowledge that:
+
+1. I have read and understand the Code of Conduct & Ethics Policy
+2. I agree to comply with all provisions
+3. I understand violations may result in disciplinary action up to termination
+4. I will report any violations I witness or suspect
+5. I understand my reporting obligations and protections
+6. I will complete annual ethics training
+
+**Employee Signature**: _________________________
+**Date**: _________________________
+**Print Name**: _________________________
+**Employee ID**: _________________________
+
+---
+
+## Appendices
+
+### Appendix A: Quick Reference - Reporting Channels
+
+```
+ISSUE TYPE              | REPORT TO                | PHONE             | EMAIL
+------------------------|--------------------------|-------------------|------------------------
+General HR              | HR Department            | (555) 123-4567    | hr@company.com
+Harassment/Discrimination| HR Department           | (555) 123-4567    | hr@company.com
+Anonymous Report        | EthicsPoint Hotline      | 1-800-REPORT-IT   | company.ethicspoint.com
+Fraud/Financial         | Internal Audit           | (555) 123-4590    | fraud@company.com
+Conflicts of Interest   | HR - Conflicts Team      | (555) 123-4567    | hr-conflicts@company.com
+Data Breach             | Security Team            | (555) 123-4580    | security@company.com
+Safety Hazard           | Facilities               | (555) 123-4569    | facilities@company.com
+Legal/Compliance        | Legal Department         | (555) 123-4575    | legal@company.com
+Media Inquiry           | Public Relations         | (555) 123-4500    | pr@company.com
+```
+
+### Appendix B: Gift Value Guidelines
+
+```
+GIFT VALUE    | RECEIVING                              | GIVING
+--------------|----------------------------------------|--------------------------------
+$0-$25        | Accept, no reporting                   | Allowed, no approval
+$26-$100      | Accept, report to manager              | Allowed, no approval
+$101-$250     | Report to manager, approval required   | Requires manager approval
+>$250         | Decline or VP approval required        | Requires VP approval
+Cash          | Decline (prohibited)                   | Prohibited
+```
+
+### Appendix C: Social Media Disclaimer Template
+
+```
+"The views expressed here are my own and do not represent the views or policies of my employer, [Company Name]. This account is personal and not affiliated with [Company Name]."
+
+OR (shorter version):
+
+"Opinions are my own and do not represent my employer."
+```
+
+### Appendix D: Training Requirements
+
+```
+TRAINING                         | FREQUENCY  | REQUIRED FOR
+---------------------------------|------------|----------------------------------
+Code of Conduct                  | Annual     | All employees
+Anti-Harassment                  | Annual     | All employees
+Information Security             | Annual     | All employees
+FCPA/Anti-Bribery               | Annual     | Employees dealing with int'l customers
+Conflicts of Interest            | Annual     | Managers and above
+Financial Controls               | Annual     | Finance team, managers with P&L
+Data Privacy (GDPR)             | Annual     | All employees handling customer data
+Safety Training                  | Annual     | All employees
+```
+
+### Appendix E: Contact Information
+
+```
+HR Department: hr@company.com | (555) 123-4567
+Anonymous Hotline: 1-800-REPORT-IT (1-800-737-6784)
+Online Reporting: company.ethicspoint.com
+Legal Department: legal@company.com | (555) 123-4575
+Security Team: security@company.com | (555) 123-4580
+Facilities: facilities@company.com | (555) 123-4569
+```
+
+---
+
+**Document Version**: 2.5
+**Effective Date**: January 2025
+**Next Review**: January 2026
+**Approved by**: Chief Legal Officer & Chief People Officer
+**Classification**: Internal - All Employees
+
+---
+
+**END OF CODE OF CONDUCT & ETHICS POLICY**
