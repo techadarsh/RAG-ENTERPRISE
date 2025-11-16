@@ -1,121 +1,111 @@
-#  RAG Enterprise Chatbot
+# 🚀 RAG Enterprise Chatbot
 
-A production-ready Retrieval-Augmented Generation (RAG) chatbot system for enterprise knowledge management with on-premise LLM support, automatic document ingestion, and resilient service architecture.
+A production-ready Retrieval-Augmented Generation (RAG) chatbot system for enterprise knowledge management with **native Mac deployment**, Metal GPU acceleration, and 8-10x performance improvements over Docker.
 
-## Overview
+## 🎯 Overview
 
 This project implements a complete RAG pipeline that allows users to ask questions about enterprise documents (HR policies, onboarding guides, engineering standards) and receive contextual answers backed by retrieved sources using local LLM inference.
 
 **Key Features:**
 - [x] End-to-end RAG pipeline with resilient LLM integration
-- [x] Vector similarity search with Milvus
-- [x] Local LLM inference via Ollama (Mistral 7B)
+- [x] **Native Mac deployment** with Metal GPU acceleration (8-10x faster)
+- [x] **One-command automation** with comprehensive health checks
+- [x] Vector similarity search with Milvus (Docker standalone)
+- [x] Local LLM inference via Ollama (Mistral 7B, 4.4GB model)
 - [x] State-of-the-art embeddings (BGE-Base-En)
-- [x] Automatic document ingestion via folder watcher
-- [x] Confluence integration (POC mode with API-ready architecture)
-- [x] **Conversational memory** — remembers last 5 turns per chat session
+- [x] Automatic document ingestion with recursive file discovery
+- [x] **Full Confluence API integration** (basic auth, pagination, CQL search)
+- [x] Conversational memory (last 5 turns per session)
 - [x] Health checks and service monitoring
-- [x] Reboot-stable architecture with automatic model loading
-- [x] Clean, minimal React UI
-- [x] One-command deployment with Docker Compose
+- [x] Clean, minimal React UI with hot reload
 - [x] Source attribution and latency tracking
+- [x] 14 sample documents pre-loaded and indexed
 
-## Quick Start
+## ⚡ Performance
+
+**Native Mac vs Docker:**
+- Query time: **8-10 seconds** (vs 60-90 seconds in Docker)
+- **8-10x performance improvement** using Metal GPU
+- Memory efficient: ~8-10GB total usage
+- No container overhead for LLM inference
+
+## 🚀 Quick Start (Local Mac Deployment)
 
 ### Prerequisites
-- Docker Desktop (with Docker Compose)
-- 12GB RAM minimum (for LLM model + embeddings)
-- Ports 3000, 8000, 11434, 19530 available
 
-###  Stable Startup (Recommended)
+- **macOS** (tested on Mac Mini M4 Pro with 48GB RAM)
+- **Homebrew** installed
+- **Python 3.11+** (installed via Homebrew if needed)
+- **Node.js 18+** (installed via Homebrew if needed)
+- **Docker Desktop** (for Milvus only)
+- **8GB RAM minimum** (16GB+ recommended)
 
-Use the development startup script for reliable initialization:
+### ⚡ One-Command Startup
 
 ```bash
-# Clone or navigate to the project directory
-cd rag-enterprise
+# Clone the repository
+git clone https://github.com/techadarsh/RAG-ENTERPRISE.git
+cd RAG-ENTERPRISE
 
-# Run the dev startup script (handles model download, health checks)
-./scripts/dev-up.sh
+# Start everything (handles all prerequisites automatically)
+./start_local.sh start
 ```
 
 **What it does:**
-1. Starts all Docker services
-2. Waits for Ollama container to be ready
-3. Downloads Mistral model if not present (~4.4GB, one-time)
-4. Waits for all services to be healthy
-5. Displays access URLs and quick test commands
+1. ✅ Checks and installs prerequisites (Homebrew, Python, Node.js, Ollama, Redis, Docker)
+2. ✅ Starts Ollama service with Metal GPU acceleration
+3. ✅ Downloads Mistral model if not present (4.4GB, one-time)
+4. ✅ Starts Redis for session caching
+5. ✅ Starts Milvus standalone container for vector storage
+6. ✅ Creates Python virtual environment and installs dependencies
+7. ✅ Starts FastAPI backend with hot reload (port 8000)
+8. ✅ Starts React frontend with hot reload (port 3000)
+9. ✅ Loads 14 sample Confluence documents
+10. ✅ Performs comprehensive health checks
+11. ✅ Shows service status and access URLs
 
 **Expected startup time:**
-- First run: 5-10 minutes (model download + service initialization)
-- Subsequent runs: 1-2 minutes (services already configured)
+- First run: 5-8 minutes (model download + dependencies)
+- Subsequent runs: 30-60 seconds (services already configured)
 
-### Alternative: Manual Startup
+### 📱 Access URLs
+
+- **Frontend UI**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health/deps
+- **Ollama API**: http://localhost:11434
+
+### 🛠️ Available Commands
 
 ```bash
 # Start all services
-docker compose up -d
+./start_local.sh start
 
-# Manually pull Mistral model (if needed)
-docker exec rag-ollama ollama pull mistral
+# Stop all services
+./start_local.sh stop
 
-# Check health status
-curl http://localhost:8000/health/deps
+# Check service status
+./start_local.sh status
+
+# Restart all services
+./start_local.sh restart
+
+# Clean all data and reset
+./start_local.sh clean
+
+# View logs for a specific service
+./start_local.sh logs backend
+./start_local.sh logs frontend
+./start_local.sh logs ollama
+./start_local.sh logs redis
+./start_local.sh logs milvus
+
+# Show help
+./start_local.sh help
 ```
 
-### Access URLs
-
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health/deps
-- **LLM Health**: http://localhost:8000/llm/health
-- **Ollama API**: http://localhost:11434
-
-### Using Host Ollama (Optional)
-
-By default, the system uses the dockerized Ollama service. To use a host-installed Ollama:
-
-1. Edit `.env`:
-   ```bash
-   LLM_HOST=host.docker.internal
-   ```
-
-2. Ensure Ollama is running on your host:
-   ```bash
-   ollama serve
-   ```
-
-3. Restart backend:
-   ```bash
-   docker compose restart backend
-   ```
-
-## Reboot-Stable Architecture
-
-This system is designed to work reliably after machine reboots:
-
-- **Dockerized Ollama**: No dependency on host services
-- **Automatic model loading**: Models persist in Docker volumes
-- **Health checks**: Services wait for dependencies before starting
-- **Fallback endpoints**: Multiple connection attempts with graceful degradation
-- **Environment-based config**: Single source of truth in `.env`
-
-### After Reboot
-
-Simply run:
-```bash
-./scripts/dev-up.sh
-```
-
-Or manually:
-```bash
-docker compose up -d
-```
-
-Services will automatically restore from persistent volumes.
-
-### First Query Example
+## 💡 Sample Queries
 
 Try asking:
 - "What is the PTO policy?"
@@ -125,8 +115,90 @@ Try asking:
 - "What are the incident severity levels?"
 - "How do I create a pull request?"
 - "What is our code review process?"
+- "What is the agile workflow?"
 
-## Testing & Validation
+**Expected response time:** 8-10 seconds with Metal GPU acceleration
+
+## 🔧 Architecture
+
+### System Components
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     User Browser                             │
+│                   http://localhost:3000                      │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 React Frontend (Port 3000)                   │
+│              - Hot reload development mode                   │
+│              - Clean, minimal UI                             │
+│              - Conversation history                          │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│            FastAPI Backend (Port 8000)                       │
+│              - RAG pipeline orchestration                    │
+│              - Embedding generation (BGE-Base-En)            │
+│              - Vector similarity search                      │
+│              - LLM query generation                          │
+│              - Conversational memory (5 turns)               │
+│              - Hot reload with Uvicorn                       │
+└─┬───────────────────┬──────────────────┬────────────────────┘
+  │                   │                  │
+  │                   │                  │
+  ▼                   ▼                  ▼
+┌──────────────┐  ┌────────────┐  ┌──────────────┐
+│   Ollama     │  │   Milvus   │  │    Redis     │
+│  (Native)    │  │  (Docker)  │  │ (Homebrew)   │
+│ Port 11434   │  │ Port 19530 │  │  Port 6379   │
+│              │  │            │  │              │
+│ - Mistral 7B │  │ - Vectors  │  │ - Sessions   │
+│ - Metal GPU  │  │ - Metadata │  │ - Cache      │
+│ - 4.4GB RAM  │  │ - Search   │  │              │
+└──────────────┘  └────────────┘  └──────────────┘
+```
+
+### Data Flow
+
+1. **User Query** → Frontend sends question to `/ask` endpoint
+2. **Embedding** → Backend generates query embedding using BGE-Base-En
+3. **Retrieval** → Milvus performs vector similarity search
+4. **Context** → Top relevant documents retrieved with metadata
+5. **Generation** → LLM generates answer using retrieved context
+6. **Response** → Answer + sources + latency returned to frontend
+7. **Memory** → Conversation stored in Redis (last 5 turns)
+
+### Confluence Integration
+
+**Mode**: Local (API-ready)
+
+**Configuration** (`.env.local`):
+```bash
+CONFLUENCE_MODE=local
+CONFLUENCE_LOCAL_DIR=data/sample_confluence_pages
+```
+
+**API Implementation** (`backend/confluence_ingest.py`):
+- ✅ Basic authentication (email + API token)
+- ✅ Fetch page by ID
+- ✅ Fetch all pages with pagination
+- ✅ CQL search support
+- ✅ Error handling (401, 404, timeout, connection errors)
+
+**To enable API mode:**
+1. Update `.env.local`:
+   ```bash
+   CONFLUENCE_MODE=api
+   CONFLUENCE_BASE_URL=https://your-domain.atlassian.net/wiki
+   CONFLUENCE_EMAIL=your-email@company.com
+   CONFLUENCE_API_TOKEN=your-api-token
+   ```
+2. Restart backend: `./start_local.sh restart`
+
+## 🧪 Testing & Validation
 
 ### Health Checks
 
@@ -138,9 +210,13 @@ curl http://localhost:8000/health/deps
 Expected response:
 ```json
 {
+  "backend": "ok",
   "milvus": "ok",
+  "etcd": "ok",
+  "minio": "ok",
+  "redis": "ok",
   "ollama": "ok",
-  "redis": "ok"
+  "embeddings": "ok"
 }
 ```
 
@@ -157,46 +233,169 @@ Test RAG pipeline with a sample question:
 ```bash
 curl -X POST http://localhost:8000/ask \
   -H 'Content-Type: application/json' \
-  -d '{"query":"What is the sprint duration?"}'
+  -d '{"query":"What is the agile workflow?"}'
 ```
 
-## Troubleshooting
+Expected response time: **8-10 seconds**
 
-### LLM 404 Error
+### Service Status
 
-**Symptom**: `/ask` endpoint returns 404 error or "LLM generation service appears unreachable"
+Check individual service status:
+```bash
+./start_local.sh status
+```
 
-## Troubleshooting
+Output shows:
+- ✅ Ollama (with model info)
+- ✅ Redis (memory usage)
+- ✅ Milvus (container status)
+- ✅ Backend (process status)
+- ✅ Frontend (process status)
+- 📊 Document count and topics
 
-### rag-ollama Container Unhealthy
+## 🐛 Troubleshooting
 
-**Symptom**: `docker compose ps` shows rag-ollama as "unhealthy"
+### Services Not Starting
 
-**Solution**:
-- Confirm the healthcheck uses `ollama list` (not curl) in docker-compose.yml
-- Ensure `LLM_HOST=rag-ollama` in .env matches the service name
-- Check logs: `docker compose logs rag-ollama --tail=50`
-- Restart if needed: `docker compose restart rag-ollama`
+**Check prerequisites:**
+```bash
+# The script checks these automatically, but you can verify manually:
+which brew       # Should show Homebrew path
+which python3    # Should show Python 3.11+
+which node       # Should show Node.js 18+
+which ollama     # Should show Ollama path
+brew services list | grep redis  # Should show redis (started)
+docker ps        # Should show Milvus container
+```
 
-### LLM 404 Error
+### Ollama Not Responding
 
-**Symptom**: `/ask` endpoint returns 404 error or "LLM generation service appears unreachable"
+**Symptom**: Backend fails with "Ollama connection error"
 
 **Solution**:
 ```bash
-# 1. Check if Ollama container is running
-docker ps | grep rag-ollama
+# Check if Ollama is running
+ps aux | grep ollama
 
-# 2. Check if model is downloaded
-docker exec rag-ollama ollama list
+# Restart Ollama
+./start_local.sh restart
 
-# 3. If model missing, download it
-docker exec rag-ollama ollama pull mistral
-
-# 4. Restart backend
+# Or manually:
+brew services restart ollama
+ollama serve
 ```
 
-### Service Dependencies Not Healthy
+### Milvus Connection Errors
+
+**Symptom**: "Failed to connect to Milvus"
+
+**Solution**:
+```bash
+# Check Milvus container
+docker ps | grep milvus
+
+# Check logs
+./start_local.sh logs milvus
+
+# Restart Milvus
+docker restart milvus-standalone
+
+# If corrupt, clean and restart
+./start_local.sh clean
+./start_local.sh start
+```
+
+### Backend Startup Timeout
+
+**Symptom**: "Backend failed to start within 120 seconds"
+
+**Cause**: Topic extraction can take 50-60 seconds on first document load
+
+**Solution**: This is normal! The script waits up to 120 seconds. If it still fails:
+```bash
+# Check backend logs
+./start_local.sh logs backend
+
+# Manually start backend to see errors
+cd /Users/adarsharma/Documents/adarsharma/M.tech-4th-sem/rag-enterprise
+source venv/bin/activate
+python -m backend.run_local
+```
+
+### Frontend Port Already in Use
+
+**Symptom**: "Port 3000 already in use"
+
+**Solution**:
+```bash
+# Find and kill the process using port 3000
+lsof -ti:3000 | xargs kill -9
+
+# Or restart frontend
+./start_local.sh restart
+```
+
+### Redis Connection Errors
+
+**Symptom**: "Could not connect to Redis"
+
+**Solution**:
+```bash
+# Check Redis status
+brew services list | grep redis
+
+# Restart Redis
+brew services restart redis
+
+# Test connection
+redis-cli ping  # Should return "PONG"
+```
+
+### LLM Queries Timing Out
+
+**Symptom**: Queries take >60 seconds or timeout
+
+**Solution**:
+```bash
+# Check if Metal GPU is being used
+ollama ps
+
+# Check system resources
+top -l 1 | grep -E "^CPU|^PhysMem"
+
+# Restart Ollama to clear any issues
+brew services restart ollama
+```
+
+### Documents Not Loading
+
+**Symptom**: Health check shows 0 documents
+
+**Solution**:
+```bash
+# Check if sample documents exist
+ls -la data/sample_confluence_pages/
+
+# Manually trigger document loading
+curl -X POST http://localhost:8000/ingest/trigger
+
+# Check backend logs for errors
+./start_local.sh logs backend
+```
+
+### Full Reset
+
+If all else fails, completely reset the system:
+```bash
+# Stop everything
+./start_local.sh stop
+
+# Clean all data
+./start_local.sh clean
+
+# Start fresh
+./start_local.sh start
+```
 
 **Solution**:
 ```bash
@@ -207,42 +406,103 @@ docker compose logs <service-name> --tail=50
 docker compose down && docker compose up -d
 ```
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 rag-enterprise/
-├── backend/                 # FastAPI backend service
-│   ├── main.py             # API endpoints (/health, /ask)
-│   ├── rag_pipeline.py     # Orchestrates RAG workflow
-│   ├── milvus_client.py    # Vector database operations
-│   ├── embeddings.py       # Hash-based embedding model
-│   ├── llm_client.py       # LLM integration (mock/API)
-│   ├── confluence_ingest.py # Confluence document ingestion
-│   ├── requirements.txt    # Python dependencies
-│   ├── Dockerfile          # Backend container config
-│   └── .env.example        # Configuration template
-├── frontend/               # React frontend service
+├── 📜 start_local.sh              # Main automation script (all-in-one)
+├── 📄 README.md                    # This file
+├── 📄 QUICKSTART.md                # Quick start guide
+├── 📄 QUICK_REFERENCE_LOCAL.md     # Local deployment commands
+├── 📄 LOCAL_SETUP_SUCCESS.md       # Detailed local setup documentation
+├── 📄 IMPROVEMENT_AREAS.md         # Grey areas and future improvements
+├── 📄 DEMO_PREP_CHECKLIST.md       # M.Tech demo preparation
+│
+├── 📂 backend/                     # FastAPI backend service
+│   ├── main.py                    # API endpoints (/health, /ask)
+│   ├── run_local.py               # Local deployment script
+│   ├── rag_pipeline.py            # RAG workflow orchestration
+│   ├── milvus_client.py           # Vector database operations
+│   ├── embeddings.py              # Embedding generation (BGE-Base-En)
+│   ├── llm_client.py              # LLM integration with Ollama
+│   ├── confluence_ingest.py       # Confluence API integration (COMPLETE)
+│   ├── requirements.txt           # Python dependencies
+│   └── .env.local                 # Local environment config
+│
+├── 📂 frontend/                    # React frontend service
 │   ├── src/
-│   │   ├── App.js         # Main chat component
-│   │   ├── App.css        # Styling
-│   │   └── index.js       # React entry point
+│   │   ├── App.js                # Main chat component
+│   │   ├── App.css               # Styling
+│   │   └── index.js              # React entry point
 │   ├── public/
-│   ├── Dockerfile         # Frontend container config
-│   ├── nginx.conf         # Nginx configuration
-│   └── package.json       # Node dependencies
-├── data/                  # Sample enterprise documents
-│   ├── hr_policy.txt     # HR policies and benefits
-│   ├── onboarding.txt    # Onboarding guide
-│   ├── leave_policy.txt  # Leave and PTO policies
-│   └── sample_confluence_pages/  # Confluence POC documents
-│       ├── engineering_standards.txt
+│   ├── package.json              # Node dependencies
+│   └── node_modules/             # Installed dependencies
+│
+├── 📂 data/                        # Sample documents
+│   └── sample_confluence_pages/  # 14 pre-loaded documents
 │       ├── agile_workflow.txt
+│       ├── api_best_practices.txt
+│       ├── code_review.txt
+│       ├── engineering_standards.txt
+│       ├── hr_policy.txt
 │       ├── incident_management.txt
-│       └── api_documentation.txt
-├── docker-compose.yml    # Multi-service orchestration
-├── .env.example          # Environment configuration template
-└── README.md            # This file
+│       ├── leave_policy.txt
+│       ├── onboarding.txt
+│       ├── performance_review.txt
+│       ├── security_guidelines.txt
+│       └── ... (14 total)
+│
+├── 📂 docs_archive/                # Archived reference documentation
+│   ├── legacy/                    # 1 file: conversational memory
+│   ├── guides/                    # 5 files: architecture, APIs, hot reload
+│   └── summaries/                 # 4 files: performance, privacy, design
+│
+├── 📂 venv/                        # Python virtual environment
+├── 📂 volumes/                     # Milvus data persistence
+├── .env.local                      # Local environment variables
+├── .gitignore                      # Git ignore rules
+├── docker-compose.yml              # Docker services (Milvus only)
+└── requirements.txt                # Python dependencies
 ```
+
+### Key Files
+
+- **`start_local.sh`**: Main automation script that handles everything
+  - 689 lines of comprehensive automation
+  - Prerequisite checking and installation
+  - Service orchestration (Ollama, Redis, Milvus, Backend, Frontend)
+  - Health monitoring and status reporting
+  - Document loading and indexing
+  - Logging and debugging support
+
+- **`backend/confluence_ingest.py`**: Full Confluence API implementation
+  - ✅ Basic authentication (email + API token)
+  - ✅ Fetch page by ID
+  - ✅ Fetch all pages with pagination
+  - ✅ CQL search support
+  - ✅ Comprehensive error handling
+
+- **`.env.local`**: Local deployment configuration
+  - All service hostnames (localhost, not Docker internal)
+  - LLM timeouts (cold: 90s, warm: 60s)
+  - Confluence mode selection (local/api)
+  - Milvus standalone configuration
+
+### Documentation Organization
+
+**Root Documentation (6 files):**
+- Essential guides for getting started and running the system
+- Current setup, commands, and improvement areas
+- Demo preparation checklist
+
+**Archived Documentation (10 files in `docs_archive/`):**
+- Architecture and design documentation
+- API implementation details
+- Performance optimization strategies
+- Security and privacy documentation
+- Prompt engineering best practices
+
+**Purpose**: Clean root directory for easy navigation, with valuable reference material preserved in archive.
 
 ## Architecture
 
@@ -849,55 +1109,99 @@ The evaluation generates a Markdown file (`results.md`) with:
 
 The `results.md` file is ready for direct inclusion in your dissertation's **Results & Evaluation** chapter:
 
-- [x] Quantitative performance metrics
-- [x] System configuration details
-- [x] Comparison baseline data
-- [x] Markdown format (easy to convert to LaTeX/Word)
+## 🎓 Academic Context
 
-## Performance Notes
+This project is part of an M.Tech 4th semester presentation demonstrating:
+- ✅ **Enterprise RAG Implementation**: Complete end-to-end pipeline
+- ✅ **Performance Optimization**: 8-10x improvement with Metal GPU
+- ✅ **Native Deployment**: Moving from Docker to optimized local setup
+- ✅ **Production Practices**: Health checks, monitoring, error handling
+- ✅ **API Integration**: Full Confluence API implementation
+- ✅ **Automation**: One-command deployment with comprehensive checks
 
-- **Cold start**: ~2-3 minutes (model loading)
-- **Query latency**: 200-500ms (mock mode)
-- **Embedding time**: ~50-100ms per query
-- **Vector search**: <10ms (3 documents)
+### Performance Metrics
 
-## Limitations (PoC)
+- **Query Response Time**: 8-10 seconds (vs 60-90s in Docker)
+- **Speedup**: 8-10x improvement with Metal GPU acceleration
+- **Memory Usage**: ~8-10GB total (efficient resource utilization)
+- **Document Loading**: 14 documents indexed in ~5 seconds
+- **Topic Extraction**: ~50 seconds (one-time per session)
+- **Startup Time**: 30-60 seconds (after initial setup)
 
-This is a minimal proof-of-concept. For production:
--  No authentication/authorization
--  No query history or conversation memory
--  No document versioning
--  No monitoring/alerting
--  Single-node Milvus (use cluster for scale)
--  No caching layer
--  Basic error handling
+### Technical Achievements
 
-## Future Enhancements
+1. **Native Mac Optimization**
+   - Metal GPU acceleration for LLM inference
+   - Eliminated Docker overhead for compute-intensive tasks
+   - Optimized service orchestration
 
-- [ ] Add conversation history and memory
-- [ ] Implement user authentication
-- [ ] Support PDF, Word, and other document formats
-- [ ] Add query refinement and follow-up questions
-- [ ] Implement feedback mechanism for answers
-- [ ] Add monitoring with Prometheus/Grafana
-- [ ] Scale Milvus to cluster mode
-- [ ] Implement semantic caching
-- [ ] Add multi-language support
+2. **Comprehensive Automation**
+   - 689-line automation script
+   - Prerequisite checking and auto-installation
+   - Health monitoring and status reporting
+   - Intelligent timeout handling
 
-## License
+3. **Full API Integration**
+   - Complete Confluence API implementation
+   - Basic authentication support
+   - Pagination and search capabilities
+   - Comprehensive error handling
 
-This project is for educational/dissertation purposes.
+4. **Production-Ready Features**
+   - Conversational memory (5-turn context)
+   - Hot reload for development
+   - Comprehensive health checks
+   - Document ingestion pipeline
+   - Source attribution and latency tracking
 
-## Contributing
+## 📚 Additional Documentation
 
-This is a proof-of-concept project. Feel free to fork and adapt for your needs.
+- **`QUICK_REFERENCE_LOCAL.md`**: Quick command reference
+- **`LOCAL_SETUP_SUCCESS.md`**: Detailed setup walkthrough
+- **`IMPROVEMENT_AREAS.md`**: 18 identified grey areas for future work
+- **`DEMO_PREP_CHECKLIST.md`**: M.Tech presentation preparation
+- **`docs_archive/`**: Architectural and implementation reference docs
 
-## Contact
+## 🚀 Future Enhancements
 
-For questions about this implementation, please refer to the code comments and documentation.
+### Priority 1 (High Impact)
+- [ ] Advanced conversational features (conversation branches, history search)
+- [ ] Enhanced document preprocessing (better chunking strategies)
+- [ ] Query optimization (caching, compression)
+
+### Priority 2 (User Experience)
+- [ ] Multi-document upload interface
+- [ ] Real-time ingestion status
+- [ ] Query history and favorites
+- [ ] Export conversations
+
+### Priority 3 (Production)
+- [ ] User authentication and authorization
+- [ ] Multi-tenant support
+- [ ] Monitoring and analytics dashboard
+- [ ] Automated testing suite
+
+### Priority 4 (Advanced Features)
+- [ ] Multi-language support
+- [ ] Custom embedding models
+- [ ] Fine-tuning capabilities
+- [ ] Advanced RAG techniques (HyDE, multi-query)
+
+## 📝 License
+
+This project is for educational/academic purposes (M.Tech dissertation).
+
+## 🙏 Acknowledgments
+
+- **Ollama**: Local LLM inference with Metal GPU support
+- **Milvus**: High-performance vector database
+- **FastAPI**: Modern Python web framework
+- **React**: Frontend UI framework
 
 ---
 
-**Built with  for enterprise knowledge management**
+**Built with ❤️ for enterprise knowledge management**
 
-*Last updated: October 2025*
+*Last updated: November 16, 2025*
+*Branch: local-final-presentation*
+*Status: Production-ready local deployment*
