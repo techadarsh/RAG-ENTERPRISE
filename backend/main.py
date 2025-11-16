@@ -208,6 +208,17 @@ async def startup_event():
         threading.Thread(target=warmup_embeddings, daemon=True).start()
         logger.info(" FastAPI started without blocking - background loading initiated")
         
+        # Optional: Force blocking initial load of sample documents on startup
+        # Useful when you want the backend to finish indexing before accepting traffic.
+        try:
+            force_load = os.getenv("FORCE_INITIAL_LOAD", "false").lower() in ["1", "true", "yes"]
+            if force_load and rag_pipeline and hasattr(rag_pipeline, 'load_data_if_needed'):
+                logger.info("FORCE_INITIAL_LOAD=true -> performing blocking initial data load...")
+                rag_pipeline.load_data_if_needed()
+                logger.info("Blocking initial data load complete")
+        except Exception as e:
+            logger.warning(f"FORCE_INITIAL_LOAD failed: {e}")
+        
     except Exception as e:
         logger.error(f"Failed to initialize RAG pipeline: {e}")
         raise
@@ -645,6 +656,49 @@ async def upload_document(file: UploadFile = File(...)):
         raise
     except Exception as e:
         logger.error(f"Error uploading document: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/ingest/confluence")
+async def ingest_confluence(payload: Dict[str, str] = None):
+    """
+    Trigger Confluence ingestion (local or api mode).
+
+    This endpoint is used by the local startup script to force-loading
+    sample Confluence documents into the RAG pipeline when Milvus is empty.
+
+    Payload (optional): {"mode": "local"} or {"mode": "api"}
+    """
+    mode = None
+    try:
+        if payload and isinstance(payload, dict):
+            mode = payload.get("mode")
+    except Exception:
+        mode = None
+
+    mode = mode or os.getenv("CONFLUENCE_MODE", "local")
+
+    try:
+        ingestor = ConfluenceIngestor(mode=mode)
+        docs = ingestor.get_documents()
+        logger.info(f"/ingest/confluence: fetched {len(docs)} documents (mode={mode})")
+
+        # If RAG pipeline is initialized, load these documents into Milvus
+        if rag_pipeline:
+            try:
+                # Update confluence_docs and perform initial load synchronously
+                rag_pipeline.confluence_docs = docs
+                rag_pipeline._load_initial_data()
+                rag_pipeline._extract_document_topics()
+                return {"status": "success", "loaded": len(docs), "message": "Documents loaded into Milvus"}
+            except Exception as e:
+                logger.error(f"Error loading documents into RAG pipeline: {e}", exc_info=True)
+                return {"status": "partial", "loaded": 0, "message": str(e)}
+
+        return {"status": "fetched", "count": len(docs), "message": "Documents fetched; backend not ready to load into Milvus"}
+
+    except Exception as e:
+        logger.error(f"/ingest/confluence failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

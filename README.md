@@ -68,6 +68,15 @@ cd rag-enterprise
 - First run: 5-8 minutes (model download + dependencies)
 - Subsequent runs: 30-60 seconds (services already configured)
 
+**Optional environment variable (force blocking initial load):**
+
+If you want the backend to finish indexing the sample documents before accepting traffic, set the following in `.env.local` before starting:
+
+```bash
+FORCE_INITIAL_LOAD=true
+```
+
+When enabled, the backend will perform a blocking load of the sample Confluence documents into Milvus during startup. This is useful for demos where you want the knowledge base ready immediately.
 ### 📱 Access URLs
 
 - **Frontend UI**: http://localhost:3000

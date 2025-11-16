@@ -136,8 +136,14 @@ class ConfluenceIngestor:
                 "Accept": "application/json"
             }
             
-            # API endpoint
-            url = f"{self.base_url}/wiki/rest/api/content"
+            # API endpoint - base_url already includes /wiki
+            # Remove duplicate /wiki from URL construction
+            base = self.base_url.rstrip('/')
+            if base.endswith('/wiki'):
+                url = f"{base}/rest/api/content"
+            else:
+                url = f"{base}/wiki/rest/api/content"
+            
             params = {
                 "spaceKey": self.space_key,
                 "expand": "body.storage,version",
@@ -159,12 +165,19 @@ class ConfluenceIngestor:
                 
                 for result in results:
                     # Extract page data
+                    # Construct page URL - base_url already includes /wiki
+                    webui_path = result.get('_links', {}).get('webui', '')
+                    if base.endswith('/wiki'):
+                        page_url = f"{base}{webui_path}"
+                    else:
+                        page_url = f"{base}/wiki{webui_path}"
+                    
                     page = {
                         "id": result.get("id", ""),
                         "title": result.get("title", "Untitled"),
                         "body": result.get("body", {}).get("storage", {}).get("value", ""),
                         "version": result.get("version", {}).get("number", 1),
-                        "url": f"{self.base_url}/wiki{result.get('_links', {}).get('webui', '')}"
+                        "url": page_url
                     }
                     pages.append(page)
                     logger.debug(f"   - {page['title']} (ID: {page['id']}, v{page['version']})")
