@@ -275,7 +275,8 @@ Your Response:"""
             check_cancellation_fn: Function that returns True if request was cancelled
         """
         # Break timeout into shorter chunks for cancellation checking
-        chunk_timeout = 2.0  # 2 seconds per attempt
+        # 10 seconds per chunk allows for model loading + generation
+        chunk_timeout = 10.0  # 10 seconds per attempt (handles cold starts)
         attempts = max(1, int(timeout / chunk_timeout))
         
         for attempt in range(attempts):

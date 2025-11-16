@@ -43,14 +43,72 @@ case $COMMAND in
     up|start)
         echo -e "${BLUE} Starting RAG Chatbot services...${NC}"
         echo ""
-        echo -e "${YELLOW}This may take 2-3 minutes for first-time setup:${NC}"
+        echo -e "${YELLOW}This may take 5-8 minutes for first-time setup:${NC}"
         echo "  1. Downloading Docker images"
-        echo "  2. Building backend and frontend"
-        echo "  3. Loading BGE-Large-En model (~1.5GB)"
-        echo "  4. Initializing Milvus vector database"
-        echo "  5. Indexing sample documents"
+        echo "  2. Downloading Mistral LLM model (~4.4GB)"
+        echo "  3. Building backend and frontend"
+        echo "  4. Loading BGE-Large-En embedding model (~1.5GB)"
+        echo "  5. Initializing Milvus vector database"
+        echo "  6. Indexing sample documents"
         echo ""
         
+        # Step 1: Start Ollama service first to download the model
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${BLUE} Step 1: Starting Ollama service...     ${NC}"
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        docker compose up -d ollama
+        
+        # Step 2: Wait for Ollama to be ready
+        echo ""
+        echo -e "${BLUE} Step 2: Waiting for Ollama to be ready...${NC}"
+        MAX_RETRIES=30
+        RETRY_COUNT=0
+        
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if docker compose exec -T ollama ollama list >/dev/null 2>&1; then
+                echo -e "${GREEN}${NC} Ollama is ready!"
+                break
+            fi
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo "  Attempt $RETRY_COUNT/$MAX_RETRIES - waiting for Ollama..."
+            sleep 2
+        done
+        
+        if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+            echo -e "${RED} Error: Ollama failed to start${NC}"
+            exit 1
+        fi
+        
+        # Step 3: Check if Mistral model is already downloaded
+        echo ""
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${BLUE} Step 3: Checking for Mistral model...${NC}"
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        
+        if docker compose exec -T ollama ollama list | grep -q "mistral"; then
+            echo -e "${GREEN}${NC} Mistral model already downloaded"
+        else
+            echo -e "${YELLOW} Mistral model not found. Downloading now...${NC}"
+            echo -e "${YELLOW} This will download ~4.4GB and may take 5-15 minutes${NC}"
+            echo ""
+            
+            if docker compose exec -T ollama ollama pull mistral; then
+                echo ""
+                echo -e "${GREEN}${NC} Successfully downloaded Mistral model (4.4GB)"
+            else
+                echo ""
+                echo -e "${RED} Error: Failed to download Mistral model${NC}"
+                echo -e "${YELLOW} You can try again later or download manually with:${NC}"
+                echo -e "${YELLOW}   docker compose exec ollama ollama pull mistral${NC}"
+                exit 1
+            fi
+        fi
+        
+        # Step 4: Start all remaining services
+        echo ""
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${BLUE} Step 4: Starting all services...${NC}"
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         docker compose up --build
         ;;
     
