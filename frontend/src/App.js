@@ -324,7 +324,24 @@ function App() {
                               <div className="sources-list">
                                 {msg.sources.map((source, idx) => (
                                   <div key={idx} className="source-item-inline">
-                                    <strong>{source.title}</strong> (score: {typeof source.score === 'string' ? source.score : source.score.toFixed(3)})
+                                    <strong>
+                                      {source.source_url ? (
+                                        <a 
+                                          href={source.source_url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="confluence-link"
+                                          title="Open in Confluence"
+                                        >
+                                          {source.title} 🔗
+                                        </a>
+                                      ) : (
+                                        source.title
+                                      )}
+                                    </strong> (score: {typeof source.score === 'string' ? source.score : source.score.toFixed(3)})
+                                    {source.source_type && source.source_type === 'confluence' && (
+                                      <span className="source-badge">📄 Confluence</span>
+                                    )}
                                     <p>{source.text}</p>
                                   </div>
                                 ))}

@@ -210,21 +210,32 @@ class RAGPipeline:
         """
         titles = []
         texts = []
+        source_types = []
+        source_urls = []
+        doc_ids = []
         
         # Load Confluence documents first (with chunking)
         if self.confluence_docs:
             logger.info(f"Loading {len(self.confluence_docs)} Confluence documents")
             for doc in self.confluence_docs:
                 doc_chunks = self._chunk_text(doc['body'])
+                doc_url = doc.get('url', '')
+                doc_id = doc.get('id', '')
                 
                 if len(doc_chunks) > 1:
                     logger.info(f"Split '{doc['title']}' into {len(doc_chunks)} chunks")
                     for i, chunk in enumerate(doc_chunks, 1):
                         titles.append(f"[Confluence] {doc['title']} (Part {i}/{len(doc_chunks)})")
                         texts.append(chunk)
+                        source_types.append("confluence")
+                        source_urls.append(doc_url)
+                        doc_ids.append(doc_id)
                 else:
                     titles.append(f"[Confluence] {doc['title']}")
                     texts.append(doc['body'])
+                    source_types.append("confluence")
+                    source_urls.append(doc_url)
+                    doc_ids.append(doc_id)
         
         # Load local text files from data directory (with chunking)
         if self.data_dir and os.path.exists(self.data_dir):
@@ -246,9 +257,15 @@ class RAGPipeline:
                                 for i, chunk in enumerate(doc_chunks, 1):
                                     titles.append(f"{filename} (Part {i}/{len(doc_chunks)})")
                                     texts.append(chunk)
+                                    source_types.append("local")
+                                    source_urls.append("")
+                                    doc_ids.append(filename)
                             else:
                                 titles.append(filename)
                                 texts.append(content)
+                                source_types.append("local")
+                                source_urls.append("")
+                                doc_ids.append(filename)
                 except Exception as e:
                     logger.error(f"Error reading file {filename}: {e}")
         
@@ -257,19 +274,19 @@ class RAGPipeline:
             return
         
         # Generate embeddings
-        logger.info(f" Starting embedding generation for {len(texts)} document chunks...")
+        logger.info(f"🧠 Starting embedding generation for {len(texts)} document chunks...")
         logger.info(f"⏱  This may take 1-2 minutes on first run...")
         
         start_time = time.time()
         embeddings = self.embedding_model.embed_texts(texts)
         elapsed = time.time() - start_time
         
-        logger.info(f" Embedding generation completed in {elapsed:.1f}s")
+        logger.info(f"✅ Embedding generation completed in {elapsed:.1f}s")
         
-        # Insert into Milvus
-        logger.info(f" Inserting {len(texts)} documents into Milvus...")
-        self.milvus_client.insert(titles, texts, embeddings)
-        logger.info(f" Loaded {len(texts)} document chunks into Milvus")
+        # Insert into Milvus with metadata
+        logger.info(f"💾 Inserting {len(texts)} documents into Milvus...")
+        self.milvus_client.insert(titles, texts, embeddings, source_types, source_urls, doc_ids)
+        logger.info(f"✅ Loaded {len(texts)} document chunks into Milvus")
     
     def query(self, query: str, top_k: int = None) -> Dict[str, Any]:
         """
@@ -318,6 +335,8 @@ class RAGPipeline:
         context_parts = []
         sources = []
         sources_for_display = []  # Only top 3 for user
+        seen_titles = set()  # Track unique titles to avoid duplicates
+        unique_count = 0  # Count of unique sources for display
         
         # Context compression settings (affects quality vs speed trade-off)
         MAX_CONTEXT_CHARS = int(os.getenv("MAX_CONTEXT_CHARS", "2000"))  # Total context limit: ~500 tokens (1 token ≈ 4 chars)
@@ -334,16 +353,29 @@ class RAGPipeline:
             # Clean title for user-friendly display
             display_title = self._clean_title_for_display(result['title'])
             
+            # Skip duplicate titles (same document may have multiple chunks)
+            if display_title in seen_titles:
+                continue
+            
+            seen_titles.add(display_title)
+            unique_count += 1
+            
             # Collect all sources for context, but only top 3 for display
             source_obj = {
                 "title": display_title,
                 "text": result['text'][:200] + "..." if len(result['text']) > 200 else result['text'],
                 "score": f"{float(result['score']) * 100:.2f}%"
             }
+            
+            # Add Confluence URL if available
+            if result.get('source_url'):
+                source_obj['source_url'] = result['source_url']
+                source_obj['source_type'] = result.get('source_type', 'confluence')
+            
             sources.append(source_obj)
             
-            # Only show top 3 sources to user
-            if i <= 3:
+            # Only show top 3 unique sources to user
+            if unique_count <= 3:
                 sources_for_display.append(source_obj)
         
         context = "\n\n".join(context_parts)

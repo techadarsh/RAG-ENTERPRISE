@@ -83,8 +83,12 @@ class MilvusClient:
         fields = [
             FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
             FieldSchema(name="title", dtype=DataType.VARCHAR, max_length=512),
-            FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=4096),
-            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.dim)
+            FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=32768),  # Increased to 32KB for full Confluence pages
+            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.dim),
+            # NEW: Add metadata fields for source tracking
+            FieldSchema(name="source_type", dtype=DataType.VARCHAR, max_length=100, default_value="local"),  # "local", "confluence", etc.
+            FieldSchema(name="source_url", dtype=DataType.VARCHAR, max_length=1000, default_value=""),  # Document URL
+            FieldSchema(name="doc_id", dtype=DataType.VARCHAR, max_length=200, default_value="")  # External document ID
         ]
         schema = CollectionSchema(fields=fields, description="Enterprise documents collection")
         self.collection = Collection(name=self.collection_name, schema=schema)
@@ -98,7 +102,8 @@ class MilvusClient:
         self.collection.create_index(field_name="embedding", index_params=index_params)
         logger.info(f" Collection created and indexed successfully (dim={self.dim})")
     
-    def insert(self, titles: List[str], texts: List[str], embeddings: np.ndarray):
+    def insert(self, titles: List[str], texts: List[str], embeddings: np.ndarray, 
+               source_types: List[str] = None, source_urls: List[str] = None, doc_ids: List[str] = None):
         """
         Insert documents into collection
         
@@ -106,16 +111,30 @@ class MilvusClient:
             titles: List of document titles
             texts: List of document texts
             embeddings: numpy array of embeddings
+            source_types: List of source types ("local", "confluence", etc.)
+            source_urls: List of source URLs
+            doc_ids: List of external document IDs
         """
         if len(titles) != len(texts) or len(titles) != len(embeddings):
             raise ValueError("Lengths of titles, texts, and embeddings must match")
+        
+        # Default metadata if not provided
+        if source_types is None:
+            source_types = ["local"] * len(titles)
+        if source_urls is None:
+            source_urls = [""] * len(titles)
+        if doc_ids is None:
+            doc_ids = [""] * len(titles)
         
         logger.info(f"Inserting {len(titles)} documents into Milvus")
         
         entities = [
             titles,
             texts,
-            embeddings.tolist()
+            embeddings.tolist(),
+            source_types,
+            source_urls,
+            doc_ids
         ]
         
         self.collection.insert(entities)
@@ -132,7 +151,7 @@ class MilvusClient:
             top_k: Number of results to return
             
         Returns:
-            List of dictionaries with title, text, and score
+            List of dictionaries with title, text, score, source_type, source_url
         """
         search_params = {"metric_type": "IP", "params": {"nprobe": 10}}
         
@@ -141,16 +160,19 @@ class MilvusClient:
             anns_field="embedding",
             param=search_params,
             limit=top_k,
-            output_fields=["title", "text"]
+            output_fields=["title", "text", "source_type", "source_url", "doc_id"]
         )
         
         output = []
         for hits in results:
             for hit in hits:
                 output.append({
-                    "title": hit.entity.get("title"),
-                    "text": hit.entity.get("text"),
-                    "score": hit.score
+                    "title": hit.get("title"),
+                    "text": hit.get("text"),
+                    "score": hit.score,
+                    "source_type": hit.get("source_type") or "local",
+                    "source_url": hit.get("source_url") or "",
+                    "doc_id": hit.get("doc_id") or ""
                 })
         
         logger.info(f"Found {len(output)} results")
