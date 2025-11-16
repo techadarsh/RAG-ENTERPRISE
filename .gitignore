@@ -72,6 +72,9 @@ vector_data/
 model_data/
 uploads/
 
+# --- Redis ---
+dump.rdb
+
 # ---- Virtual Environments at Root Level ---
 venv/
 venv*/
