@@ -45,7 +45,7 @@ This project implements a complete RAG pipeline that allows users to ask questio
 ```bash
 # Clone the repository
 git clone https://github.com/techadarsh/RAG-ENTERPRISE.git
-cd RAG-ENTERPRISE
+cd rag-enterprise
 
 # Start everything (handles all prerequisites automatically)
 ./start_local.sh start
