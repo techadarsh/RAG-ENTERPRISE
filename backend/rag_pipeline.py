@@ -5,6 +5,7 @@ import logging
 import os
 import glob
 import time
+import numpy as np
 from typing import Dict, Any, List
 from embeddings import EmbeddingModel
 from milvus_client import MilvusClient
@@ -472,3 +473,86 @@ class RAGPipeline:
             "sources": sources_for_display,  # Only show top 3 to user
             "context": context
         }
+    
+    def update_single_document(self, page_id: str, page_data: Dict[str, str]) -> bool:
+        """
+        Update a single Confluence page in Milvus (delete old + insert new)
+        
+        This method is called by webhook endpoint when a page is created/updated.
+        It performs an atomic upsert: delete all old chunks, then insert new ones.
+        
+        Args:
+            page_id: Confluence page ID
+            page_data: Dictionary with keys: id, title, body, url
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            logger.info(f"🔄 Updating document: {page_data.get('title', 'Unknown')} (ID: {page_id})")
+            
+            # Step 1: Delete old chunks for this page
+            deleted_count = self.milvus_client.delete_by_doc_id(page_id)
+            logger.info(f"🗑️  Deleted {deleted_count} old chunks for page {page_id}")
+            
+            # Step 2: Prepare new document data
+            title = page_data.get('title', 'Untitled')
+            content = page_data.get('body', '')
+            url = page_data.get('url', '')
+            
+            if not content:
+                logger.warning(f"⚠️  Empty content for page {page_id}, skipping insertion")
+                return True  # Successfully deleted, but nothing to insert
+            
+            # Step 3: Generate embedding for the new content
+            embedding = self.embedding_model.embed_texts([content])[0]
+            
+            # Step 4: Insert new chunk into Milvus
+            self.milvus_client.insert(
+                titles=[title],
+                texts=[content],
+                embeddings=np.array([embedding]),
+                source_types=["confluence"],
+                source_urls=[url],
+                doc_ids=[page_id]
+            )
+            
+            logger.info(f"✅ Successfully updated document: {title}")
+            
+            # Step 5: Re-extract topics to include new document
+            self._extract_document_topics()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error updating document {page_id}: {e}", exc_info=True)
+            return False
+    
+    def delete_single_document(self, page_id: str) -> bool:
+        """
+        Delete a single Confluence page from Milvus
+        
+        Called by webhook endpoint when a page is deleted in Confluence.
+        
+        Args:
+            page_id: Confluence page ID
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            logger.info(f"🗑️  Deleting document with ID: {page_id}")
+            deleted_count = self.milvus_client.delete_by_doc_id(page_id)
+            
+            if deleted_count > 0:
+                logger.info(f"✅ Deleted {deleted_count} chunks for page {page_id}")
+                # Re-extract topics after deletion
+                self._extract_document_topics()
+                return True
+            else:
+                logger.warning(f"⚠️  No chunks found for page {page_id}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error deleting document {page_id}: {e}", exc_info=True)
+            return False

@@ -211,3 +211,40 @@ class MilvusClient:
         except Exception as e:
             logger.error(f"Error retrieving all documents: {e}")
             return []
+    
+    def delete_by_doc_id(self, doc_id: str) -> int:
+        """
+        Delete all chunks/entries for a specific document ID
+        
+        Args:
+            doc_id: The document ID to delete (e.g., Confluence page ID)
+            
+        Returns:
+            Number of entities deleted
+        """
+        try:
+            self.collection.load()
+            
+            # First, query to get all IDs matching this doc_id
+            results = self.collection.query(
+                expr=f'doc_id == "{doc_id}"',
+                output_fields=["id"]
+            )
+            
+            if not results:
+                logger.info(f"No documents found with doc_id: {doc_id}")
+                return 0
+            
+            # Extract primary key IDs
+            ids_to_delete = [str(result["id"]) for result in results]
+            
+            # Delete using primary key IDs
+            delete_expr = f"id in [{','.join(ids_to_delete)}]"
+            self.collection.delete(delete_expr)
+            
+            logger.info(f"Deleted {len(ids_to_delete)} chunks for doc_id: {doc_id}")
+            return len(ids_to_delete)
+            
+        except Exception as e:
+            logger.error(f"Error deleting document with doc_id {doc_id}: {e}")
+            raise

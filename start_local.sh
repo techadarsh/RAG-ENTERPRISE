@@ -184,6 +184,13 @@ CONFLUENCE_USER_EMAIL=2023mt03610@wilp.bits-pilani.ac.in
 CONFLUENCE_API_TOKEN=ATATT3xFfGF0UUStV1nHxREnhPFL88CM7ff7p35kfE2IJP9S7NiyCqDp3chhxI4sW-Z8h4SAdYaPd1Bp5b6SOIjew2ENeb1DVP_dMjMFvZCKKO1FHAHeUI6bT8Rc3KvxHQnicrru3rrRqZhZVC6ktbL_RRUH1sz_eThmycopRaQ144GFAw5Vat0=69C56591
 CONFLUENCE_SPACE_KEY=BITSWILP
 
+# Confluence Auto-Sync (polls Confluence for changes)
+CONFLUENCE_AUTO_SYNC=true                               # Enable automatic sync
+CONFLUENCE_SYNC_INTERVAL=300                            # Check every 300 seconds (5 minutes)
+
+# Confluence Webhook (for real-time updates from Confluence)
+export CONFLUENCE_WEBHOOK_SECRET="test-secret-key-12345"
+
 # Data Directories
 DATA_DIR=./data
 UPLOAD_DIR=./data/uploads
@@ -531,25 +538,278 @@ load_sample_documents() {
     fi
 }
 
+# Function to stop backend only
+stop_backend() {
+    echo -e "${BLUE}Stopping backend...${NC}"
+    
+    if [ -f /tmp/rag-backend.pid ]; then
+        BACKEND_PID=$(cat /tmp/rag-backend.pid)
+        kill -9 $BACKEND_PID 2>/dev/null || true
+        rm /tmp/rag-backend.pid
+    fi
+    
+    pkill -9 -f "uvicorn.*main:app" 2>/dev/null || true
+    pkill -9 -f "python.*uvicorn.*backend" 2>/dev/null || true
+    lsof -ti:8000 | xargs kill -9 2>/dev/null || true
+    
+    echo -e "${GREEN}✅ Backend stopped${NC}"
+}
+
+# Function to stop frontend only
+stop_frontend() {
+    echo -e "${BLUE}Stopping frontend...${NC}"
+    
+    if [ -f /tmp/rag-frontend.pid ]; then
+        FRONTEND_PID=$(cat /tmp/rag-frontend.pid)
+        kill -9 $FRONTEND_PID 2>/dev/null || true
+        rm /tmp/rag-frontend.pid
+    fi
+    
+    pkill -9 -f "react-scripts.*start" 2>/dev/null || true
+    pkill -9 -f "node.*frontend" 2>/dev/null || true
+    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+    
+    echo -e "${GREEN}✅ Frontend stopped${NC}"
+}
+
+# Function to stop Ollama only
+stop_ollama() {
+    echo -e "${BLUE}Stopping Ollama...${NC}"
+    pkill -x ollama 2>/dev/null || true
+    echo -e "${GREEN}✅ Ollama stopped${NC}"
+}
+
+# Function to stop Redis only
+stop_redis() {
+    echo -e "${BLUE}Stopping Redis...${NC}"
+    brew services stop redis > /dev/null 2>&1
+    echo -e "${GREEN}✅ Redis stopped${NC}"
+}
+
+# Function to stop Milvus only
+stop_milvus() {
+    echo -e "${BLUE}Stopping Milvus...${NC}"
+    docker stop milvus-standalone > /dev/null 2>&1 || true
+    echo -e "${GREEN}✅ Milvus stopped${NC}"
+}
+
+# Function to start backend only
+start_backend() {
+    echo -e "${BLUE}Starting Backend...${NC}"
+    
+    # Source environment
+    if [ -f .env.local ]; then
+        set -a
+        source .env.local
+        set +a
+    fi
+    
+    # Start backend
+    cd "$PROJECT_DIR/backend"
+    PYTHONPATH="$PROJECT_DIR/backend" nohup "$PROJECT_DIR/venv/bin/python3" -m uvicorn main:app \
+        --host 0.0.0.0 \
+        --port 8000 \
+        --log-level info > /tmp/rag-backend.log 2>&1 &
+    BACKEND_PID=$!
+    echo $BACKEND_PID > /tmp/rag-backend.pid
+    cd "$PROJECT_DIR"
+    
+    echo -e "${GREEN}✅ Backend started (PID: $BACKEND_PID)${NC}"
+    
+    # Wait for backend to be ready
+    echo -e "${BLUE}   Waiting for backend health endpoint...${NC}"
+    for i in {1..30}; do
+        if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ Backend is ready at http://localhost:8000${NC}"
+            return 0
+        fi
+        sleep 2
+    done
+    
+    echo -e "${RED}❌ Backend failed to start (timeout)${NC}"
+    echo -e "${YELLOW}   Check logs: tail -f /tmp/rag-backend.log${NC}"
+    return 1
+}
+
+# Function to start frontend only
+start_frontend() {
+    echo -e "${BLUE}Starting Frontend...${NC}"
+    
+    cd "$PROJECT_DIR/frontend"
+    nohup npm start > /tmp/rag-frontend.log 2>&1 &
+    FRONTEND_PID=$!
+    echo $FRONTEND_PID > /tmp/rag-frontend.pid
+    cd "$PROJECT_DIR"
+    
+    echo -e "${GREEN}✅ Frontend started (PID: $FRONTEND_PID)${NC}"
+    echo -e "${BLUE}   Waiting for frontend to compile (this may take 30-60 seconds)...${NC}"
+    
+    for i in {1..60}; do
+        if curl -s http://localhost:3000 > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ Frontend is ready at http://localhost:3000${NC}"
+            return 0
+        fi
+        sleep 2
+    done
+    
+    echo -e "${RED}❌ Frontend failed to start (timeout)${NC}"
+    echo -e "${YELLOW}   Check logs: tail -f /tmp/rag-frontend.log${NC}"
+    return 1
+}
+
+# Function to start Ollama only
+start_ollama() {
+    echo -e "${BLUE}Starting Ollama service...${NC}"
+    
+    if ! pgrep -x "ollama" > /dev/null; then
+        nohup ollama serve > /tmp/ollama.log 2>&1 &
+        sleep 3
+        echo -e "${GREEN}✅ Ollama started${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Ollama already running${NC}"
+    fi
+    
+    # Check if mistral model is available
+    echo -e "${BLUE}Checking Mistral model...${NC}"
+    if ollama list | grep -q "mistral"; then
+        echo -e "${GREEN}✅ Mistral model ready${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Mistral model not found. Pulling (this may take a few minutes)...${NC}"
+        ollama pull mistral
+        echo -e "${GREEN}✅ Mistral model ready${NC}"
+    fi
+}
+
+# Function to start Redis only
+start_redis() {
+    echo -e "${BLUE}Starting Redis...${NC}"
+    
+    if redis-cli ping > /dev/null 2>&1; then
+        echo -e "${YELLOW}⚠️  Redis already running${NC}"
+    else
+        brew services start redis > /dev/null 2>&1
+        sleep 2
+        if redis-cli ping > /dev/null 2>&1; then
+            echo -e "${GREEN}✅ Redis started${NC}"
+        else
+            echo -e "${RED}❌ Redis failed to start${NC}"
+            return 1
+        fi
+    fi
+}
+
+# Function to start Milvus only
+start_milvus() {
+    echo -e "${BLUE}Starting Milvus...${NC}"
+    
+    # Check if Milvus is already running
+    if docker ps | grep -q milvus-standalone; then
+        echo -e "${YELLOW}⚠️  Milvus already running${NC}"
+    else
+        # Check if container exists but is stopped
+        if docker ps -a | grep -q milvus-standalone; then
+            docker start milvus-standalone > /dev/null
+        else
+            # Create new container
+            mkdir -p ~/milvus-data
+            docker run -d \
+                --name milvus-standalone \
+                -p 19530:19530 \
+                -p 9091:9091 \
+                -v ~/milvus-data:/var/lib/milvus \
+                milvusdb/milvus:latest > /dev/null
+        fi
+        
+        echo -e "${GREEN}✅ Milvus started${NC}"
+        
+        # Wait for Milvus to be ready
+        echo -e "${BLUE}   Waiting for Milvus to be ready...${NC}"
+        for i in {1..30}; do
+            if curl -s http://localhost:9091/healthz > /dev/null 2>&1; then
+                echo -e "${GREEN}✅ Milvus is ready${NC}"
+                return 0
+            fi
+            sleep 2
+        done
+        
+        echo -e "${RED}❌ Milvus failed to start (timeout)${NC}"
+        return 1
+    fi
+}
+
+# Function to restart a specific service
+restart_service() {
+    SERVICE=$1
+    
+    case $SERVICE in
+        backend)
+            stop_backend
+            sleep 1
+            start_backend
+            ;;
+        frontend)
+            stop_frontend
+            sleep 1
+            start_frontend
+            ;;
+        ollama)
+            stop_ollama
+            sleep 1
+            start_ollama
+            ;;
+        redis)
+            stop_redis
+            sleep 1
+            start_redis
+            ;;
+        milvus)
+            stop_milvus
+            sleep 2
+            start_milvus
+            ;;
+        *)
+            echo -e "${RED}❌ Unknown service: $SERVICE${NC}"
+            echo "Available services: backend, frontend, ollama, redis, milvus"
+            return 1
+            ;;
+    esac
+}
+
 # Function to stop all services
 stop_services() {
     echo -e "${BLUE}Stopping all services...${NC}"
     
-    # Stop backend
+    # Stop backend (use PID file first, then force kill any remaining)
     if [ -f /tmp/rag-backend.pid ]; then
         BACKEND_PID=$(cat /tmp/rag-backend.pid)
-        kill $BACKEND_PID 2>/dev/null || true
+        kill -9 $BACKEND_PID 2>/dev/null || true
         rm /tmp/rag-backend.pid
-        echo -e "${GREEN}✅ Backend stopped${NC}"
     fi
     
-    # Stop frontend
+    # Force kill any remaining backend processes
+    pkill -9 -f "uvicorn.*main:app" 2>/dev/null || true
+    pkill -9 -f "python.*uvicorn.*backend" 2>/dev/null || true
+    
+    # Kill any process using port 8000
+    lsof -ti:8000 | xargs kill -9 2>/dev/null || true
+    
+    echo -e "${GREEN}✅ Backend stopped${NC}"
+    
+    # Stop frontend (use PID file first, then force kill any remaining)
     if [ -f /tmp/rag-frontend.pid ]; then
         FRONTEND_PID=$(cat /tmp/rag-frontend.pid)
-        kill $FRONTEND_PID 2>/dev/null || true
+        kill -9 $FRONTEND_PID 2>/dev/null || true
         rm /tmp/rag-frontend.pid
-        echo -e "${GREEN}✅ Frontend stopped${NC}"
     fi
+    
+    # Force kill any remaining frontend processes
+    pkill -9 -f "react-scripts.*start" 2>/dev/null || true
+    pkill -9 -f "node.*frontend" 2>/dev/null || true
+    
+    # Kill any process using port 3000
+    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+    
+    echo -e "${GREEN}✅ Frontend stopped${NC}"
     
     # Stop Ollama
     pkill -x ollama 2>/dev/null || true
@@ -696,9 +956,14 @@ case $COMMAND in
         ;;
     
     restart)
-        stop_services
-        sleep 2
-        $0 start
+        SERVICE=${2:-all}
+        if [ "$SERVICE" = "all" ]; then
+            stop_services
+            sleep 2
+            $0 start
+        else
+            restart_service "$SERVICE"
+        fi
         ;;
     
     clean)
@@ -719,22 +984,26 @@ case $COMMAND in
         ;;
     
     help|--help|-h)
-        echo "Usage: ./start_local.sh [command]"
+        echo "Usage: ./start_local.sh [command] [options]"
         echo ""
         echo "Commands:"
         echo "  start              Check prerequisites, install if needed, and start all services"
         echo "  stop               Stop all services"
-        echo "  restart            Restart all services"
+        echo "  restart [service]  Restart all services or a specific service"
+        echo "                     Services: backend, frontend, ollama, redis, milvus"
         echo "  status             Show service status"
         echo "  logs [service]     View logs (backend|frontend|ollama)"
         echo "  clean              Remove all data and containers"
         echo "  help               Show this help message"
         echo ""
         echo "Examples:"
-        echo "  ./start_local.sh start             # Start everything"
-        echo "  ./start_local.sh status            # Check status"
-        echo "  ./start_local.sh logs backend      # View backend logs"
-        echo "  ./start_local.sh stop              # Stop everything"
+        echo "  ./start_local.sh start                  # Start everything"
+        echo "  ./start_local.sh restart                # Restart everything"
+        echo "  ./start_local.sh restart backend        # Restart only backend"
+        echo "  ./start_local.sh restart frontend       # Restart only frontend"
+        echo "  ./start_local.sh status                 # Check status"
+        echo "  ./start_local.sh logs backend           # View backend logs"
+        echo "  ./start_local.sh stop                   # Stop everything"
         ;;
     
     *)

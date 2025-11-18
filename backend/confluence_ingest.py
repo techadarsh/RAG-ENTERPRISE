@@ -146,45 +146,99 @@ class ConfluenceIngestor:
             
             params = {
                 "spaceKey": self.space_key,
-                "expand": "body.storage,version",
-                "limit": 100,  # Fetch up to 100 pages
+                "expand": "body.storage,version,ancestors",  # Include ancestors for hierarchy
+                "limit": 100,  # Fetch up to 100 pages per request
                 "type": "page"  # Only fetch pages, not blog posts
             }
             
             logger.info(f"📡 Fetching pages from Confluence space: {self.space_key}")
             logger.info(f"   API URL: {url}")
             
-            # Make API request
-            response = requests.get(url, headers=headers, params=params, timeout=30)
+            # Handle pagination - fetch ALL pages
+            start = 0
+            total_fetched = 0
             
-            if response.status_code == 200:
-                data = response.json()
-                results = data.get("results", [])
+            while True:
+                params["start"] = start
                 
-                logger.info(f"✅ Successfully fetched {len(results)} pages from Confluence API")
+                # Make API request
+                response = requests.get(url, headers=headers, params=params, timeout=30)
                 
-                for result in results:
-                    # Extract page data
-                    # Construct page URL - base_url already includes /wiki
-                    webui_path = result.get('_links', {}).get('webui', '')
-                    if base.endswith('/wiki'):
-                        page_url = f"{base}{webui_path}"
-                    else:
-                        page_url = f"{base}/wiki{webui_path}"
+                if response.status_code == 200:
+                    data = response.json()
+                    results = data.get("results", [])
                     
-                    page = {
-                        "id": result.get("id", ""),
-                        "title": result.get("title", "Untitled"),
-                        "body": result.get("body", {}).get("storage", {}).get("value", ""),
-                        "version": result.get("version", {}).get("number", 1),
-                        "url": page_url
-                    }
-                    pages.append(page)
-                    logger.debug(f"   - {page['title']} (ID: {page['id']}, v{page['version']})")
-                
-                # Check if there are more pages (pagination)
-                if data.get("_links", {}).get("next"):
-                    logger.info(f"⚠️  More pages available (pagination not implemented)")
+                    if not results:
+                        break  # No more pages
+                    
+                    for result in results:
+                        # Extract page data
+                        # Construct page URL - base_url already includes /wiki
+                        webui_path = result.get('_links', {}).get('webui', '')
+                        if base.endswith('/wiki'):
+                            page_url = f"{base}{webui_path}"
+                        else:
+                            page_url = f"{base}/wiki{webui_path}"
+                        
+                        # Extract hierarchy information
+                        ancestors = result.get("ancestors", [])
+                        parent_id = ancestors[-1].get("id") if ancestors else None
+                        parent_title = ancestors[-1].get("title") if ancestors else None
+                        
+                        # Build breadcrumb path for nested pages
+                        breadcrumb_titles = [a.get("title", "") for a in ancestors]
+                        breadcrumb_path = " > ".join(breadcrumb_titles) if breadcrumb_titles else ""
+                        
+                        # Enhance body with hierarchy context for better RAG retrieval
+                        body_content = result.get("body", {}).get("storage", {}).get("value", "")
+                        
+                        # Add hierarchy metadata to the beginning of content for context
+                        if breadcrumb_path:
+                            hierarchy_context = f"[Page Hierarchy: {breadcrumb_path} > {result.get('title', '')}]\n\n"
+                            body_with_context = hierarchy_context + body_content
+                        else:
+                            body_with_context = body_content
+                        
+                        page = {
+                            "id": result.get("id", ""),
+                            "title": result.get("title", "Untitled"),
+                            "body": body_with_context,  # Include hierarchy context
+                            "original_body": body_content,  # Keep original for reference
+                            "version": result.get("version", {}).get("number", 1),
+                            "url": page_url,
+                            "parent_id": parent_id,
+                            "parent_title": parent_title,
+                            "breadcrumb": breadcrumb_path,
+                            "depth": len(ancestors)  # Nesting level (0 = root page)
+                        }
+                        pages.append(page)
+                        
+                        # Log with hierarchy indicator
+                        indent = "  " * len(ancestors)
+                        logger.debug(f"   {indent}└─ {page['title']} (ID: {page['id']}, v{page['version']}, depth: {page['depth']})")
+                    
+                    total_fetched += len(results)
+                    
+                    # Check if there are more pages
+                    if data.get("_links", {}).get("next"):
+                        start += len(results)
+                        logger.info(f"   Fetched {total_fetched} pages so far, continuing pagination...")
+                    else:
+                        break  # No more pages
+                        
+                else:
+                    # Handle errors on first request
+                    if start == 0:
+                        if response.status_code == 401:
+                            logger.error("❌ Confluence API authentication failed. Check CONFLUENCE_USER_EMAIL and CONFLUENCE_API_TOKEN")
+                        elif response.status_code == 404:
+                            logger.error(f"❌ Confluence space '{self.space_key}' not found")
+                        else:
+                            logger.error(f"❌ Confluence API error: {response.status_code} - {response.text}")
+                    break
+            
+            if total_fetched > 0:
+                logger.info(f"✅ Successfully fetched {total_fetched} pages from Confluence API (including nested pages)")
                     
             elif response.status_code == 401:
                 logger.error("❌ Confluence API authentication failed. Check CONFLUENCE_USER_EMAIL and CONFLUENCE_API_TOKEN")
@@ -235,13 +289,19 @@ class ConfluenceIngestor:
                 "Accept": "application/json"
             }
             
-            # API endpoint for specific page
-            url = f"{self.base_url}/wiki/rest/api/content/{page_id}"
+            # API endpoint for specific page (handle duplicate /wiki in base_url)
+            base = self.base_url.rstrip('/')
+            if base.endswith('/wiki'):
+                url = f"{base}/rest/api/content/{page_id}"
+            else:
+                url = f"{base}/wiki/rest/api/content/{page_id}"
+            
             params = {
-                "expand": "body.storage,version"
+                "expand": "body.storage,version,ancestors"  # Include ancestors for hierarchy
             }
             
             logger.info(f"📡 Fetching Confluence page ID: {page_id}")
+            logger.info(f"   URL: {url}")
             
             # Make API request
             response = requests.get(url, headers=headers, params=params, timeout=30)
@@ -249,15 +309,40 @@ class ConfluenceIngestor:
             if response.status_code == 200:
                 result = response.json()
                 
+                # Extract hierarchy information
+                ancestors = result.get("ancestors", [])
+                parent_id = ancestors[-1].get("id") if ancestors else None
+                parent_title = ancestors[-1].get("title") if ancestors else None
+                
+                # Build breadcrumb path
+                breadcrumb_titles = [a.get("title", "") for a in ancestors]
+                breadcrumb_path = " > ".join(breadcrumb_titles) if breadcrumb_titles else ""
+                
+                # Enhance body with hierarchy context
+                body_content = result.get("body", {}).get("storage", {}).get("value", "")
+                
+                if breadcrumb_path:
+                    hierarchy_context = f"[Page Hierarchy: {breadcrumb_path} > {result.get('title', '')}]\n\n"
+                    body_with_context = hierarchy_context + body_content
+                else:
+                    body_with_context = body_content
+                
                 page = {
                     "id": result.get("id", ""),
                     "title": result.get("title", "Untitled"),
-                    "body": result.get("body", {}).get("storage", {}).get("value", ""),
+                    "body": body_with_context,
+                    "original_body": body_content,
                     "version": result.get("version", {}).get("number", 1),
-                    "url": f"{self.base_url}/wiki{result.get('_links', {}).get('webui', '')}"
+                    "url": f"{self.base_url}/wiki{result.get('_links', {}).get('webui', '')}",
+                    "parent_id": parent_id,
+                    "parent_title": parent_title,
+                    "breadcrumb": breadcrumb_path,
+                    "depth": len(ancestors)
                 }
                 
                 logger.info(f"✅ Successfully fetched page: {page['title']}")
+                if breadcrumb_path:
+                    logger.info(f"   Hierarchy: {breadcrumb_path} > {page['title']}")
                 return page
                 
             elif response.status_code == 404:
