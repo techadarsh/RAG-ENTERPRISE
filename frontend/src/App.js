@@ -53,6 +53,7 @@ function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDegraded, setIsDegraded] = useState(false);
+  const [availableTopics, setAvailableTopics] = useState([]);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
   const abortControllerRef = useRef(null);
@@ -66,17 +67,44 @@ function App() {
   // Generate session ID on mount
   useEffect(() => {
     setSessionId(generateUUID());
+    // Fetch available topics
+    fetchTopics();
   }, []);
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, typingText, isTyping]);
+  // Fetch available topics from backend
+  const fetchTopics = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/confluence/pages`);
+      if (response.data && response.data.pages) {
+        // Get first 10 unique titles
+        const titles = response.data.pages
+          .map(page => page.title)
+          .filter((title, index, self) => self.indexOf(title) === index) // Remove duplicates
+          .slice(0, 10);
+        setAvailableTopics(titles);
+      }
+    } catch (err) {
+      console.error('Failed to fetch topics:', err);
+      // Set fallback topics
+      setAvailableTopics([
+        'HR Policies Handbook',
+        'API Integration Guide',
+        'Engineering Standards',
+        'Agile Workflow',
+        'System Architecture'
+      ]);
+    }
+  };
 
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages, typingText, isTyping]);
+
+  // Handle topic chip click
+  const handleTopicClick = (topic) => {
+    setQuery(`Tell me about ${topic}`);
+  };
 
   // Typing animation effect
   const typeText = (text, sources, latency_ms) => {
@@ -257,9 +285,6 @@ function App() {
             <header className="header">
               <h1> RAG Enterprise Chatbot</h1>
               <p>Ask questions about company policies, onboarding, and HR information</p>
-              {sessionId && (
-                <p className="session-info">Session: {sessionId.slice(0, 8)}...</p>
-              )}
             </header>
 
             <div className="chat-container" ref={chatContainerRef}>
@@ -391,17 +416,25 @@ function App() {
 
                 {messages.length === 0 && !loading && !error && !isTyping && (
                   <div className="welcome-message">
-                    <h2>Welcome!</h2>
-                    <p>Start a conversation by asking about:</p>
-                    <ul>
-                      <li>HR policies and benefits</li>
-                      <li>Leave and PTO information</li>
-                      <li>Onboarding procedures</li>
-                      <li>Engineering standards</li>
-                      <li>Incident management</li>
-                      <li>API documentation</li>
-                    </ul>
-                    <p className="hint"> I remember our conversation, so feel free to ask follow-up questions!</p>
+                    <h2>👋 Welcome!</h2>
+                    <p>Ask me about any of these topics from your knowledge base:</p>
+                    <div className="topic-chips">
+                      {availableTopics.length > 0 ? (
+                        availableTopics.map((topic, index) => (
+                          <button
+                            key={index}
+                            className="topic-chip"
+                            onClick={() => handleTopicClick(topic)}
+                            title={`Ask about ${topic}`}
+                          >
+                            📄 {topic}
+                          </button>
+                        ))
+                      ) : (
+                        <p className="loading-topics">Loading topics...</p>
+                      )}
+                    </div>
+                    <p className="hint">💡 Click any topic above or type your own question!</p>
                   </div>
                 )}
 

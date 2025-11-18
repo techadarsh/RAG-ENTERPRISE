@@ -413,12 +413,14 @@ start_backend() {
     echo $BACKEND_PID > /tmp/rag-backend.pid
     
     echo -e "${GREEN}✅ Backend started (PID: $BACKEND_PID)${NC}"
-    echo -e "${BLUE}   Backend is initializing (loading documents, extracting topics)...${NC}"
-    echo -e "${BLUE}   This may take 60-90 seconds. Monitor: tail -f /tmp/rag-backend.log${NC}"
+    echo -e "${BLUE}   Backend is initializing (loading ~31 Confluence documents)...${NC}"
+    echo -e "${BLUE}   With FORCE_INITIAL_LOAD=true, this may take 2-3 minutes.${NC}"
+    echo -e "${BLUE}   💡 Tip: Set FORCE_INITIAL_LOAD=false in .env.local for instant startup${NC}"
+    echo -e "${BLUE}   Monitor progress: tail -f /tmp/rag-backend.log${NC}"
     
-    # Wait for backend to be ready (increased timeout for topic extraction)
+    # Wait for backend to be ready (increased timeout for Confluence document loading)
     echo -e "${BLUE}   Waiting for backend health endpoint...${NC}"
-    for i in {1..60}; do
+    for i in {1..90}; do
         if curl -s http://localhost:8000/health > /dev/null 2>&1; then
             echo -e "${GREEN}✅ Backend is ready at http://localhost:8000${NC}"
             return 0
@@ -472,69 +474,43 @@ FRONTEND_SCRIPT
     echo -e "${YELLOW}⚠️  Frontend may still be compiling. Check logs: tail -f /tmp/rag-frontend.log${NC}"
 }
 
-# Function to load sample documents into Milvus
-load_sample_documents() {
-    echo -e "${BLUE}Loading sample documents into Milvus...${NC}"
+# Function to load Confluence documents into Milvus
+load_confluence_documents() {
+    echo -e "${BLUE}Loading Confluence documents into Milvus...${NC}"
+    echo -e "${BLUE}   Documents will be loaded from Confluence API${NC}"
+    echo -e "${BLUE}   Waiting for backend to be fully ready...${NC}"
     
-    # Check recursively for .txt files in data directory
-    CONFLUENCE_DIR="data/sample_confluence_pages"
-    
-    if [ -d "$CONFLUENCE_DIR" ]; then
-        # Count .txt files recursively
-        TXT_COUNT=$(find "$CONFLUENCE_DIR" -type f -name "*.txt" 2>/dev/null | wc -l | tr -d ' ')
-        
-        if [ "$TXT_COUNT" -gt 0 ]; then
-            echo -e "${BLUE}   Found $TXT_COUNT sample documents in $CONFLUENCE_DIR${NC}"
-            
-            # List some of the files found
-            echo -e "${BLUE}   Sample files:${NC}"
-            find "$CONFLUENCE_DIR" -type f -name "*.txt" 2>/dev/null | head -5 | while read file; do
-                echo -e "${BLUE}     - $(basename "$file")${NC}"
-            done
-            
-            echo -e "${BLUE}   Waiting for backend to be fully ready for ingestion...${NC}"
-            
-            # Wait up to 2 minutes for backend to complete initialization
-            BACKEND_READY=false
-            for i in {1..60}; do
-                if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-                    BACKEND_READY=true
-                    echo -e "${GREEN}✅ Backend is ready${NC}"
-                    break
-                fi
-                sleep 2
-            done
-            
-            if [ "$BACKEND_READY" = false ]; then
-                echo -e "${YELLOW}⚠️  Backend not ready yet. Documents were auto-loaded during startup.${NC}"
-                echo -e "${YELLOW}   The backend loads sample documents automatically on initialization.${NC}"
-                echo -e "${YELLOW}   Check: tail -f /tmp/rag-backend.log${NC}"
-                return 0
-            fi
-            
-            # Call the ingestion endpoint
-            echo -e "${BLUE}   Checking document ingestion status via API...${NC}"
-            RESPONSE=$(curl -s -X POST http://localhost:8000/ingest/confluence \
-                -H "Content-Type: application/json" \
-                -d '{"mode": "local"}' 2>&1)
-            
-            # Check response for success indicators
-            if echo "$RESPONSE" | grep -q "success\|ingested\|loaded\|pages"; then
-                echo -e "${GREEN}✅ Documents confirmed in Milvus${NC}"
-                echo -e "${GREEN}   $(echo "$RESPONSE" | head -c 200)${NC}"
-            else
-                echo -e "${YELLOW}⚠️  Documents may already be loaded${NC}"
-                echo -e "${YELLOW}   $(echo "$RESPONSE" | head -c 200)${NC}"
-            fi
-        else
-            echo -e "${YELLOW}⚠️  No .txt files found in $CONFLUENCE_DIR${NC}"
-            echo -e "${YELLOW}   Add .txt files and restart, or use the upload API${NC}"
+    # Wait up to 2 minutes for backend to complete initialization
+    BACKEND_READY=false
+    for i in {1..60}; do
+        if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+            BACKEND_READY=true
+            echo -e "${GREEN}✅ Backend is ready${NC}"
+            break
         fi
+        sleep 2
+    done
+    
+    if [ "$BACKEND_READY" = false ]; then
+        echo -e "${YELLOW}⚠️  Backend not ready yet. Documents were auto-loaded during startup.${NC}"
+        echo -e "${YELLOW}   The backend loads sample documents automatically on initialization.${NC}"
+        echo -e "${YELLOW}   Check: tail -f /tmp/rag-backend.log${NC}"
+        return 0
+    fi
+    
+    # Call the ingestion endpoint
+    echo -e "${BLUE}   Checking document ingestion status via API...${NC}"
+    RESPONSE=$(curl -s -X POST http://localhost:8000/ingest/confluence \
+        -H "Content-Type: application/json" \
+        -d '{"mode": "api"}' 2>&1)
+    
+    # Check response for success indicators
+    if echo "$RESPONSE" | grep -q "success\|ingested\|loaded\|pages"; then
+        echo -e "${GREEN}✅ Documents confirmed in Milvus${NC}"
+        echo -e "${GREEN}   $(echo "$RESPONSE" | head -c 200)${NC}"
     else
-        echo -e "${YELLOW}⚠️  Directory $CONFLUENCE_DIR not found${NC}"
-        echo -e "${YELLOW}   Creating directory...${NC}"
-        mkdir -p "$CONFLUENCE_DIR"
-        echo -e "${YELLOW}   Add .txt files to $CONFLUENCE_DIR and restart${NC}"
+        echo -e "${YELLOW}⚠️  Documents may already be loaded${NC}"
+        echo -e "${YELLOW}   $(echo "$RESPONSE" | head -c 200)${NC}"
     fi
 }
 
@@ -924,9 +900,9 @@ case $COMMAND in
         
         echo ""
         echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo -e "${BLUE}  STEP 3: Loading Sample Documents${NC}"
+        echo -e "${BLUE}  STEP 3: Loading Confluence Documents${NC}"
         echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        load_sample_documents
+        load_confluence_documents
         
         echo ""
         echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

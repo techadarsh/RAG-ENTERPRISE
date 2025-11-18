@@ -60,23 +60,39 @@ cd rag-enterprise
 6. ✅ Creates Python virtual environment and installs dependencies
 7. ✅ Starts FastAPI backend with hot reload (port 8000)
 8. ✅ Starts React frontend with hot reload (port 3000)
-9. ✅ Loads 14 sample Confluence documents
+9. ✅ Loads ~31 Confluence documents (via API)
 10. ✅ Performs comprehensive health checks
 11. ✅ Shows service status and access URLs
 
 **Expected startup time:**
-- First run: 5-8 minutes (model download + dependencies)
-- Subsequent runs: 30-60 seconds (services already configured)
+- **First run**: 5-8 minutes (model download + dependencies + Confluence sync)
+- **Subsequent runs with FORCE_INITIAL_LOAD=true**: 2-3 minutes (loading 31 documents)
+- **Subsequent runs with FORCE_INITIAL_LOAD=false**: 30-60 seconds (instant startup, loads in background)
 
-**Optional environment variable (force blocking initial load):**
+**Startup behavior (configurable):**
 
-If you want the backend to finish indexing the sample documents before accepting traffic, set the following in `.env.local` before starting:
+The backend can start in two modes:
 
+1. **Blocking Load** (`FORCE_INITIAL_LOAD=true` in `.env.local`):
+   - Backend waits to load all ~31 Confluence documents before accepting requests
+   - Startup time: 2-3 minutes
+   - **Pro**: Knowledge base is immediately available for queries
+   - **Con**: Slower startup
+   - **Best for**: Demos, presentations, production deployments
+
+2. **Background Load** (`FORCE_INITIAL_LOAD=false`):
+   - Backend starts immediately and loads documents in the background
+   - Startup time: 30-60 seconds
+   - **Pro**: Instant API availability
+   - **Con**: First few queries may have limited context until loading completes
+   - **Best for**: Development, testing, quick iterations
+
+To change modes, edit `.env.local`:
 ```bash
-FORCE_INITIAL_LOAD=true
+FORCE_INITIAL_LOAD=true   # or false
 ```
 
-When enabled, the backend will perform a blocking load of the sample Confluence documents into Milvus during startup. This is useful for demos where you want the knowledge base ready immediately.
+**Current default**: `FORCE_INITIAL_LOAD=true` (blocking load for reliable demo experience)
 ### 📱 Access URLs
 
 - **Frontend UI**: http://localhost:3000
@@ -1211,6 +1227,6 @@ This project is for educational/academic purposes (M.Tech dissertation).
 
 **Built with ❤️ for enterprise knowledge management**
 
-*Last updated: November 16, 2025*
+*Last updated: November 19, 2025*
 *Branch: local-final-presentation*
 *Status: Production-ready local deployment*

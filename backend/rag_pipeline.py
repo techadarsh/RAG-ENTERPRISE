@@ -196,18 +196,17 @@ class RAGPipeline:
     
     def _load_initial_data(self):
         """
-        Load and index SAMPLE documents from data directory and Confluence
+        Load and index SAMPLE documents from Confluence
         
         IMPORTANT: This method is ONLY for initial knowledge base loading on startup.
         For runtime document ingestion, use the async ingestion API instead.
         
         This method loads:
-        - Confluence sample documents (17 enterprise docs)
-        - Any .txt files in DATA_DIR
+        - Confluence documents (from API)
         
         For NEW documents during production:
         - Use POST /api/ingest/upload (async processing)
-        - Do NOT add files to data/ directory
+        - Or rely on automatic Confluence sync
         """
         titles = []
         texts = []
@@ -237,41 +236,11 @@ class RAGPipeline:
                     source_types.append("confluence")
                     source_urls.append(doc_url)
                     doc_ids.append(doc_id)
-        
-        # Load local text files from data directory (with chunking)
-        if self.data_dir and os.path.exists(self.data_dir):
-            txt_files = glob.glob(os.path.join(self.data_dir, "*.txt"))
-            
-            for file_path in txt_files:
-                filename = os.path.basename(file_path)
-                logger.info(f"Reading file: {filename}")
-                
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read().strip()
-                        
-                        if content:
-                            doc_chunks = self._chunk_text(content)
-                            
-                            if len(doc_chunks) > 1:
-                                logger.info(f"Split '{filename}' into {len(doc_chunks)} chunks")
-                                for i, chunk in enumerate(doc_chunks, 1):
-                                    titles.append(f"{filename} (Part {i}/{len(doc_chunks)})")
-                                    texts.append(chunk)
-                                    source_types.append("local")
-                                    source_urls.append("")
-                                    doc_ids.append(filename)
-                            else:
-                                titles.append(filename)
-                                texts.append(content)
-                                source_types.append("local")
-                                source_urls.append("")
-                                doc_ids.append(filename)
-                except Exception as e:
-                    logger.error(f"Error reading file {filename}: {e}")
+        else:
+            logger.warning("⚠️  No Confluence documents provided for initial load")
         
         if not texts:
-            logger.warning("No content found in data files or Confluence")
+            logger.warning("⚠️  No content found - skipping initial load")
             return
         
         # Generate embeddings
