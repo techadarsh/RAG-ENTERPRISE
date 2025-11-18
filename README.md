@@ -60,13 +60,13 @@ cd rag-enterprise
 6. ✅ Creates Python virtual environment and installs dependencies
 7. ✅ Starts FastAPI backend with hot reload (port 8000)
 8. ✅ Starts React frontend with hot reload (port 3000)
-9. ✅ Loads ~31 Confluence documents (via API)
+9. ✅ Loads Confluence documents (via API)
 10. ✅ Performs comprehensive health checks
 11. ✅ Shows service status and access URLs
 
 **Expected startup time:**
 - **First run**: 5-8 minutes (model download + dependencies + Confluence sync)
-- **Subsequent runs with FORCE_INITIAL_LOAD=true**: 2-3 minutes (loading 31 documents)
+- **Subsequent runs with FORCE_INITIAL_LOAD=true**: 2-3 minutes (loading multiple confluence documents)
 - **Subsequent runs with FORCE_INITIAL_LOAD=false**: 30-60 seconds (instant startup, loads in background)
 
 **Startup behavior (configurable):**
@@ -74,7 +74,7 @@ cd rag-enterprise
 The backend can start in two modes:
 
 1. **Blocking Load** (`FORCE_INITIAL_LOAD=true` in `.env.local`):
-   - Backend waits to load all ~31 Confluence documents before accepting requests
+   - Backend waits to loads multiple Confluence documents before accepting requests
    - Startup time: 2-3 minutes
    - **Pro**: Knowledge base is immediately available for queries
    - **Con**: Slower startup

@@ -195,7 +195,7 @@ export CONFLUENCE_WEBHOOK_SECRET="test-secret-key-12345"
 DATA_DIR=./data
 UPLOAD_DIR=./data/uploads
 
-FORCE_INITIAL_LOAD=true
+FORCE_INITIAL_LOAD=false
 
 # Etcd/Minio Configuration (Milvus standalone uses embedded versions)
 ETCD_USE_EMBED=true
@@ -413,12 +413,12 @@ start_backend() {
     echo $BACKEND_PID > /tmp/rag-backend.pid
     
     echo -e "${GREEN}✅ Backend started (PID: $BACKEND_PID)${NC}"
-    echo -e "${BLUE}   Backend is initializing (loading ~31 Confluence documents)...${NC}"
+    echo -e "${BLUE}   Backend is initializing (loading Confluence documents)...${NC}"
     echo -e "${BLUE}   With FORCE_INITIAL_LOAD=true, this may take 2-3 minutes.${NC}"
     echo -e "${BLUE}   💡 Tip: Set FORCE_INITIAL_LOAD=false in .env.local for instant startup${NC}"
     echo -e "${BLUE}   Monitor progress: tail -f /tmp/rag-backend.log${NC}"
     
-    # Wait for backend to be ready (increased timeout for Confluence document loading)
+    # Wait for backend to be ready 
     echo -e "${BLUE}   Waiting for backend health endpoint...${NC}"
     for i in {1..90}; do
         if curl -s http://localhost:8000/health > /dev/null 2>&1; then
