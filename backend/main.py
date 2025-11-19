@@ -485,15 +485,15 @@ async def health_check_dependencies() -> Dict[str, Any]:
     else:
         results["redis"] = "unavailable"
     
-    # Check Embeddings model
-    # TEMPORARILY DISABLED: Embedding test triggers model download which times out
-    # TODO: Re-enable once model is pre-downloaded or network issue resolved
+    # Check Embeddings model with actual embedding test
     try:
         if rag_pipeline and hasattr(rag_pipeline, 'embedding_model'):
-            # Skip actual embedding test to avoid triggering model download
-            # test_result = rag_pipeline.embedding_model.embed_query("test")
-            # Just check if model attribute exists
-            results["embeddings"] = "ok" if rag_pipeline.embedding_model else "not_loaded"
+            # Test actual embedding generation to verify model is working
+            test_result = rag_pipeline.embedding_model.embed_query("health check test")
+            if test_result is not None and len(test_result) > 0:
+                results["embeddings"] = "ok"
+            else:
+                results["embeddings"] = "fail"
         else:
             results["embeddings"] = "not_loaded"
     except Exception as e:
