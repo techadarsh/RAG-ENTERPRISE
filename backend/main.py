@@ -605,6 +605,65 @@ async def llm_health_check() -> Dict[str, Any]:
     return result
 
 
+def needs_conversation_context(query: str, has_history: bool) -> bool:
+    """
+    Smart detection: Does this query need conversation history?
+    
+    Returns True if query appears to reference previous context.
+    Returns False for standalone questions.
+    
+    This improves performance by avoiding unnecessary context for new topics.
+    """
+    if not has_history:
+        return False  # No history to use
+    
+    query_lower = query.lower().strip()
+    
+    # Very short queries are often follow-ups
+    if len(query_lower.split()) <= 3:
+        return True
+    
+    # Check for referential pronouns and follow-up indicators
+    follow_up_indicators = [
+        # Pronouns
+        'it', 'its', 'that', 'this', 'these', 'those', 'they', 'them',
+        # Follow-up requests
+        'more', 'explain', 'elaborate', 'detail', 'expand', 'clarify',
+        'continue', 'further', 'additionally', 'also',
+        # Questions about previous content
+        'what about', 'how about', 'what do you mean', 'you said', 'you mentioned',
+        # Comparisons and references
+        'same', 'similar', 'different', 'compare', 'versus', 'vs',
+        # Direct references
+        'above', 'previous', 'earlier', 'before', 'mentioned'
+    ]
+    
+    # Check if query starts with follow-up words (strong signal)
+    first_words = ' '.join(query_lower.split()[:3])
+    for indicator in ['can you', 'could you', 'please', 'more', 'explain', 'what about']:
+        if first_words.startswith(indicator):
+            return True
+    
+    # Check if query contains any follow-up indicators
+    for indicator in follow_up_indicators:
+        if indicator in query_lower:
+            return True
+    
+    # Standalone questions typically start with question words
+    standalone_starters = [
+        'what is', 'what are', 'who is', 'who are', 'where is', 'where are',
+        'when is', 'when are', 'why is', 'why are', 'how does', 'how do',
+        'tell me about', 'explain the', 'describe', 'list', 'show me'
+    ]
+    
+    for starter in standalone_starters:
+        if query_lower.startswith(starter):
+            return False  # Likely a new topic
+    
+    # Default: use context if we have history (conservative approach)
+    return True
+
+
 @app.post("/ask", response_model=QueryResponse)
 async def ask_question(query_req: QueryRequest, request: Request) -> QueryResponse:
     """
@@ -662,11 +721,16 @@ async def ask_question(query_req: QueryRequest, request: Request) -> QueryRespon
                 # Capture thread ID in the executor thread
                 thread_id_holder['id'] = threading.get_ident()
                 
-                # Process query with conversation context
-                if history:
+                # Smart context detection: Only use history if query needs it
+                use_context = needs_conversation_context(query_req.query, bool(history))
+                
+                if use_context and history:
+                    logger.info(f"📚 Using conversation context (detected follow-up query)")
                     return rag_pipeline.generate_with_context(query_req.query, history)
                 else:
-                    # First message in conversation - use standard query
+                    if history:
+                        logger.info(f"🆕 Treating as new topic (standalone query)")
+                    # First message or standalone question - use standard query (faster)
                     return rag_pipeline.query(query_req.query)
             
             # Run synchronous RAG pipeline in thread pool to avoid blocking event loop

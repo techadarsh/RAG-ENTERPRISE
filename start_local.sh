@@ -203,8 +203,8 @@ EMBEDDING_DIM=768
 # Document Processing
 CHUNK_SIZE=512
 CHUNK_OVERLAP=50
-RETRIEVAL_TOP_K=5
-MAX_CONTEXT_CHARS=2000
+RETRIEVAL_TOP_K=3
+MAX_CONTEXT_CHARS=1500
 
 # Confluence Configuration
 CONFLUENCE_MODE=api                                      # local or api 
@@ -229,7 +229,7 @@ export CONFLUENCE_WEBHOOK_SECRET="test-secret-key-12345"
 DATA_DIR=./data
 UPLOAD_DIR=./data/uploads
 
-FORCE_INITIAL_LOAD=false
+FORCE_INITIAL_LOAD=true
 
 # Etcd/Minio Configuration (Milvus standalone uses embedded versions)
 ETCD_USE_EMBED=true
@@ -249,8 +249,8 @@ MISTRAL_API_URL=http://localhost:11434/api/generate
 MISTRAL_MODEL=mistral
 
 # All other settings from main .env
-LLM_INITIAL_TIMEOUT_MS=60000
-LLM_TIMEOUT_MS=45000
+LLM_INITIAL_TIMEOUT_MS=150000
+LLM_TIMEOUT_MS=150000
 LLM_DYNAMIC_TIMEOUT=true
 LLM_HEALTH_GATE=false
 LLM_BREAKER_ENABLED=true
