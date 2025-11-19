@@ -397,6 +397,15 @@ start_redis() {
 start_milvus() {
     echo -e "${BLUE}Starting Milvus...${NC}"
     
+    # Check if Milvus image exists locally
+    MILVUS_IMAGE="milvusdb/milvus:v2.3.3"
+    if ! docker images | grep -q "milvusdb/milvus.*v2.3.3"; then
+        echo -e "${BLUE}   Milvus image not found locally. Downloading...${NC}"
+        echo -e "${YELLOW}   This may take 2-3 minutes (image size: ~800MB)${NC}"
+        docker pull $MILVUS_IMAGE
+        echo -e "${GREEN}✅ Milvus image downloaded${NC}"
+    fi
+    
     # Check if Milvus container exists
     if docker ps -a | grep -q milvus-standalone; then
         # Container exists, check if running
@@ -409,6 +418,7 @@ start_milvus() {
         fi
     else
         # Create and start new container
+        echo -e "${BLUE}   Creating Milvus container...${NC}"
         docker run -d \
           --name milvus-standalone \
           -p 19530:19530 \
@@ -416,10 +426,10 @@ start_milvus() {
           -v ~/milvus-data:/var/lib/milvus \
           -e ETCD_USE_EMBED=true \
           -e COMMON_STORAGETYPE=local \
-          milvusdb/milvus:v2.3.3 \
+          $MILVUS_IMAGE \
           milvus run standalone > /dev/null 2>&1
         
-        echo -e "${GREEN}✅ Milvus started${NC}"
+        echo -e "${GREEN}✅ Milvus container created and started${NC}"
     fi
     
     # Wait for Milvus to be ready
@@ -712,6 +722,15 @@ start_redis() {
 start_milvus() {
     echo -e "${BLUE}Starting Milvus...${NC}"
     
+    # Check if Milvus image exists locally
+    MILVUS_IMAGE="milvusdb/milvus:v2.3.3"
+    if ! docker images | grep -q "milvusdb/milvus.*v2.3.3"; then
+        echo -e "${BLUE}   Milvus image not found locally. Downloading...${NC}"
+        echo -e "${YELLOW}   This may take 2-3 minutes (image size: ~800MB)${NC}"
+        docker pull $MILVUS_IMAGE
+        echo -e "${GREEN}✅ Milvus image downloaded${NC}"
+    fi
+    
     # Check if Milvus is already running
     if docker ps | grep -q milvus-standalone; then
         echo -e "${YELLOW}⚠️  Milvus already running${NC}"
@@ -722,12 +741,16 @@ start_milvus() {
         else
             # Create new container
             mkdir -p ~/milvus-data
+            echo -e "${BLUE}   Creating Milvus container...${NC}"
             docker run -d \
                 --name milvus-standalone \
                 -p 19530:19530 \
                 -p 9091:9091 \
                 -v ~/milvus-data:/var/lib/milvus \
-                milvusdb/milvus:latest > /dev/null
+                -e ETCD_USE_EMBED=true \
+                -e COMMON_STORAGETYPE=local \
+                $MILVUS_IMAGE \
+                milvus run standalone > /dev/null
         fi
         
         echo -e "${GREEN}✅ Milvus started${NC}"
