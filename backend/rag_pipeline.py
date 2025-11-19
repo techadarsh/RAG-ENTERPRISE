@@ -473,20 +473,51 @@ class RAGPipeline:
                 logger.warning(f"⚠️  Empty content for page {page_id}, skipping insertion")
                 return True  # Successfully deleted, but nothing to insert
             
-            # Step 3: Generate embedding for the new content
-            embedding = self.embedding_model.embed_texts([content])[0]
+            # Step 3: Check if content needs chunking (Milvus max string length: 32KB)
+            MAX_CHUNK_SIZE = 30000  # Leave some buffer below 32KB limit
+            content_chunks = []
             
-            # Step 4: Insert new chunk into Milvus
+            if len(content) > MAX_CHUNK_SIZE:
+                logger.info(f"📄 Document is large ({len(content)} chars), chunking...")
+                # Use existing chunking logic
+                content_chunks = self._chunk_text(content, max_length=MAX_CHUNK_SIZE, overlap=500)
+                logger.info(f"✂️  Split into {len(content_chunks)} chunks")
+            else:
+                content_chunks = [content]
+            
+            # Step 4: Generate embeddings for all chunks
+            embeddings = self.embedding_model.embed_texts(content_chunks)
+            
+            # Step 5: Prepare data for insertion
+            titles = []
+            texts = []
+            source_types = []
+            source_urls = []
+            doc_ids = []
+            
+            for i, chunk in enumerate(content_chunks):
+                if len(content_chunks) > 1:
+                    chunk_title = f"{title} (Part {i+1}/{len(content_chunks)})"
+                else:
+                    chunk_title = title
+                
+                titles.append(chunk_title)
+                texts.append(chunk)
+                source_types.append("confluence")
+                source_urls.append(url)
+                doc_ids.append(page_id)
+            
+            # Step 6: Insert all chunks into Milvus
             self.milvus_client.insert(
-                titles=[title],
-                texts=[content],
-                embeddings=np.array([embedding]),
-                source_types=["confluence"],
-                source_urls=[url],
-                doc_ids=[page_id]
+                titles=titles,
+                texts=texts,
+                embeddings=np.array(embeddings),
+                source_types=source_types,
+                source_urls=source_urls,
+                doc_ids=doc_ids
             )
             
-            logger.info(f"✅ Successfully updated document: {title}")
+            logger.info(f"✅ Successfully updated document: {title} ({len(content_chunks)} chunk(s))")
             
             # Step 5: Re-extract topics to include new document
             self._extract_document_topics()
