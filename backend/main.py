@@ -1194,8 +1194,17 @@ async def trigger_confluence_sync():
     Returns:
         Sync status and summary of changes
     """
+    global confluence_last_versions
+    
     try:
         logger.info("🔄 Manual Confluence sync triggered via API")
+        
+        # DEBUG: Show current cache state
+        logger.info(f"   📦 Cache currently has {len(confluence_last_versions)} pages tracked")
+        if confluence_last_versions:
+            sample_ids = list(confluence_last_versions.keys())[:3]
+            for sample_id in sample_ids:
+                logger.debug(f"      Sample: ID {sample_id} → v{confluence_last_versions[sample_id]}")
         
         # Fetch all pages from Confluence
         from confluence_ingest import ConfluenceIngestor
@@ -1218,8 +1227,6 @@ async def trigger_confluence_sync():
         unchanged_count = 0
         deleted_count = 0
         
-        global confluence_last_versions
-        
         # Get current page IDs from Confluence
         current_page_ids = {page.get("id") for page in pages}
         
@@ -1240,6 +1247,10 @@ async def trigger_confluence_sync():
             page_title = page.get("title", "Untitled")
             page_version = page.get("version", 1)
             
+            # DEBUG: Log version comparison for every page
+            cached_version = confluence_last_versions.get(page_id, "NOT_IN_CACHE")
+            logger.debug(f"   🔍 Page '{page_title}' (ID: {page_id}): cached={cached_version}, current={page_version}")
+            
             # Check if this is a new or updated page
             if page_id not in confluence_last_versions:
                 # New page - add it
@@ -1258,6 +1269,7 @@ async def trigger_confluence_sync():
                     updated_count += 1
             else:
                 # No changes
+                logger.debug(f"   ⏭️  Unchanged: {page_title} (ID: {page_id}, v{page_version})")
                 unchanged_count += 1
         
         # Summary

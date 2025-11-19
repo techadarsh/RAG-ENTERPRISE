@@ -289,7 +289,7 @@ class RAGPipeline:
             }
         
         # 3. Check relevance - if top result has very low score, question is likely out of scope
-        RELEVANCE_THRESHOLD = 0.02  # Lowered for hash embeddings (2%) - LLM will do final filtering
+        RELEVANCE_THRESHOLD = 0.7  # Higher threshold for better quality results
         top_score = float(results[0]['score'])
         
         if top_score < RELEVANCE_THRESHOLD:
@@ -396,7 +396,7 @@ class RAGPipeline:
             }
         
         # 3. Check relevance - if top result has very low score, question is likely out of scope
-        RELEVANCE_THRESHOLD = 0.02  # Lowered for hash embeddings (2%) - LLM will do final filtering
+        RELEVANCE_THRESHOLD = 0.7  # Higher threshold for better quality results
         top_score = float(results[0]['score'])
         
         if top_score < RELEVANCE_THRESHOLD:
