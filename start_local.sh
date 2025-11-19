@@ -110,17 +110,51 @@ check_redis() {
 # Function to check Docker (for Milvus)
 check_docker() {
     echo -e "${BLUE}[6/8] Checking Docker...${NC}"
+    
+    # Check if Docker is installed
     if ! command -v docker &> /dev/null; then
         echo -e "${RED}❌ Docker not found!${NC}"
-        echo -e "${YELLOW}   Please install Docker Desktop from: https://www.docker.com/products/docker-desktop${NC}"
+        echo -e "${YELLOW}   Checking if Docker Desktop app exists...${NC}"
+        
+        # Check if Docker Desktop app exists on Mac
+        if [ -d "/Applications/Docker.app" ]; then
+            echo -e "${YELLOW}   Docker Desktop app found but command-line not available${NC}"
+            echo -e "${YELLOW}   Please open Docker Desktop manually and try again${NC}"
+        else
+            echo -e "${YELLOW}   Please install Docker Desktop from: https://www.docker.com/products/docker-desktop${NC}"
+        fi
         exit 1
     fi
     
+    # Check if Docker daemon is running
     if ! docker info > /dev/null 2>&1; then
-        echo -e "${RED}❌ Docker is not running!${NC}"
-        echo -e "${YELLOW}   Please start Docker Desktop and try again${NC}"
-        exit 1
+        echo -e "${YELLOW}⚠️  Docker is installed but not running${NC}"
+        
+        # Try to start Docker Desktop automatically on Mac
+        if [ -d "/Applications/Docker.app" ]; then
+            echo -e "${BLUE}   Attempting to start Docker Desktop...${NC}"
+            open -a Docker
+            
+            echo -e "${BLUE}   Waiting for Docker to start (up to 60 seconds)...${NC}"
+            for i in {1..30}; do
+                if docker info > /dev/null 2>&1; then
+                    echo -e "${GREEN}✅ Docker started successfully${NC}"
+                    return 0
+                fi
+                sleep 2
+                echo -ne "${BLUE}   ...${NC}"
+            done
+            echo ""
+            
+            echo -e "${RED}❌ Docker failed to start within 60 seconds${NC}"
+            echo -e "${YELLOW}   Please check Docker Desktop manually and try again${NC}"
+            exit 1
+        else
+            echo -e "${YELLOW}   Please start Docker Desktop manually and try again${NC}"
+            exit 1
+        fi
     fi
+    
     echo -e "${GREEN}✅ Docker found and running${NC}"
 }
 
