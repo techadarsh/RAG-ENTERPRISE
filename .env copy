@@ -1,22 +1,76 @@
-API_HOST=0.0.0.0
-API_PORT=8080
-CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000"]
-LOG_LEVEL=INFO
-PYTHONPATH=api pytest -q api/app/tests
+# ===================================
+# RAG Enterprise - Environment Config
+# Single source of truth for all services
+# ===================================
 
-MILVUS_HOST=milvus
-MILVUS_PORT=19530
-MILVUS_COLLECTION=enterprise_docs
-EMBEDDINGS_HOST=embeddings
-EMBEDDINGS_PORT=8000
-LLM_HOST=ollama
-LLM_PORT=11434
-LLM_MODEL=mistral:7b-instruct-q4_K_M
-LLM_TEMPERATURE=0.2
-LLM_MAX_TOKENS=1024
+# LLM Configuration (Ollama - Docker Service)
+LLM_HOST=rag-ollama             # Docker service name
+LLM_PORT=11434                  # Ollama default port  
+LLM_MODEL=mistral               # LLM Model name in Ollama
+LLM_TEMPERATURE=0.2             # Sampling temperature
+LLM_MAX_TOKENS=256              # Maximum tokens per request
+LLM_MODE=api                    # api or local (local=llama.cpp)
 
-PG_HOST=postgres
-PG_PORT=5432
-PG_DB=ragdb
-PG_USER=rag
-PG_PASSWORD=ragPass
+# LLM Performance Tuning
+LLM_INITIAL_TIMEOUT_MS=45000     # first call after startup (model cold)
+LLM_TIMEOUT_MS=30000             # normal calls
+LLM_DYNAMIC_TIMEOUT=true         # adjust timeout based on query complexity (30-90s)
+LLM_HEALTH_GATE=true             # fast-fail /ask if ollama != ok
+LLM_BREAKER_ENABLED=true         # circuit breaker
+LLM_BREAKER_FAILS=3              # open breaker after 3 consecutive fails
+LLM_BREAKER_COOLDOWN_S=90        # cool-down before half-open probe
+LLM_WARMUP_ENABLED=true          # warm up model on startup
+LLM_KEEPALIVE_ENABLED=true       # prevent model eviction
+ASK_STREAMING_ENABLED=false      # optional streaming to frontend
+
+# Retrieval Tuning
+RETRIEVAL_TOP_K=5                # number of chunks to retrieve from Milvus DB
+RETRIEVAL_MIN_SCORE=0.0          # keep current behavior unless tuned
+RETRIEVAL_NPROBE=8               # if using IVF/IVF_FLAT; ignore if HNSW
+RETRIEVAL_CACHE_SIZE=32          # LRU cache size for queries
+RETRIEVAL_CACHE_TTL_S=60         # cache TTL in seconds
+MAX_CONTEXT_CHARS=2000           # max total context chars (~500 tokens)
+MAX_CHUNK_CHARS=800              # max per chunk (~200 tokens)
+
+# Connection Pooling
+HTTPX_POOL_LIMIT=20              # LLM & embeddings shared pools
+EMBED_BATCH=32                   # embed batch size hint
+
+# Legacy Mistral API Config (for backward compatibility)
+MISTRAL_API_URL=http://rag-ollama:11434/api/generate # Mistral API URL
+MISTRAL_API_KEY= your_api_key_here  # Mistral API Key
+MISTRAL_MODEL=mistral               # LLM Model name in Ollama
+
+# API Configuration
+API_HOST=0.0.0.0                    # Listen on all interfaces     
+API_PORT=8000                       # API port
+
+# Milvus Vector Database
+MILVUS_HOST=milvus                  # Docker service name
+MILVUS_PORT=19530                   # Milvus default port
+COLLECTION_NAME=enterprise_docs     # Milvus collection name
+MILVUS_COLLECTION=enterprise_docs   # Milvus collection name
+
+# Embeddings Configuration
+EMBEDDINGS_HOST=embeddings          # Docker service name
+EMBEDDINGS_PORT=8000                # Embeddings service port
+EMBEDDING_MODEL=BAAI/bge-base-en    # Embedding model name
+EMBEDDING_DIM=768                   # Embedding dimension
+
+# Redis Configuration
+REDIS_HOST=redis                    # Docker service name
+REDIS_PORT=6379                     # Redis default port
+REDIS_DB=0                          # Redis database number
+
+# Confluence Configuration 
+CONFLUENCE_MODE=local                                       # local or api
+CONFLUENCE_LOCAL_DIR=/app/data/sample_confluence_pages      # local dir for Confluence docs
+CONFLUENCE_BASE_URL=https://yourcompany.atlassian.net/wiki  # Confluence base URL
+CONFLUENCE_SPACE_KEY=ENGINEERING                            # Confluence space key
+
+# Data Directories
+DATA_DIR=/app/data                  # base data directory
+UPLOAD_DIR=/app/uploads             # file upload directory
+
+# Document Ingestion
+ENABLE_FOLDER_WATCHER=true          # enable folder watcher service

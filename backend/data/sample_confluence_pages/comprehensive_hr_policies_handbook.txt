@@ -1,0 +1,1085 @@
+# Comprehensive Company HR Policies & Employee Handbook
+
+## Welcome to Our Company
+
+This Employee Handbook contains important information about our company policies, procedures, benefits, and expectations. All employees are required to read, understand, and comply with these policies.
+
+**Effective Date**: January 1, 2025
+**Last Updated**: October 2025
+**Document Version**: 3.2
+**Classification**: Internal - All Employees
+
+---
+
+## Table of Contents
+
+1. Employment Policies
+2. Compensation & Benefits
+3. Time Off & Leave Policies
+4. Work Hours & Schedules
+5. Remote Work Policy
+6. Professional Development
+7. Performance Management
+8. Workplace Conduct
+9. Health & Safety
+10. Technology & Equipment
+11. Confidentiality & Data Security
+12. Grievance & Complaint Procedures
+
+---
+
+## 1. Employment Policies
+
+### 1.1 Equal Employment Opportunity
+
+**Policy Statement**:
+Our company is an Equal Opportunity Employer. We are committed to creating a diverse and inclusive workplace where all employees are treated with dignity and respect, regardless of race, color, religion, sex, national origin, age, disability, gender identity, sexual orientation, veteran status, or any other protected characteristic.
+
+**Application**:
+- All employment decisions (hiring, promotion, termination, compensation) are based solely on job-related criteria
+- We prohibit discrimination and harassment in all forms
+- Reasonable accommodations provided for qualified individuals with disabilities
+- Affirmative action plan in place for underrepresented groups
+
+**Reporting Violations**:
+- Report to HR immediately (hr@company.com)
+- Anonymous hotline available: 1-800-REPORT-IT
+- No retaliation against reporters
+- Investigations completed within 30 days
+
+### 1.2 Employment Categories
+
+**Full-Time Employees**:
+- Work 40 hours per week
+- Eligible for all company benefits
+- Health insurance, 401(k) matching, PTO
+- Minimum commitment: 1 year
+
+**Part-Time Employees**:
+- Work less than 30 hours per week
+- Prorated PTO based on hours worked
+- No health insurance or 401(k) matching
+- Hourly pay, no bonuses
+
+**Contract Employees**:
+- Fixed-term engagements (3-12 months)
+- Hourly or project-based pay
+- No benefits package
+- Can convert to full-time after 6 months
+
+**Interns**:
+- Paid internships only (minimum wage + 20%)
+- 10-20 hours per week during school, 40 hours during summer
+- Mentorship program included
+- Potential for full-time offer after graduation
+
+### 1.3 Background Checks
+
+**Pre-Employment Screening**:
+All final candidates undergo background checks including:
+- Criminal history check (federal and state)
+- Employment verification (last 3 employers)
+- Education verification (degrees and certifications)
+- Credit check (for finance positions only)
+- Reference checks (minimum 2 professional references)
+
+**Timeline**: 5-7 business days
+**Conditional Offer**: Job offer contingent on satisfactory background check
+**Adverse Action**: Candidates notified before disqualification
+
+### 1.4 Onboarding Process
+
+**Week 1: Orientation**
+
+*Day 1*:
+- 9:00 AM: Welcome meeting with HR
+- 9:30 AM: IT setup (laptop, accounts, email)
+- 10:30 AM: Company overview presentation
+- 11:30 AM: Benefits enrollment
+- 1:00 PM: Lunch with team
+- 2:00 PM: Office tour & introductions
+- 3:00 PM: Review employee handbook
+- 4:00 PM: Complete I-9, W-4 forms
+
+*Day 2-3*:
+- Shadow team members
+- Setup development environment
+- Review codebase and documentation
+- Attend team standup meetings
+- Meet with manager for 90-day goals
+
+*Day 4-5*:
+- Assign first task (beginner-friendly)
+- Pair programming with mentor
+- Access to Slack, GitHub, Jira
+- Set up direct deposit
+
+**Week 2-4**:
+- Complete onboarding checklist
+- Attend department meetings
+- Begin contributing to projects
+- Weekly 1-on-1 with manager
+- Feedback session at end of week 4
+
+### 1.5 Probationary Period
+
+**Duration**: 90 days for all new hires
+
+**Evaluation Criteria**:
+- Technical skills & job performance
+- Team collaboration & communication
+- Attendance & punctuality
+- Cultural fit & company values alignment
+- Initiative & problem-solving
+
+**Reviews**:
+- 30-day check-in (informal)
+- 60-day review (formal written evaluation)
+- 90-day final review (promotion to regular employee or termination)
+
+**Expectations**:
+- Complete all training modules
+- Achieve 80%+ of 90-day goals
+- No more than 2 unexcused absences
+- Positive peer feedback
+
+---
+
+## 2. Compensation & Benefits
+
+### 2.1 Salary Structure
+
+**Pay Bands**:
+
+```
+Level 1 (Junior Engineer):
+- Salary Range: $70,000 - $90,000
+- Experience: 0-2 years
+- Bonus: Up to 10% of base
+
+Level 2 (Mid-Level Engineer):
+- Salary Range: $90,000 - $120,000
+- Experience: 2-5 years
+- Bonus: Up to 15% of base
+
+Level 3 (Senior Engineer):
+- Salary Range: $120,000 - $160,000
+- Experience: 5-8 years
+- Bonus: Up to 20% of base
+
+Level 4 (Staff/Principal Engineer):
+- Salary Range: $160,000 - $200,000
+- Experience: 8+ years
+- Bonus: Up to 25% of base
+
+Level 5 (Engineering Manager):
+- Salary Range: $150,000 - $190,000
+- Experience: 5+ years, including 2+ years managing
+- Bonus: Up to 30% of base
+```
+
+**Pay Schedule**:
+- Bi-weekly pay periods (26 per year)
+- Direct deposit required
+- Payday: Every other Friday
+- Overtime: Time-and-a-half for hourly employees (>40 hours)
+
+**Annual Reviews**:
+- Conducted every January
+- Merit increases: 0-10% based on performance
+- Promotion increases: 10-20%
+- Cost of living adjustments: 2-4%
+
+### 2.2 Bonus Program
+
+**Performance Bonus**:
+- Eligibility: All full-time employees after 1 year
+- Based on: Individual performance (70%) + company performance (30%)
+- Payout: March of following year
+- Target: 10-30% of base salary (depending on level)
+
+**Spot Bonus**:
+- One-time awards for exceptional work
+- Amount: $500 - $5,000
+- Awarded anytime, unlimited
+- Nominated by managers, approved by VP
+
+**Referral Bonus**:
+- $3,000 for successful engineering referrals
+- $1,500 for other role referrals
+- Paid after referral completes 90 days
+- No limit on number of referrals
+
+### 2.3 Health Insurance
+
+**Medical Insurance**:
+- **PPO Plan** (Preferred):
+  - Employee premium: $150/month
+  - Family premium: $450/month
+  - Deductible: $1,000 individual / $2,000 family
+  - Out-of-pocket max: $5,000 / $10,000
+  - Coverage: 80/20 after deductible
+  - Network: Nationwide
+
+- **HMO Plan** (Budget):
+  - Employee premium: $75/month
+  - Family premium: $250/month
+  - Deductible: $500 individual / $1,000 family
+  - Out-of-pocket max: $3,000 / $6,000
+  - Coverage: 90/10 after deductible
+  - Network: Regional only
+
+**Company Contribution**: 75% of premium costs
+
+**Dental Insurance**:
+- Employee premium: $25/month
+- Family premium: $75/month
+- Preventive care: 100% covered (2 cleanings/year)
+- Basic procedures: 80% covered
+- Major procedures: 50% covered
+- Annual maximum: $1,500
+
+**Vision Insurance**:
+- Employee premium: $10/month
+- Family premium: $30/month
+- Eye exam: $10 copay (annual)
+- Lenses: $25 copay (annual)
+- Frames: $150 allowance (every 2 years)
+- Contacts: $150 allowance (in lieu of glasses)
+
+**Life Insurance**:
+- Company-paid: 1x annual salary
+- Optional supplemental: Up to 5x salary (employee pays)
+- AD&D coverage included
+- No medical exam required for base coverage
+
+**Disability Insurance**:
+- Short-term: 60% of salary for up to 90 days
+- Long-term: 60% of salary after 90 days
+- Company-paid premiums
+- No waiting period
+
+### 2.4 Retirement Benefits
+
+**401(k) Plan**:
+- Eligibility: After 90 days of employment
+- Employee contribution: Up to 100% of salary (IRS limit: $23,000 in 2025)
+- Company match: 100% of first 3%, 50% of next 2%
+  - Example: Contribute 5% → Get 4% match → Total 9%
+- Vesting: Immediate (100% vested from day 1)
+- Investment options: 20+ mutual funds, target-date funds, index funds
+- Roth 401(k) option available
+
+**Roth IRA Assistance**:
+- Company doesn't offer Roth IRA directly
+- But provides financial advisor access
+- $500 annual allowance for financial planning
+
+### 2.5 Additional Perks
+
+**Flexible Spending Accounts**:
+- Healthcare FSA: Up to $3,200/year (tax-free)
+- Dependent Care FSA: Up to $5,000/year
+- Commuter FSA: Up to $300/month (parking + transit)
+
+**Health Savings Account** (with PPO only):
+- Contribute up to $4,150 individual / $8,300 family
+- Company seeds: $500 individual / $1,000 family
+- Rolls over year to year (no "use it or lose it")
+- Tax-advantaged: Deduct contributions, tax-free growth, tax-free withdrawals (for medical)
+
+**Wellness Program**:
+- Gym membership reimbursement: Up to $50/month
+- Mental health: 6 free counseling sessions/year (EAP)
+- Health screenings: Annual physical 100% covered
+- Wellness challenges: Quarterly competitions with prizes
+
+**Professional Development**:
+- Training budget: $2,000/year per employee
+- Conference attendance: 1-2 per year (approved)
+- Certification reimbursement: 100% after passing
+- Online courses: Unlimited (Udemy, Coursera, Pluralsight)
+- Internal lunch-and-learns: Weekly
+
+**Technology**:
+- MacBook Pro M3 or equivalent PC (employee choice)
+- External monitor (27" 4K)
+- Ergonomic keyboard & mouse
+- Noise-canceling headphones (up to $300)
+- Home office stipend: $500 (one-time)
+
+**Food & Snacks**:
+- Free lunch: Catered Monday-Friday
+- Snacks & beverages: Always available
+- Coffee: Premium espresso machine
+- Monthly team dinners: Company-paid
+
+---
+
+## 3. Time Off & Leave Policies
+
+### 3.1 Paid Time Off (PTO)
+
+**Accrual Rates**:
+
+```
+Years of Service    Annual PTO Days
+0-2 years           15 days
+3-4 years           20 days
+5-7 years           25 days
+8+ years            30 days
+
+Plus:
+- 10 company holidays
+- 5 sick days (separate)
+- Birthday off
+Total: 31-46 days off per year
+```
+
+**Accrual Method**:
+- PTO accrues each pay period (bi-weekly)
+- Pro-rated for part-time employees
+- Example: 20 days/year = 0.77 days per pay period
+
+**Usage Rules**:
+- Minimum request: 4 hours (half-day)
+- Request via HR system (Workday) at least 2 weeks in advance
+- Manager approval required
+- Blackout periods: None (but coordinate with team)
+- Carryover: Up to 5 days to next year (use-it-or-lose-it after that)
+- Cash out: Not permitted
+
+**PTO Payout on Termination**:
+- Voluntary resignation: Unused PTO paid out
+- Termination for cause: Forfeit unused PTO
+- Layoff/involuntary: Unused PTO paid out
+
+### 3.2 Sick Leave
+
+**Allowance**: 5 days per year (separate from PTO)
+
+**Usage**:
+- Personal illness or injury
+- Medical appointments
+- Caring for sick family member
+- Mental health days
+- No doctor's note required (unless >3 consecutive days)
+
+**Accrual**: Does NOT carry over to next year
+
+**Notice**: Call manager & HR before 9:00 AM if using sick day
+
+### 3.3 Company Holidays
+
+**Fixed Holidays** (10 days):
+1. New Year's Day (January 1)
+2. Martin Luther King Jr. Day (3rd Monday in January)
+3. Presidents' Day (3rd Monday in February)
+4. Memorial Day (Last Monday in May)
+5. Independence Day (July 4)
+6. Labor Day (1st Monday in September)
+7. Thanksgiving Day (4th Thursday in November)
+8. Day after Thanksgiving
+9. Christmas Eve (December 24)
+10. Christmas Day (December 25)
+
+**Floating Holiday**: 1 day (employee choice, manager approval)
+
+**Holiday Pay**:
+- If holiday falls on weekend, observed on adjacent weekday
+- If required to work holiday (rare): Double-time pay + comp day
+
+### 3.4 Parental Leave
+
+**Maternity Leave** (Birth Mother):
+- 16 weeks paid leave (100% salary)
+- 4 weeks before due date (if desired)
+- 12 weeks after birth
+- FMLA protection (job guaranteed)
+- Can extend with PTO or unpaid leave
+
+**Paternity Leave** (Non-Birth Parent):
+- 8 weeks paid leave (100% salary)
+- Must be taken within 6 months of birth/adoption
+- Can be taken intermittently or all at once
+
+**Adoption Leave**:
+- Same as paternity leave (8 weeks paid)
+- Reimbursement for adoption expenses: Up to $10,000
+
+**Return-to-Work**:
+- Flexible schedule first 3 months (work from home more)
+- Lactation rooms available (private, refrigerator)
+- Gradual ramp-up encouraged
+
+### 3.5 Bereavement Leave
+
+**Immediate Family** (parent, spouse, child, sibling):
+- 5 days paid leave
+- Travel time included (if >200 miles)
+
+**Extended Family** (grandparent, in-law, aunt, uncle):
+- 3 days paid leave
+
+**Additional Leave**:
+- Can use PTO for more time
+- Unpaid leave available if needed
+- Mental health resources available (EAP)
+
+### 3.6 Jury Duty & Voting Leave
+
+**Jury Duty**:
+- Paid leave for duration of service
+- Must provide court summons to HR
+- Return to work if dismissed early
+- Company pays difference if jury pay < salary
+
+**Voting**:
+- 2 hours paid leave on election day (federal, state, local)
+- Can arrive late or leave early
+
+### 3.7 Sabbatical Leave
+
+**Eligibility**: After 7 years of continuous employment
+
+**Duration**: 4 weeks (paid)
+
+**Purpose**:
+- Travel & personal growth
+- Volunteer work
+- Pursue passion project
+- Recharge & prevent burnout
+
+**Requirements**:
+- Submit proposal 6 months in advance
+- Manager approval required
+- Document learnings upon return (optional presentation)
+
+**Frequency**: Every 7 years
+
+---
+
+## 4. Work Hours & Schedules
+
+### 4.1 Standard Work Hours
+
+**Core Hours**: 10:00 AM - 4:00 PM (must be available)
+
+**Flexible Hours**:
+- Arrival: 7:00 AM - 10:00 AM
+- Departure: 4:00 PM - 7:00 PM
+- Lunch: 30-60 minutes (anytime)
+
+**Example Schedules**:
+- Early bird: 7:00 AM - 4:00 PM
+- Standard: 9:00 AM - 5:00 PM
+- Night owl: 10:00 AM - 7:00 PM
+
+**Weekly Total**: 40 hours
+
+### 4.2 Overtime Policy
+
+**Non-Exempt Employees** (hourly):
+- Overtime = Time-and-a-half for hours >40/week
+- Must be pre-approved by manager
+- Tracked via time tracking system (Clockify)
+
+**Exempt Employees** (salaried):
+- No overtime pay (expected to work as needed)
+- Compensatory time off available (manager discretion)
+- Typical: 40-45 hours/week
+- During crunch time: 50-55 hours (temporary)
+
+**On-Call Rotation**:
+- Engineers: 1 week every 8 weeks
+- Compensation: $500 bonus per week
+- Call-out: 2 hours minimum pay (even if 10-minute fix)
+
+### 4.3 Break Policy
+
+**Lunch Break**:
+- Minimum 30 minutes (unpaid)
+- Recommended 60 minutes
+- Off-site lunches allowed
+
+**Rest Breaks**:
+- 15 minutes every 4 hours (paid)
+- Coffee breaks encouraged
+- Walking meetings counted as work time
+
+**Nursing Mothers**:
+- Reasonable break time for lactation
+- Private room provided (not bathroom)
+- Up to 1 year after child's birth
+
+---
+
+## 5. Remote Work Policy
+
+### 5.1 Remote Work Options
+
+**Fully Remote**:
+- Available for all engineering roles
+- Must live in US time zones (EST to PST)
+- Home office requirements must be met
+
+**Hybrid**:
+- 2-3 days in office, rest remote
+- Office days: Tuesday, Wednesday (core team days)
+- Flexible schedule
+
+**Office-Based**:
+- 5 days per week in office
+- Required for some roles (IT, facilities)
+
+### 5.2 Remote Work Requirements
+
+**Home Office**:
+- Dedicated workspace (quiet, professional background)
+- High-speed internet (minimum 50 Mbps down, 10 Mbps up)
+- Ergonomic chair & desk
+- Proper lighting for video calls
+
+**Technology**:
+- Company-provided laptop
+- Second monitor (if requested)
+- Webcam & microphone (built-in okay)
+- VPN access (required for all remote work)
+
+**Availability**:
+- Online during core hours (10 AM - 4 PM your timezone)
+- Respond to Slack within 1 hour during work hours
+- Calendar up-to-date
+- Video on for meetings (unless bandwidth issues)
+
+### 5.3 Remote Work Expectations
+
+**Communication**:
+- Daily standup (video call)
+- Weekly 1-on-1 with manager
+- Monthly all-hands (must attend)
+- Proactive updates on progress
+
+**Productivity**:
+- Meet all deadlines & commitments
+- Maintain quality of work
+- Participate in code reviews
+- Available during core hours
+
+**Security**:
+- Lock screen when away
+- Use VPN for company resources
+- No public Wi-Fi without VPN
+- Report security incidents immediately
+
+---
+
+## 6. Professional Development
+
+### 6.1 Learning & Development Budget
+
+**Annual Allowance**: $2,000 per employee
+
+**Eligible Expenses**:
+- Online courses (Udemy, Coursera, Pluralsight)
+- Books & learning materials
+- Conference tickets
+- Certification exams
+- Workshops & boot camps
+
+**Reimbursement Process**:
+1. Submit request via HR system (pre-approval)
+2. Complete course/certification
+3. Submit receipt + proof of completion
+4. Reimbursed within 2 pay periods
+
+### 6.2 Conferences
+
+**Attendance Policy**:
+- 1-2 conferences per year (approved)
+- Company covers: Registration, travel, hotel, meals
+- Must present or write blog post after
+
+**Popular Conferences**:
+- PyCon (Python)
+- KubeCon (Kubernetes)
+- AWS re:Invent (Cloud)
+- ODSC (Data Science)
+
+### 6.3 Certifications
+
+**Reimbursement**: 100% after passing
+
+**Popular Certifications**:
+- AWS Certified Solutions Architect
+- Google Cloud Professional Architect
+- Certified Kubernetes Administrator
+- Certified Information Systems Security Professional (CISSP)
+
+**Study Support**:
+- Paid study time (up to 5 hours/week)
+- Study groups organized internally
+- Practice exams provided
+
+---
+
+## 7. Performance Management
+
+### 7.1 Performance Review Cycle
+
+**Annual Review** (January):
+- Self-assessment
+- Manager review
+- 360 feedback from peers
+- Goal setting for next year
+- Compensation adjustments
+
+**Mid-Year Check-In** (July):
+- Progress on goals
+- Course correction if needed
+- Informal feedback
+
+**Continuous Feedback**:
+- Weekly 1-on-1s with manager
+- Monthly team feedback sessions
+- Real-time feedback encouraged (positive & constructive)
+
+### 7.2 Performance Ratings
+
+**Rating Scale**:
+
+```
+5 - Exceeds Expectations (Top 10%)
+- Consistently delivers exceptional results
+- Goes above and beyond job requirements
+- Major impact on team/company success
+- Bonus: 20-30% of base
+
+4 - Meets Expectations (60-70%)
+- Consistently meets all job requirements
+- Reliable and high-quality work
+- Positive team contributor
+- Bonus: 10-15% of base
+
+3 - Needs Improvement (10-15%)
+- Meets some but not all expectations
+- Inconsistent performance
+- Requires manager intervention
+- Bonus: 0-5% of base
+
+2 - Does Not Meet Expectations (5-10%)
+- Fails to meet minimum job requirements
+- Performance improvement plan required
+- At risk of termination
+- No bonus
+
+1 - Unacceptable (Rare)
+- Severe performance issues
+- Immediate termination considered
+- No bonus
+```
+
+### 7.3 Performance Improvement Plan (PIP)
+
+**Trigger**: Performance rating of 2 or 3
+
+**Duration**: 60-90 days
+
+**Process**:
+1. Meet with manager to discuss issues
+2. Create written improvement plan with specific goals
+3. Weekly check-ins with manager
+4. HR oversight
+5. Final review at end of period
+
+**Outcomes**:
+- Success: Return to regular status, rating improved
+- Partial Success: Extend PIP another 30-60 days
+- Failure: Termination
+
+**Support During PIP**:
+- Additional training provided
+- Mentorship assigned
+- Resources allocated
+- No shame/stigma (confidential)
+
+---
+
+## 8. Workplace Conduct
+
+### 8.1 Code of Conduct
+
+**Core Values**:
+- **Respect**: Treat everyone with dignity
+- **Integrity**: Be honest and ethical
+- **Collaboration**: Work together effectively
+- **Excellence**: Strive for high quality
+- **Innovation**: Embrace new ideas
+
+**Expected Behaviors**:
+- Communicate professionally
+- Be punctual for meetings
+- Meet commitments and deadlines
+- Give and receive feedback gracefully
+- Maintain positive attitude
+
+**Prohibited Behaviors**:
+- Harassment or discrimination
+- Violence or threats
+- Theft or property damage
+- Drug/alcohol use at work (except company events)
+- Conflicts of interest
+
+### 8.2 Anti-Harassment Policy
+
+**Definition of Harassment**:
+Any unwelcome conduct based on protected characteristics (race, gender, religion, etc.) that creates an intimidating, hostile, or offensive work environment.
+
+**Examples of Harassment**:
+- Offensive jokes or comments
+- Unwanted physical contact or advances
+- Display of offensive images or materials
+- Retaliation against complainants
+- Cyberbullying or online harassment
+
+**Zero Tolerance**:
+- First offense: Warning & mandatory training
+- Second offense: Suspension
+- Third offense: Termination
+- Severe cases: Immediate termination
+
+**Reporting**:
+- Report to HR, manager, or anonymous hotline
+- Investigation within 10 business days
+- Confidentiality maintained
+- No retaliation guaranteed
+
+### 8.3 Dress Code
+
+**General Guidelines**:
+- Business casual
+- Clean and professional appearance
+- No offensive graphics or messages
+
+**Examples**:
+-  Acceptable: Jeans, t-shirts (plain or branded), sneakers, hoodies
+-  Acceptable: Polo shirts, chinos, blouses, dress shoes
+-  Not Acceptable: Shorts, flip-flops, tank tops, revealing clothing
+-  Not Acceptable: Pajamas, sweatpants, clothing with holes
+
+**Exceptions**:
+- Casual Friday: More relaxed (shorts & flip-flops okay)
+- Client meetings: Business professional required
+- Remote work: No dress code (but professional for video calls)
+
+---
+
+## 9. Health & Safety
+
+### 9.1 Workplace Safety
+
+**Emergency Procedures**:
+- Fire drills: Quarterly
+- Emergency exits: Clearly marked
+- First aid kits: On each floor
+- AED devices: Lobby and 3rd floor
+
+**Reporting Hazards**:
+- Report to facilities immediately
+- Anonymous safety hotline: 1-800-SAFE-WORK
+- OSHA compliance monitored
+
+### 9.2 Ergonomics
+
+**Workstation Setup**:
+- Monitor at eye level (top 1/3 of screen)
+- Feet flat on floor or footrest
+- Elbows at 90 degrees
+- Chair with lumbar support
+
+**Ergonomic Assessments**:
+- Available upon request (free)
+- Conducted by certified specialist
+- Equipment recommendations provided
+- Company covers approved items
+
+### 9.3 Mental Health Support
+
+**Employee Assistance Program (EAP)**:
+- 6 free counseling sessions per year
+- Confidential
+- Available 24/7
+- Covers: Stress, anxiety, depression, relationships
+
+**Mental Health Days**:
+- Use sick leave for mental health (no questions asked)
+- Encouraged to take when needed
+- Manager check-ins if frequent absences
+
+**Wellness Resources**:
+- Meditation app subscriptions (Calm, Headspace)
+- Stress management workshops (monthly)
+- Yoga classes (on-site, weekly)
+
+---
+
+## 10. Technology & Equipment
+
+### 10.1 Company-Provided Equipment
+
+**Standard Setup**:
+- Laptop (MacBook Pro M3 or Dell XPS 15)
+- External monitor (27" 4K)
+- Keyboard & mouse (ergonomic options)
+- Headphones (noise-canceling, up to $300)
+- Dock/hub for connectivity
+
+**Software**:
+- OS: macOS or Windows (employee choice)
+- IDE: VS Code, PyCharm, IntelliJ (licensed)
+- Collaboration: Slack, Zoom, Google Workspace
+- Development: Docker, Git, AWS access
+
+**Replacement Cycle**:
+- Laptops: Every 3 years (or sooner if performance issues)
+- Monitors: Every 5 years
+- Accessories: As needed
+
+### 10.2 Acceptable Use Policy
+
+**Permitted Use**:
+- Work-related activities
+- Reasonable personal use (email, news, banking during breaks)
+- Professional development (online courses)
+
+**Prohibited Use**:
+- Illegal activities
+- Downloading copyrighted material
+- Accessing inappropriate content
+- Installing unauthorized software
+- Side businesses or freelancing
+
+**Monitoring**:
+- Company reserves right to monitor all device usage
+- No expectation of privacy on company devices
+- Logs reviewed quarterly
+
+### 10.3 Data Security
+
+**Password Requirements**:
+- Minimum 12 characters
+- Mix of uppercase, lowercase, numbers, symbols
+- Change every 90 days
+- No password reuse
+
+**Two-Factor Authentication (2FA)**:
+- Required for all accounts
+- Use authenticator app (Google, Microsoft)
+- Backup codes stored securely
+
+**Data Classification**:
+- **Public**: Marketing materials, press releases
+- **Internal**: Code, docs, internal communications
+- **Confidential**: Customer data, financials, trade secrets
+- **Restricted**: PII, HIPAA data, payment info
+
+**Data Handling**:
+- Encrypt all sensitive data (at rest and in transit)
+- No customer data on personal devices
+- Use approved cloud storage only (Google Drive, AWS S3)
+- Report data breaches within 1 hour
+
+---
+
+## 11. Confidentiality & Data Security
+
+### 11.1 Non-Disclosure Agreement (NDA)
+
+**Scope**:
+All employees must sign NDA before start date, covering:
+- Company trade secrets
+- Customer information
+- Source code and technical documentation
+- Business strategies and financials
+- Product roadmaps
+
+**Duration**: Perpetual (survives employment termination)
+
+**Violations**: Legal action, including termination and lawsuits
+
+### 11.2 Intellectual Property
+
+**Work Product**:
+All work created during employment belongs to company:
+- Code written for company projects
+- Documentation and designs
+- Inventions related to company business
+- Patents and copyrights
+
+**Personal Projects**:
+Employees may work on personal projects if:
+- Completely unrelated to company business
+- Done outside work hours
+- No company resources used
+- Manager notified (optional but recommended)
+
+### 11.3 Social Media Policy
+
+**Personal Accounts**:
+- Do not share confidential company information
+- Do not speak on behalf of company (unless authorized)
+- Add disclaimer: "Opinions are my own"
+- Be respectful when discussing company
+
+**Company Accounts**:
+- Only authorized personnel may post
+- Follow brand guidelines
+- No political or controversial content
+- Respond to comments professionally
+
+---
+
+## 12. Grievance & Complaint Procedures
+
+### 12.1 Informal Resolution
+
+**First Step**: Speak directly with person involved
+- Many issues resolved through direct communication
+- Be respectful and professional
+- Focus on specific behaviors, not personalities
+
+**Second Step**: Involve manager
+- If direct approach fails, escalate to manager
+- Manager facilitates conversation
+- Document discussion
+
+### 12.2 Formal Complaint
+
+**When to File**:
+- Informal resolution unsuccessful
+- Serious violations (harassment, discrimination)
+- Legal concerns
+
+**Process**:
+1. Submit written complaint to HR (hr@company.com)
+2. Include: Names, dates, detailed description, witnesses
+3. HR acknowledges within 2 business days
+4. Investigation begins within 5 business days
+5. Decision within 30 days
+
+**Investigation**:
+- Confidential (only those who need to know)
+- Both parties interviewed
+- Witnesses interviewed
+- Evidence reviewed
+- Findings documented
+
+**Outcomes**:
+- Substantiated: Disciplinary action taken (warning to termination)
+- Unsubstantiated: No action, may recommend mediation
+- Inconclusive: Insufficient evidence, monitoring continues
+
+### 12.3 Appeals Process
+
+**Right to Appeal**:
+If dissatisfied with investigation outcome, employee may appeal within 10 business days.
+
+**Appeal Process**:
+1. Submit written appeal to VP of HR
+2. Include: Why decision was wrong, new evidence
+3. VP reviews case independently
+4. Decision within 15 business days
+5. VP decision is final
+
+### 12.4 Non-Retaliation
+
+**Policy**:
+Company strictly prohibits retaliation against employees who:
+- Report violations in good faith
+- Participate in investigations
+- Exercise legal rights
+
+**Retaliation Examples**:
+- Demotion or termination
+- Reduced pay or hours
+- Negative performance reviews
+- Social exclusion or hostility
+
+**Consequences**:
+Retaliation is grounds for immediate termination, regardless of position.
+
+---
+
+## Acknowledgment
+
+By signing below, I acknowledge that:
+
+1. I have received and read the Employee Handbook
+2. I understand the policies and agree to comply
+3. I understand employment is "at-will" (can be terminated by either party at any time)
+4. I understand the handbook is not a contract and policies may change
+5. I will direct questions to HR
+
+**Employee Signature**: _________________________
+**Date**: _________________________
+**Print Name**: _________________________
+
+---
+
+## Appendices
+
+### Appendix A: Company Holidays (2025)
+
+```
+January 1 (Wed) - New Year's Day
+January 20 (Mon) - MLK Jr. Day
+February 17 (Mon) - Presidents' Day
+May 26 (Mon) - Memorial Day
+July 4 (Fri) - Independence Day
+September 1 (Mon) - Labor Day
+November 27 (Thu) - Thanksgiving
+November 28 (Fri) - Day after Thanksgiving
+December 24 (Wed) - Christmas Eve
+December 25 (Thu) - Christmas Day
+
+Total: 10 days
+```
+
+### Appendix B: Benefits Summary
+
+```
+Medical Insurance: PPO & HMO options, company pays 75%
+Dental Insurance: $25-75/month, preventive 100% covered
+Vision Insurance: $10-30/month, annual eye exam
+Life Insurance: 1x salary (company-paid)
+401(k): 4% match (3% + 50% of next 2%)
+PTO: 15-30 days based on tenure
+Sick Leave: 5 days per year
+Holidays: 10 company holidays + 1 floating
+Parental Leave: 16 weeks (maternity), 8 weeks (paternity)
+Professional Development: $2,000/year
+Gym Reimbursement: $50/month
+Home Office Stipend: $500 (one-time)
+```
+
+### Appendix C: Contact Information
+
+```
+HR Department: hr@company.com | (555) 123-4567
+IT Help Desk: helpdesk@company.com | (555) 123-4568
+Facilities: facilities@company.com | (555) 123-4569
+Anonymous Hotline: 1-800-REPORT-IT
+EAP Counseling: 1-800-EAP-HELP (24/7)
+```
+
+---
+
+**Document Version**: 3.2
+**Effective Date**: January 1, 2025
+**Next Review**: January 1, 2026
+**Approved by**: Chief People Officer
+**Classification**: Internal - All Employees
+
+---
+
+**END OF EMPLOYEE HANDBOOK**

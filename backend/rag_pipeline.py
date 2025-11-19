@@ -5,6 +5,7 @@ import logging
 import os
 import glob
 import time
+import numpy as np
 from typing import Dict, Any, List
 from embeddings import EmbeddingModel
 from milvus_client import MilvusClient
@@ -195,81 +196,67 @@ class RAGPipeline:
     
     def _load_initial_data(self):
         """
-        Load and index SAMPLE documents from data directory and Confluence
+        Load and index SAMPLE documents from Confluence
         
         IMPORTANT: This method is ONLY for initial knowledge base loading on startup.
         For runtime document ingestion, use the async ingestion API instead.
         
         This method loads:
-        - Confluence sample documents (17 enterprise docs)
-        - Any .txt files in DATA_DIR
+        - Confluence documents (from API)
         
         For NEW documents during production:
         - Use POST /api/ingest/upload (async processing)
-        - Do NOT add files to data/ directory
+        - Or rely on automatic Confluence sync
         """
         titles = []
         texts = []
+        source_types = []
+        source_urls = []
+        doc_ids = []
         
         # Load Confluence documents first (with chunking)
         if self.confluence_docs:
             logger.info(f"Loading {len(self.confluence_docs)} Confluence documents")
             for doc in self.confluence_docs:
                 doc_chunks = self._chunk_text(doc['body'])
+                doc_url = doc.get('url', '')
+                doc_id = doc.get('id', '')
                 
                 if len(doc_chunks) > 1:
                     logger.info(f"Split '{doc['title']}' into {len(doc_chunks)} chunks")
                     for i, chunk in enumerate(doc_chunks, 1):
                         titles.append(f"[Confluence] {doc['title']} (Part {i}/{len(doc_chunks)})")
                         texts.append(chunk)
+                        source_types.append("confluence")
+                        source_urls.append(doc_url)
+                        doc_ids.append(doc_id)
                 else:
                     titles.append(f"[Confluence] {doc['title']}")
                     texts.append(doc['body'])
-        
-        # Load local text files from data directory (with chunking)
-        if self.data_dir and os.path.exists(self.data_dir):
-            txt_files = glob.glob(os.path.join(self.data_dir, "*.txt"))
-            
-            for file_path in txt_files:
-                filename = os.path.basename(file_path)
-                logger.info(f"Reading file: {filename}")
-                
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read().strip()
-                        
-                        if content:
-                            doc_chunks = self._chunk_text(content)
-                            
-                            if len(doc_chunks) > 1:
-                                logger.info(f"Split '{filename}' into {len(doc_chunks)} chunks")
-                                for i, chunk in enumerate(doc_chunks, 1):
-                                    titles.append(f"{filename} (Part {i}/{len(doc_chunks)})")
-                                    texts.append(chunk)
-                            else:
-                                titles.append(filename)
-                                texts.append(content)
-                except Exception as e:
-                    logger.error(f"Error reading file {filename}: {e}")
+                    source_types.append("confluence")
+                    source_urls.append(doc_url)
+                    doc_ids.append(doc_id)
+        else:
+            logger.warning("⚠️  No Confluence documents provided for initial load")
         
         if not texts:
-            logger.warning("No content found in data files or Confluence")
+            logger.warning("⚠️  No content found - skipping initial load")
             return
         
         # Generate embeddings
-        logger.info(f" Starting embedding generation for {len(texts)} document chunks...")
+        logger.info(f"🧠 Starting embedding generation for {len(texts)} document chunks...")
         logger.info(f"⏱  This may take 1-2 minutes on first run...")
         
         start_time = time.time()
         embeddings = self.embedding_model.embed_texts(texts)
         elapsed = time.time() - start_time
         
-        logger.info(f" Embedding generation completed in {elapsed:.1f}s")
+        logger.info(f"✅ Embedding generation completed in {elapsed:.1f}s")
         
-        # Insert into Milvus
-        logger.info(f" Inserting {len(texts)} documents into Milvus...")
-        self.milvus_client.insert(titles, texts, embeddings)
-        logger.info(f" Loaded {len(texts)} document chunks into Milvus")
+        # Insert into Milvus with metadata
+        logger.info(f"💾 Inserting {len(texts)} documents into Milvus...")
+        self.milvus_client.insert(titles, texts, embeddings, source_types, source_urls, doc_ids)
+        logger.info(f"✅ Loaded {len(texts)} document chunks into Milvus")
     
     def query(self, query: str, top_k: int = None) -> Dict[str, Any]:
         """
@@ -302,7 +289,7 @@ class RAGPipeline:
             }
         
         # 3. Check relevance - if top result has very low score, question is likely out of scope
-        RELEVANCE_THRESHOLD = 0.02  # Lowered for hash embeddings (2%) - LLM will do final filtering
+        RELEVANCE_THRESHOLD = 0.8  # 80% threshold for stricter quality control
         top_score = float(results[0]['score'])
         
         if top_score < RELEVANCE_THRESHOLD:
@@ -318,10 +305,12 @@ class RAGPipeline:
         context_parts = []
         sources = []
         sources_for_display = []  # Only top 3 for user
+        seen_titles = set()  # Track unique titles to avoid duplicates
+        unique_count = 0  # Count of unique sources for display
         
-        # Context compression settings
-        MAX_CONTEXT_CHARS = int(os.getenv("MAX_CONTEXT_CHARS", "2000"))  # ~500 tokens
-        MAX_CHUNK_CHARS = int(os.getenv("MAX_CHUNK_CHARS", "800"))  # ~200 tokens per chunk
+        # Context compression settings (affects quality vs speed trade-off)
+        MAX_CONTEXT_CHARS = int(os.getenv("MAX_CONTEXT_CHARS", "2000"))  # Total context limit: ~500 tokens (1 token ≈ 4 chars)
+        MAX_CHUNK_CHARS = int(os.getenv("MAX_CHUNK_CHARS", "800"))  # Per-chunk limit: ~200 tokens to prevent overly long individual chunks
         
         for i, result in enumerate(results, 1):
             # Trim individual chunks to prevent overly long context
@@ -334,16 +323,29 @@ class RAGPipeline:
             # Clean title for user-friendly display
             display_title = self._clean_title_for_display(result['title'])
             
+            # Skip duplicate titles (same document may have multiple chunks)
+            if display_title in seen_titles:
+                continue
+            
+            seen_titles.add(display_title)
+            unique_count += 1
+            
             # Collect all sources for context, but only top 3 for display
             source_obj = {
                 "title": display_title,
                 "text": result['text'][:200] + "..." if len(result['text']) > 200 else result['text'],
                 "score": f"{float(result['score']) * 100:.2f}%"
             }
+            
+            # Add Confluence URL if available
+            if result.get('source_url'):
+                source_obj['source_url'] = result['source_url']
+                source_obj['source_type'] = result.get('source_type', 'confluence')
+            
             sources.append(source_obj)
             
-            # Only show top 3 sources to user
-            if i <= 3:
+            # Only show top 3 unique sources to user
+            if unique_count <= 3:
                 sources_for_display.append(source_obj)
         
         context = "\n\n".join(context_parts)
@@ -394,7 +396,7 @@ class RAGPipeline:
             }
         
         # 3. Check relevance - if top result has very low score, question is likely out of scope
-        RELEVANCE_THRESHOLD = 0.02  # Lowered for hash embeddings (2%) - LLM will do final filtering
+        RELEVANCE_THRESHOLD = 0.8  # 80% threshold for stricter quality control
         top_score = float(results[0]['score'])
         
         if top_score < RELEVANCE_THRESHOLD:
@@ -440,3 +442,117 @@ class RAGPipeline:
             "sources": sources_for_display,  # Only show top 3 to user
             "context": context
         }
+    
+    def update_single_document(self, page_id: str, page_data: Dict[str, str]) -> bool:
+        """
+        Update a single Confluence page in Milvus (delete old + insert new)
+        
+        This method is called by webhook endpoint when a page is created/updated.
+        It performs an atomic upsert: delete all old chunks, then insert new ones.
+        
+        Args:
+            page_id: Confluence page ID
+            page_data: Dictionary with keys: id, title, body, url
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            logger.info(f"🔄 Updating document: {page_data.get('title', 'Unknown')} (ID: {page_id})")
+            
+            # Step 1: Delete old chunks for this page
+            deleted_count = self.milvus_client.delete_by_doc_id(page_id)
+            logger.info(f"🗑️  Deleted {deleted_count} old chunks for page {page_id}")
+            
+            # Step 2: Prepare new document data
+            title = page_data.get('title', 'Untitled')
+            content = page_data.get('body', '')
+            url = page_data.get('url', '')
+            
+            if not content:
+                logger.warning(f"⚠️  Empty content for page {page_id}, skipping insertion")
+                return True  # Successfully deleted, but nothing to insert
+            
+            # Step 3: Check if content needs chunking (Milvus max string length: 32KB)
+            MAX_CHUNK_SIZE = 30000  # Leave some buffer below 32KB limit
+            content_chunks = []
+            
+            if len(content) > MAX_CHUNK_SIZE:
+                logger.info(f"📄 Document is large ({len(content)} chars), chunking...")
+                # Use existing chunking logic
+                content_chunks = self._chunk_text(content, max_length=MAX_CHUNK_SIZE, overlap=500)
+                logger.info(f"✂️  Split into {len(content_chunks)} chunks")
+            else:
+                content_chunks = [content]
+            
+            # Step 4: Generate embeddings for all chunks
+            embeddings = self.embedding_model.embed_texts(content_chunks)
+            
+            # Step 5: Prepare data for insertion
+            titles = []
+            texts = []
+            source_types = []
+            source_urls = []
+            doc_ids = []
+            
+            for i, chunk in enumerate(content_chunks):
+                if len(content_chunks) > 1:
+                    chunk_title = f"{title} (Part {i+1}/{len(content_chunks)})"
+                else:
+                    chunk_title = title
+                
+                titles.append(chunk_title)
+                texts.append(chunk)
+                source_types.append("confluence")
+                source_urls.append(url)
+                doc_ids.append(page_id)
+            
+            # Step 6: Insert all chunks into Milvus
+            self.milvus_client.insert(
+                titles=titles,
+                texts=texts,
+                embeddings=np.array(embeddings),
+                source_types=source_types,
+                source_urls=source_urls,
+                doc_ids=doc_ids
+            )
+            
+            logger.info(f"✅ Successfully updated document: {title} ({len(content_chunks)} chunk(s))")
+            
+            # Step 5: Re-extract topics to include new document
+            self._extract_document_topics()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error updating document {page_id}: {e}", exc_info=True)
+            return False
+    
+    def delete_single_document(self, page_id: str) -> bool:
+        """
+        Delete a single Confluence page from Milvus
+        
+        Called by webhook endpoint when a page is deleted in Confluence.
+        
+        Args:
+            page_id: Confluence page ID
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            logger.info(f"🗑️  Deleting document with ID: {page_id}")
+            deleted_count = self.milvus_client.delete_by_doc_id(page_id)
+            
+            if deleted_count > 0:
+                logger.info(f"✅ Deleted {deleted_count} chunks for page {page_id}")
+                # Re-extract topics after deletion
+                self._extract_document_topics()
+                return True
+            else:
+                logger.warning(f"⚠️  No chunks found for page {page_id}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error deleting document {page_id}: {e}", exc_info=True)
+            return False

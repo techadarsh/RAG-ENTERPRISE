@@ -1,0 +1,469 @@
+API DOCUMENTATION - DEVELOPER GUIDE
+
+Last Updated: October 2025
+Space: ENGINEERING
+
+═══════════════════════════════════════════════════════════════
+
+GETTING STARTED
+
+Base URL:
+Production: https://api.company.com/v1
+Staging: https://api-staging.company.com/v1
+Development: http://localhost:8000/v1
+
+Authentication:
+All API requests require authentication using Bearer tokens.
+
+Authorization Header:
+Authorization: Bearer <your_api_token>
+
+Rate Limits:
+- Free tier: 100 requests/hour
+- Pro tier: 1000 requests/hour
+- Enterprise: Custom limits
+
+═══════════════════════════════════════════════════════════════
+
+AUTHENTICATION ENDPOINTS
+
+POST /auth/login
+Description: Authenticate user and receive access token
+
+Request Body:
+{
+  "email": "user@example.com",
+  "password": "secure_password"
+}
+
+Success Response (200 OK):
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
+  "expires_in": 3600,
+  "token_type": "Bearer"
+}
+
+Error Response (401 Unauthorized):
+{
+  "error": "invalid_credentials",
+  "message": "Email or password is incorrect"
+}
+
+---
+
+POST /auth/refresh
+Description: Refresh access token using refresh token
+
+Request Body:
+{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
+}
+
+Success Response (200 OK):
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "expires_in": 3600
+}
+
+---
+
+POST /auth/logout
+Description: Invalidate current access token
+
+Headers:
+Authorization: Bearer <access_token>
+
+Success Response (200 OK):
+{
+  "message": "Successfully logged out"
+}
+
+═══════════════════════════════════════════════════════════════
+
+USER ENDPOINTS
+
+GET /users/me
+Description: Get current user profile
+
+Headers:
+Authorization: Bearer <access_token>
+
+Success Response (200 OK):
+{
+  "id": "user_12345",
+  "email": "adarsh@email.com",
+  "first_name": "Adarsh",
+  "last_name": "Sharma",
+  "role": "Owner",
+  "created_at": "2025-01-15T10:30:00Z",
+  "last_login": "2025-10-11T08:15:00Z"
+}
+
+---
+
+PUT /users/me
+Description: Update current user profile
+
+Request Body:
+{
+  "first_name": "Adarsh",
+  "last_name": "Sharma",
+  "phone": "+91-964-448-8821"
+}
+
+Success Response (200 OK):
+{
+  "id": "user_12345",
+  "email": "adarsh@email.com",
+  "first_name": "Adarsh",
+  "last_name": "Sharma",
+  "phone": "+91-964-448-8821",
+  "updated_at": "2025-10-11T10:30:00Z"
+}
+
+═══════════════════════════════════════════════════════════════
+
+PROJECT ENDPOINTS
+
+GET /projects
+Description: List all projects for authenticated user
+
+Query Parameters:
+- page: Page number (default: 1)
+- limit: Results per page (default: 20, max: 100)
+- status: Filter by status (active, archived, all)
+- sort: Sort field (name, created_at, updated_at)
+- order: Sort order (asc, desc)
+
+Example Request:
+GET /projects?page=1&limit=20&status=active&sort=created_at&order=desc
+
+Success Response (200 OK):
+{
+  "data": [
+    {
+      "id": "proj_67890",
+      "name": "RAG Chatbot",
+      "description": "Enterprise RAG system",
+      "status": "active",
+      "created_at": "2025-09-01T10:00:00Z",
+      "updated_at": "2025-10-11T09:30:00Z",
+      "owner": {
+        "id": "user_12345",
+        "email": "user@example.com"
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 45,
+    "pages": 3
+  }
+}
+
+---
+
+POST /projects
+Description: Create a new project
+
+Request Body:
+{
+  "name": "New Project",
+  "description": "Project description",
+  "status": "active"
+}
+
+Success Response (201 Created):
+{
+  "id": "proj_98765",
+  "name": "New Project",
+  "description": "Project description",
+  "status": "active",
+  "created_at": "2025-10-11T10:30:00Z"
+}
+
+---
+
+GET /projects/{project_id}
+Description: Get project details
+
+Path Parameters:
+- project_id: Project ID
+
+Success Response (200 OK):
+{
+  "id": "proj_67890",
+  "name": "RAG Chatbot",
+  "description": "Enterprise RAG system",
+  "status": "active",
+  "team_members": [
+    {
+      "id": "user_12345",
+      "email": "dev1@company.com",
+      "role": "owner"
+    },
+    {
+      "id": "user_54321",
+      "email": "dev2@company.com",
+      "role": "contributor"
+    }
+  ],
+  "created_at": "2025-09-01T10:00:00Z",
+  "updated_at": "2025-10-11T09:30:00Z"
+}
+
+Error Response (404 Not Found):
+{
+  "error": "project_not_found",
+  "message": "Project with ID 'proj_67890' not found"
+}
+
+---
+
+DELETE /projects/{project_id}
+Description: Delete a project
+
+Path Parameters:
+- project_id: Project ID
+
+Success Response (204 No Content)
+
+═══════════════════════════════════════════════════════════════
+
+DOCUMENT ENDPOINTS
+
+GET /projects/{project_id}/documents
+Description: List documents in a project
+
+Query Parameters:
+- page: Page number (default: 1)
+- limit: Results per page (default: 50, max: 100)
+- type: Filter by document type (pdf, txt, md, all)
+
+Success Response (200 OK):
+{
+  "data": [
+    {
+      "id": "doc_11111",
+      "filename": "requirements.pdf",
+      "type": "pdf",
+      "size": 245678,
+      "uploaded_at": "2025-10-10T14:20:00Z",
+      "uploaded_by": "user_12345"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 125,
+    "pages": 3
+  }
+}
+
+---
+
+POST /projects/{project_id}/documents
+Description: Upload a document
+
+Request: multipart/form-data
+- file: File to upload
+- description: Optional description
+
+Success Response (201 Created):
+{
+  "id": "doc_22222",
+  "filename": "design_doc.pdf",
+  "type": "pdf",
+  "size": 345678,
+  "url": "https://cdn.company.com/documents/doc_22222",
+  "uploaded_at": "2025-10-11T10:30:00Z"
+}
+
+═══════════════════════════════════════════════════════════════
+
+SEARCH ENDPOINT
+
+POST /search
+Description: Search across projects and documents
+
+Request Body:
+{
+  "query": "authentication implementation",
+  "filters": {
+    "project_id": "proj_67890",
+    "document_type": ["pdf", "md"],
+    "date_range": {
+      "from": "2025-09-01",
+      "to": "2025-10-11"
+    }
+  },
+  "limit": 10
+}
+
+Success Response (200 OK):
+{
+  "results": [
+    {
+      "type": "document",
+      "id": "doc_11111",
+      "title": "Authentication Guide",
+      "excerpt": "...implementation of JWT-based authentication...",
+      "score": 0.95,
+      "project": {
+        "id": "proj_67890",
+        "name": "RAG Chatbot"
+      }
+    }
+  ],
+  "total_results": 24,
+  "query_time_ms": 45
+}
+
+═══════════════════════════════════════════════════════════════
+
+ERROR CODES
+
+Standard HTTP status codes are used:
+
+2xx Success:
+- 200 OK: Request successful
+- 201 Created: Resource created
+- 204 No Content: Request successful, no content returned
+
+4xx Client Errors:
+- 400 Bad Request: Invalid request parameters
+- 401 Unauthorized: Authentication required or failed
+- 403 Forbidden: Insufficient permissions
+- 404 Not Found: Resource not found
+- 422 Unprocessable Entity: Validation error
+- 429 Too Many Requests: Rate limit exceeded
+
+5xx Server Errors:
+- 500 Internal Server Error: Server error
+- 502 Bad Gateway: Upstream service error
+- 503 Service Unavailable: Service temporarily down
+
+Error Response Format:
+{
+  "error": "error_code",
+  "message": "Human-readable error message",
+  "details": {
+    "field": "Additional context"
+  }
+}
+
+═══════════════════════════════════════════════════════════════
+
+RATE LIMITING
+
+Rate limit headers are included in all responses:
+
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 950
+X-RateLimit-Reset: 1697024400
+
+When rate limit is exceeded (429 response):
+{
+  "error": "rate_limit_exceeded",
+  "message": "Rate limit of 1000 requests/hour exceeded",
+  "retry_after": 1800
+}
+
+═══════════════════════════════════════════════════════════════
+
+WEBHOOKS
+
+Configure webhooks to receive real-time notifications:
+
+Supported Events:
+- project.created
+- project.updated
+- project.deleted
+- document.uploaded
+- document.deleted
+- user.joined
+- user.left
+
+Webhook Payload Example:
+{
+  "event": "document.uploaded",
+  "timestamp": "2025-10-11T10:30:00Z",
+  "data": {
+    "document_id": "doc_22222",
+    "project_id": "proj_67890",
+    "uploaded_by": "user_12345"
+  }
+}
+
+Webhook Security:
+- Verify signature in X-Webhook-Signature header
+- Use HMAC-SHA256 with your webhook secret
+
+═══════════════════════════════════════════════════════════════
+
+CODE EXAMPLES
+
+Python:
+```python
+import requests
+
+API_BASE = "https://api.company.com/v1"
+TOKEN = "your_access_token"
+
+headers = {
+    "Authorization": f"Bearer {TOKEN}",
+    "Content-Type": "application/json"
+}
+
+# Get user profile
+response = requests.get(f"{API_BASE}/users/me", headers=headers)
+user = response.json()
+print(f"Logged in as: {user['email']}")
+```
+
+JavaScript:
+```javascript
+const API_BASE = "https://api.company.com/v1";
+const TOKEN = "your_access_token";
+
+async function getUserProfile() {
+  const response = await fetch(`${API_BASE}/users/me`, {
+    headers: {
+      "Authorization": `Bearer ${TOKEN}`,
+      "Content-Type": "application/json"
+    }
+  });
+  const user = await response.json();
+  console.log(`Logged in as: ${user.email}`);
+}
+```
+
+cURL:
+```bash
+curl -X GET "https://api.company.com/v1/users/me" \
+  -H "Authorization: Bearer your_access_token" \
+  -H "Content-Type: application/json"
+```
+
+═══════════════════════════════════════════════════════════════
+
+CHANGELOG
+
+Version 1.0 (October 2025):
+- Initial API release
+- Authentication endpoints
+- Project management
+- Document upload/search
+
+Upcoming Features:
+- GraphQL API
+- Real-time collaboration
+- Advanced analytics
+- Bulk operations
+
+═══════════════════════════════════════════════════════════════
+
+For API support, contact api-support@company.com
+Interactive API explorer: https://api.company.com/docs

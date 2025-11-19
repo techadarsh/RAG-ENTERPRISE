@@ -75,17 +75,20 @@ class LLMClient:
     - Adaptive timeouts (cold start vs warm)
     - Circuit breaker for fast-fail
     - Structured logging with latency metrics
-    - Support for mock, Ollama, HuggingFace backends
+    - Support for mock and Ollama backends (on-premises only)
     - Thread-safe class-level shared state
+    - Request cancellation support
     """
     
     # Module-level shared HTTP client (connection pool)
     _http_client: Optional[httpx.Client] = None
     _first_call = True  # Track cold start
     _breaker: Optional[CircuitBreaker] = None
+    _active_requests: Dict[int, bool] = {}  # Track active requests by thread ID
     
     # Thread-safety locks for shared state
     _lock = threading.Lock()  # Protects _first_call, _http_client, _breaker initialization
+    _requests_lock = threading.Lock()  # Protects _active_requests
     
     def __init__(self):
         """Initialize LLM client with environment-based configuration"""
@@ -102,10 +105,6 @@ class LLMClient:
         self.breaker_enabled = os.getenv("LLM_BREAKER_ENABLED", "true").lower() == "true"
         self.breaker_fails = int(os.getenv("LLM_BREAKER_FAILS", "3"))
         self.breaker_cooldown = int(os.getenv("LLM_BREAKER_COOLDOWN_S", "90"))
-        
-        # Legacy support
-        self.api_url = os.getenv("MISTRAL_API_URL", f"http://{self.llm_host}:{self.llm_port}/api/generate")
-        self.api_key = os.getenv("MISTRAL_API_KEY", "")
         
         # Build endpoint list
         self.endpoints = self._build_endpoints()
@@ -155,12 +154,10 @@ class LLMClient:
         return endpoints
     
     def _detect_backend(self) -> str:
-        """Detect which backend to use based on mode and URL"""
+        """Detect which backend to use based on mode"""
         if self.mode == "mock":
             return "mock"
-        elif "huggingface" in self.api_url.lower():
-            return "huggingface"
-        elif self.mode == "api" or "ollama" in self.api_url.lower() or f":{self.llm_port}" in self.api_url:
+        elif self.mode == "api":
             return "ollama"
         return "mock"
     
@@ -221,8 +218,6 @@ class LLMClient:
             return self._generate_mock(prompt, context_text)
         elif self.backend == "ollama":
             return self._generate_ollama_resilient(full_prompt)
-        elif self.backend == "huggingface":
-            return self._generate_huggingface(full_prompt)
         else:
             logger.warning(f"Unknown backend '{self.backend}', falling back to mock")
             return self._generate_mock(prompt, context_text)
@@ -231,35 +226,35 @@ class LLMClient:
         """Build a structured RAG prompt with strict knowledge base constraints"""
         return f"""You are an AI assistant for an enterprise knowledge base system. Your role is to help users find information from company documentation.
 
-CRITICAL RULES - NEVER VIOLATE THESE:
-1. ONLY answer using information from the Context below
-2. If the Context doesn't contain the answer, you MUST say: "I don't have that information in the knowledge base."
-3. NEVER use your general knowledge or training data
-4. NEVER make assumptions or infer information not explicitly in the Context
-5. NEVER provide advice, recommendations, or opinions unless they are explicitly stated in the Context
+        CRITICAL RULES - NEVER VIOLATE THESE:
+        1. ONLY answer using information from the Context below
+        2. If the Context doesn't contain the answer, you MUST say: "I don't have that information in the knowledge base."
+        3. NEVER use your general knowledge or training data
+        4. NEVER make assumptions or infer information not explicitly in the Context
+        5. NEVER provide advice, recommendations, or opinions unless they are explicitly stated in the Context
 
-ALLOWED BEHAVIORS:
- Answer questions directly from the Context
- Combine information from multiple parts of the Context
- Clarify or rephrase what's in the Context
- Ask for clarification if the question is ambiguous
- Admit when the Context doesn't contain enough information
- Quote relevant sections from the Context when helpful
- Be conversational and helpful in tone
+        ALLOWED BEHAVIORS:
+        Answer questions directly from the Context
+        Combine information from multiple parts of the Context
+        Clarify or rephrase what's in the Context
+        Ask for clarification if the question is ambiguous
+        Admit when the Context doesn't contain enough information
+        Quote relevant sections from the Context when helpful
+        Be conversational and helpful in tone
 
-RESPONSE GUIDELINES:
-- Start with a direct answer when possible
-- Cite which document/section you're referencing but not mention like part 1/15 because user don't understand about chunking
-- If partially answered: provide what you know, then say what's missing
-- For greeting/small-talk: respond briefly, then offer to help with knowledge base questions
-- For questions completely outside the Context: politely decline and redirect to knowledge base topics
+        RESPONSE GUIDELINES:
+        - Start with a direct answer when possible
+        - Cite which document/section you're referencing but not mention like part 1/15 because user don't understand about chunking
+        - If partially answered: provide what you know, then say what's missing
+        - For greeting/small-talk: respond briefly, then offer to help with knowledge base questions
+        - For questions completely outside the Context: politely decline and redirect to knowledge base topics
 
-Context Documents:
-{context}
+        Context Documents:
+        {context}
 
-User Question: {query}
+        User Question: {query}
 
-Your Response:"""
+        Your Response:"""
     
     def _get_timeout(self) -> float:
         """Get adaptive timeout based on cold/warm state (thread-safe)"""
@@ -268,142 +263,174 @@ Your Response:"""
                 return self.initial_timeout_ms / 1000.0
         return self.normal_timeout_ms / 1000.0
     
-    def _try_generate(self, url: str, payload: dict, timeout: float) -> str:
-        """Attempt generation with a single endpoint"""
-        if HTTPX_AVAILABLE and LLMClient._http_client:
-            # Use shared connection pool
-            r = LLMClient._http_client.post(url, json=payload, timeout=timeout)
-            r.raise_for_status()
-            data = r.json()
-        else:
-            import requests
-            r = requests.post(url, json=payload, timeout=timeout)
-            r.raise_for_status()
-            data = r.json()
+    def _try_generate(self, url: str, payload: dict, timeout: float, check_cancellation_fn=None) -> str:
+        """
+        Attempt generation with a single endpoint.
+        Uses multiple short timeout attempts to allow for cancellation checks.
         
-        # Handle different response formats
-        response_text = (
-            data.get("response") or 
-            data.get("text") or 
-            data.get("generated_text") or 
-            ""
-        ).strip()
+        Args:
+            url: Ollama endpoint URL
+            payload: Request payload
+            timeout: Total timeout duration
+            check_cancellation_fn: Function that returns True if request was cancelled
+        """
+        # Break timeout into shorter chunks for cancellation checking
+        # 10 seconds per chunk allows for model loading + generation
+        chunk_timeout = 10.0  # 10 seconds per attempt (handles cold starts)
+        attempts = max(1, int(timeout / chunk_timeout))
         
-        return response_text
+        for attempt in range(attempts):
+            # Check if cancelled before each chunk
+            if check_cancellation_fn and check_cancellation_fn():
+                raise Exception("RequestCancelledDuringGeneration")
+            
+            try:
+                if HTTPX_AVAILABLE and LLMClient._http_client:
+                    # Use shared connection pool with short timeout
+                    r = LLMClient._http_client.post(url, json=payload, timeout=chunk_timeout)
+                    r.raise_for_status()
+                    data = r.json()
+                else:
+                    import requests
+                    r = requests.post(url, json=payload, timeout=chunk_timeout)
+                    r.raise_for_status()
+                    data = r.json()
+                
+                # Handle different response formats
+                response_text = (
+                    data.get("response") or 
+                    data.get("text") or 
+                    data.get("generated_text") or 
+                    ""
+                ).strip()
+                
+                return response_text
+                
+            except Exception as e:
+                error_str = str(e).lower()
+                # If timeout, continue to next attempt (unless it's the last one)
+                if "timeout" in error_str or "timed out" in error_str:
+                    if attempt < attempts - 1:
+                        logger.debug(f"Timeout attempt {attempt + 1}/{attempts}, retrying...")
+                        continue
+                # Any other error, raise immediately
+                raise
     
     def _generate_ollama_resilient(self, prompt: str) -> str:
         """
-        Generate using Ollama with circuit breaker, adaptive timeout, connection pooling
+        Generate using Ollama with circuit breaker, adaptive timeout, connection pooling.
+        
+        Request cancellation is handled via thread-based tracking updated by the async
+        disconnection monitor in main.py.
+        
+        Args:
+            prompt: The prompt to send to Ollama
+            
+        Returns:
+            Generated text or user-friendly error message
         """
-        # Check circuit breaker
-        if self.breaker_enabled and LLMClient._breaker:
-            if not LLMClient._breaker.can_attempt():
-                logger.warning(f" Circuit breaker OPEN - skipping LLM call")
-                raise Exception("CircuitBreakerOpen")
+        # Register this request as active
+        thread_id = threading.get_ident()
+        with LLMClient._requests_lock:
+            LLMClient._active_requests[thread_id] = True
         
-        # Get adaptive timeout
-        timeout = self._get_timeout()
-        with LLMClient._lock:
-            timeout_label = "cold" if LLMClient._first_call else "warm"
-        
-        payload = {
-            "model": self.model_name,
-            "prompt": prompt,
-            "options": {
-                "temperature": self.temperature,
-                "num_predict": self.max_tokens,
-            },
-            "stream": False
-        }
-        
-        last_error = None
-        start_time = time.perf_counter()
-        
-        for i, url in enumerate(self.endpoints):
-            try:
-                breaker_state = LLMClient._breaker.state.value if LLMClient._breaker else "N/A"
-                logger.info(f" [Attempt {i+1}/{len(self.endpoints)}] Trying Ollama: {url} (timeout={timeout:.1f}s {timeout_label}, breaker={breaker_state})")
+        try:
+            # Check circuit breaker
+            if self.breaker_enabled and LLMClient._breaker:
+                if not LLMClient._breaker.can_attempt():
+                    logger.warning(f" Circuit breaker OPEN - skipping LLM call")
+                    return (
+                        "I'm currently experiencing technical difficulties and need a moment to recover. "
+                        "Please try again in a minute or two."
+                    )
+            
+            # Get adaptive timeout
+            timeout = self._get_timeout()
+            with LLMClient._lock:
+                timeout_label = "cold" if LLMClient._first_call else "warm"
+            
+            payload = {
+                "model": self.model_name,
+                "prompt": prompt,
+                "options": {
+                    "temperature": self.temperature,
+                    "num_predict": self.max_tokens,
+                },
+                "stream": False
+            }
+            
+            last_error = None
+            start_time = time.perf_counter()
+            
+            for i, url in enumerate(self.endpoints):
+                # Check if request was cancelled before trying next endpoint
+                with LLMClient._requests_lock:
+                    if not LLMClient._active_requests.get(thread_id, False):
+                        logger.info(f"Request cancelled - stopping Ollama attempts (tried {i}/{len(self.endpoints)})")
+                        return "Request cancelled. Feel free to ask me another question!"
                 
-                response = self._try_generate(url, payload, timeout)
+                # Create cancellation check function
+                def is_cancelled():
+                    with LLMClient._requests_lock:
+                        return not LLMClient._active_requests.get(thread_id, False)
                 
-                if response:
+                try:
+                    breaker_state = LLMClient._breaker.state.value if LLMClient._breaker else "N/A"
+                    logger.info(f" [Attempt {i+1}/{len(self.endpoints)}] Trying Ollama: {url} (timeout={timeout:.1f}s {timeout_label}, breaker={breaker_state})")
+                    
+                    response = self._try_generate(url, payload, timeout, check_cancellation_fn=is_cancelled)
+                    
+                    if response:
+                        latency_ms = (time.perf_counter() - start_time) * 1000
+                        logger.info(f" Ollama response received ({len(response)} chars, {latency_ms:.0f}ms) from: {url}")
+                        
+                        # Record success
+                        if self.breaker_enabled and LLMClient._breaker:
+                            LLMClient._breaker.record_success()
+                        
+                        # Mark as warmed up (thread-safe)
+                        with LLMClient._lock:
+                            LLMClient._first_call = False
+                        
+                        return response
+                    else:
+                        logger.warning(f"  Ollama returned empty response from: {url}")
+                        
+                except Exception as e:
                     latency_ms = (time.perf_counter() - start_time) * 1000
-                    logger.info(f" Ollama response received ({len(response)} chars, {latency_ms:.0f}ms) from: {url}")
+                    error_type = type(e).__name__
+                    error_msg = str(e)
                     
-                    # Record success
-                    if self.breaker_enabled and LLMClient._breaker:
-                        LLMClient._breaker.record_success()
+                    # Handle cancellation during generation
+                    if "RequestCancelledDuringGeneration" in error_msg or "cancelled" in error_msg.lower():
+                        logger.info(f"Request cancelled during LLM generation (after {latency_ms:.0f}ms)")
+                        return "Request cancelled. Feel free to ask me another question!"
                     
-                    # Mark as warmed up (thread-safe)
-                    with LLMClient._lock:
-                        LLMClient._first_call = False
+                    logger.warning(f" Failed at {url} ({latency_ms:.0f}ms): {error_type}: {error_msg[:100]}")
+                    last_error = e
                     
-                    return response
-                else:
-                    logger.warning(f"  Ollama returned empty response from: {url}")
+                    # Record failure for circuit breaker (only for primary endpoint)
+                    if i == 0 and self.breaker_enabled and LLMClient._breaker:
+                        LLMClient._breaker.record_failure()
                     
-            except Exception as e:
-                latency_ms = (time.perf_counter() - start_time) * 1000
-                error_type = type(e).__name__
-                logger.warning(f" Failed at {url} ({latency_ms:.0f}ms): {error_type}: {str(e)[:100]}")
-                last_error = e
-                
-                # Record failure for circuit breaker (only for primary endpoint)
-                if i == 0 and self.breaker_enabled and LLMClient._breaker:
-                    LLMClient._breaker.record_failure()
-                
-                continue
-        
-        # All endpoints failed - user-friendly message
-        error_msg = (
-            "I'm currently unable to process your request. "
-            "Please try again in a moment. If the problem persists, contact support."
-        )
-        logger.error(f" All Ollama endpoints failed. Last error: {last_error}")
-        return error_msg
+                    continue
+            
+            # All endpoints failed - user-friendly message
+            error_msg = (
+                "I'm currently unable to process your request. "
+                "Please try again in a moment. If the problem persists, contact support."
+            )
+            logger.error(f" All Ollama endpoints failed. Last error: {last_error}")
+            return error_msg
+        finally:
+            # Clean up active request tracking
+            with LLMClient._requests_lock:
+                LLMClient._active_requests.pop(thread_id, None)
     
     def _generate_mock(self, prompt: str, context: Optional[str]) -> str:
         """Mock mode - returns placeholder with context snippet"""
         context_snippet = context[:200] if context else "No context provided"
         return f"[MOCK MODE] This is a simulated response based on: {context_snippet}..."
-    
-    def _generate_huggingface(self, prompt: str) -> str:
-        """Generate using Hugging Face Inference API"""
-        logger.info(f" Generating answer via HuggingFace")
-        
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "inputs": prompt,
-            "parameters": {
-                "temperature": self.temperature,
-                "max_new_tokens": self.max_tokens,
-            }
-        }
-        
-        try:
-            timeout = self._get_timeout()
-            if HTTPX_AVAILABLE and LLMClient._http_client:
-                r = LLMClient._http_client.post(self.api_url, json=payload, headers=headers, timeout=timeout)
-                r.raise_for_status()
-                data = r.json()
-            else:
-                import requests
-                r = requests.post(self.api_url, json=payload, headers=headers, timeout=timeout)
-                r.raise_for_status()
-                data = r.json()
-            
-            response_text = data[0].get("generated_text", "").strip()
-            with LLMClient._lock:
-                LLMClient._first_call = False
-            return response_text
-            
-        except Exception as e:
-            logger.error(f"HuggingFace generation failed: {type(e).__name__}: {str(e)}")
-            return f"Error generating response: {str(e)}"
     
     @classmethod
     def warmup(cls, test_prompt: str = "ping") -> bool:

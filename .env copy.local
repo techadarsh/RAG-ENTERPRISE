@@ -1,0 +1,91 @@
+# Local Development Configuration - Mac M4 Pro
+
+# LLM Configuration (Local Ollama)
+LLM_MODE=api
+LLM_HOST=localhost
+LLM_PORT=11434
+LLM_MODEL=mistral
+LLM_TEMPERATURE=0.2
+LLM_MAX_TOKENS=1024
+LLM_TIMEOUT_WARM=60000
+LLM_TIMEOUT_COLD=90000
+
+# Milvus Configuration (Docker)
+MILVUS_HOST=localhost
+MILVUS_PORT=19530
+COLLECTION_NAME=enterprise_docs
+
+# Redis Configuration (Local)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+
+# Embedding Model
+EMBEDDING_MODEL=BAAI/bge-base-en
+EMBEDDING_DIM=768
+
+# Document Processing
+CHUNK_SIZE=512
+CHUNK_OVERLAP=50
+RETRIEVAL_TOP_K=5
+MAX_CONTEXT_CHARS=2000
+
+# Confluence Configuration
+CONFLUENCE_MODE=api                                      # local or api 
+CONFLUENCE_LOCAL_DIR=data/sample_confluence_pages
+
+# Confluence API Configuration (for API mode)
+# To use Confluence Cloud API instead of local files, set CONFLUENCE_MODE=api
+# Get your API token from: https://id.atlassian.com/manage-profile/security/api-tokens
+CONFLUENCE_BASE_URL=https://wilp-team-cemu4tnf.atlassian.net/wiki
+CONFLUENCE_USER_EMAIL=2023mt03610@wilp.bits-pilani.ac.in
+CONFLUENCE_API_TOKEN=ATATT3xFfGF0UUStV1nHxREnhPFL88CM7ff7p35kfE2IJP9S7NiyCqDp3chhxI4sW-Z8h4SAdYaPd1Bp5b6SOIjew2ENeb1DVP_dMjMFvZCKKO1FHAHeUI6bT8Rc3KvxHQnicrru3rrRqZhZVC6ktbL_RRUH1sz_eThmycopRaQ144GFAw5Vat0=69C56591
+CONFLUENCE_SPACE_KEY=BITSWILP
+
+# Data Directories
+DATA_DIR=./data
+UPLOAD_DIR=./data/uploads
+
+FORCE_INITIAL_LOAD=true
+
+# Etcd/Minio Configuration (Milvus standalone uses embedded versions)
+ETCD_USE_EMBED=true
+COMMON_STORAGETYPE=local
+ETCD_HOST=localhost
+ETCD_PORT=2379
+MINIO_HOST=localhost
+MINIO_PORT=9000
+
+# Local/Standalone Mode Flags
+MILVUS_STANDALONE=true
+SKIP_ETCD_CHECK=true
+SKIP_MINIO_CHECK=true
+
+# Mistral Legacy Config
+MISTRAL_API_URL=http://localhost:11434/api/generate
+MISTRAL_MODEL=mistral
+
+# All other settings from main .env
+LLM_INITIAL_TIMEOUT_MS=60000
+LLM_TIMEOUT_MS=45000
+LLM_DYNAMIC_TIMEOUT=true
+LLM_HEALTH_GATE=false
+LLM_BREAKER_ENABLED=true
+LLM_BREAKER_FAILS=3
+LLM_BREAKER_COOLDOWN_S=90
+LLM_WARMUP_ENABLED=true
+LLM_KEEPALIVE_ENABLED=true
+ASK_STREAMING_ENABLED=false
+RETRIEVAL_MIN_SCORE=0.0
+RETRIEVAL_NPROBE=8
+RETRIEVAL_CACHE_SIZE=32
+RETRIEVAL_CACHE_TTL_S=60
+MAX_CHUNK_CHARS=800
+HTTPX_POOL_LIMIT=20
+EMBED_BATCH=32
+MILVUS_COLLECTION=enterprise_docs
+EMBEDDINGS_HOST=localhost
+EMBEDDINGS_PORT=8000
+API_HOST=0.0.0.0
+API_PORT=8000
+ENABLE_FOLDER_WATCHER=false

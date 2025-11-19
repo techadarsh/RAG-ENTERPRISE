@@ -7,14 +7,20 @@ import os
 import threading
 import uuid
 import shutil
+import hmac
+import hashlib
 from typing import Dict, Any, List, Optional
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request, Header, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from rag_pipeline import RAGPipeline
 from confluence_ingest import ConfluenceIngestor
 from embeddings import EmbeddingModel
+from llm_client import LLMClient
+import asyncio
+import json
 
 # Setup logging BEFORE any logger usage
 logging.basicConfig(
@@ -33,8 +39,20 @@ except ImportError:
     REDIS_AVAILABLE = False
     logger.warning("  Redis/RQ not available - ingestion API will be disabled")
 
-# Load environment variables (don't override existing ones)
-load_dotenv(override=False)
+# Load environment variables - check for .env.local first (for local development)
+import os
+from pathlib import Path
+env_local_path = Path(__file__).parent.parent / '.env.local'
+if env_local_path.exists():
+    load_dotenv(env_local_path, override=True)
+    logger.info(f" Loaded local environment from {env_local_path}")
+else:
+    load_dotenv(override=False)
+
+# Health check cache (TTL: 10 seconds)
+_health_cache = {"data": None, "timestamp": 0}
+_health_cache_lock = threading.Lock()
+HEALTH_CACHE_TTL = 10  # seconds
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -96,9 +114,52 @@ chat_sessions: Dict[str, List[Dict[str, str]]] = {}
 redis_conn = None
 ingestion_queue = None
 
-# Upload directory
-UPLOAD_DIR = "/app/uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# Confluence sync state
+confluence_sync_task = None
+confluence_last_versions: Dict[str, int] = {}  # page_id -> version number
+
+# Upload directory - support both Docker and local paths
+DATA_DIR = os.getenv("DATA_DIR", "./data")
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", os.path.join(DATA_DIR, "uploads"))
+
+# Create upload directory if it doesn't exist
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    logger.info(f" Upload directory: {UPLOAD_DIR}")
+except Exception as e:
+    logger.warning(f"⚠️  Could not create upload directory {UPLOAD_DIR}: {e}")
+    UPLOAD_DIR = "./uploads"  # Fallback
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+def validate_atlassian_webhook_signature(request_body: bytes, signature: str, secret: str) -> bool:
+    """
+    Validate Atlassian webhook signature using HMAC-SHA256.
+    
+    Args:
+        request_body: Raw request body bytes
+        signature: X-Atlassian-Webhook-Signature header value
+        secret: Webhook secret from environment
+    
+    Returns:
+        True if signature is valid, False otherwise
+    """
+    if not signature or not secret:
+        return False
+    
+    try:
+        # Compute HMAC-SHA256
+        expected_signature = hmac.new(
+            secret.encode('utf-8'),
+            request_body,
+            hashlib.sha256
+        ).hexdigest()
+        
+        # Compare signatures (constant-time comparison to prevent timing attacks)
+        return hmac.compare_digest(signature, expected_signature)
+    except Exception as e:
+        logger.error(f"❌ Signature validation error: {e}")
+        return False
 
 
 def warmup_embeddings():
@@ -183,9 +244,119 @@ async def startup_event():
         threading.Thread(target=warmup_embeddings, daemon=True).start()
         logger.info(" FastAPI started without blocking - background loading initiated")
         
+        # Optional: Force blocking initial load of sample documents on startup
+        # Useful when you want the backend to finish indexing before accepting traffic.
+        try:
+            force_load = os.getenv("FORCE_INITIAL_LOAD", "false").lower() in ["1", "true", "yes"]
+            if force_load and rag_pipeline and hasattr(rag_pipeline, 'load_data_if_needed'):
+                logger.info("FORCE_INITIAL_LOAD=true -> performing blocking initial data load...")
+                rag_pipeline.load_data_if_needed()
+                logger.info("Blocking initial data load complete")
+        except Exception as e:
+            logger.warning(f"FORCE_INITIAL_LOAD failed: {e}")
+        
     except Exception as e:
         logger.error(f"Failed to initialize RAG pipeline: {e}")
         raise
+    
+    # Start automatic Confluence sync if enabled
+    global confluence_sync_task
+    sync_enabled = os.getenv("CONFLUENCE_AUTO_SYNC", "false").lower() in ["1", "true", "yes"]
+    if sync_enabled and confluence_mode == "api":
+        sync_interval = int(os.getenv("CONFLUENCE_SYNC_INTERVAL", "300"))  # Default: 5 minutes
+        logger.info(f"🔄 Starting automatic Confluence sync (interval: {sync_interval}s)")
+        confluence_sync_task = asyncio.create_task(auto_sync_confluence(sync_interval))
+    else:
+        logger.info("ℹ️  Automatic Confluence sync disabled (set CONFLUENCE_AUTO_SYNC=true to enable)")
+
+
+async def auto_sync_confluence(interval_seconds: int = 300):
+    """
+    Automatically poll Confluence for changes and sync updated documents
+    
+    This function runs in the background and periodically:
+    1. Fetches all pages from Confluence
+    2. Compares version numbers with last known versions
+    3. Updates only changed pages in Milvus
+    4. Detects and removes deleted pages from Milvus
+    
+    Args:
+        interval_seconds: How often to check for changes (default: 300 = 5 minutes)
+    """
+    global confluence_last_versions
+    
+    logger.info(f"🔄 Confluence auto-sync started (checking every {interval_seconds}s)")
+    
+    while True:
+        try:
+            await asyncio.sleep(interval_seconds)
+            
+            logger.info("🔍 Checking Confluence for updates...")
+            
+            # Fetch all pages from Confluence
+            from confluence_ingest import ConfluenceIngestor
+            ingestor = ConfluenceIngestor(mode='api')
+            pages = ingestor.get_documents()
+            
+            if not pages:
+                logger.warning("⚠️  No pages fetched from Confluence")
+                continue
+            
+            # Track changes
+            new_count = 0
+            updated_count = 0
+            unchanged_count = 0
+            deleted_count = 0
+            
+            # Get current page IDs from Confluence
+            current_page_ids = {page.get("id") for page in pages}
+            
+            # Check for deleted pages (in our cache but not in Confluence anymore)
+            deleted_page_ids = set(confluence_last_versions.keys()) - current_page_ids
+            
+            for deleted_page_id in deleted_page_ids:
+                logger.info(f"   🗑️  Deleted page detected: ID {deleted_page_id}")
+                success = rag_pipeline.delete_single_document(deleted_page_id)
+                if success:
+                    del confluence_last_versions[deleted_page_id]
+                    deleted_count += 1
+                    logger.info(f"   ✅ Removed from RAG system")
+            
+            # Process existing/new/updated pages
+            for page in pages:
+                page_id = page.get("id")
+                page_title = page.get("title", "Untitled")
+                page_version = page.get("version", 1)
+                
+                # Check if this is a new or updated page
+                if page_id not in confluence_last_versions:
+                    # New page - add it
+                    logger.info(f"   📄 New page detected: {page_title} (ID: {page_id})")
+                    success = rag_pipeline.update_single_document(page_id, page)
+                    if success:
+                        confluence_last_versions[page_id] = page_version
+                        new_count += 1
+                elif confluence_last_versions[page_id] < page_version:
+                    # Page updated - sync it
+                    old_version = confluence_last_versions[page_id]
+                    logger.info(f"   🔄 Updated page detected: {page_title} (ID: {page_id}, v{old_version} → v{page_version})")
+                    success = rag_pipeline.update_single_document(page_id, page)
+                    if success:
+                        confluence_last_versions[page_id] = page_version
+                        updated_count += 1
+                else:
+                    # No changes
+                    unchanged_count += 1
+            
+            # Summary
+            if new_count > 0 or updated_count > 0 or deleted_count > 0:
+                logger.info(f"✅ Sync complete: {new_count} new, {updated_count} updated, {deleted_count} deleted, {unchanged_count} unchanged")
+            else:
+                logger.info(f"✅ No changes detected ({unchanged_count} pages up-to-date)")
+                
+        except Exception as e:
+            logger.error(f"❌ Error during Confluence auto-sync: {e}", exc_info=True)
+            # Continue running despite errors
 
 
 @app.get("/health")
@@ -197,9 +368,17 @@ async def health_check() -> Dict[str, str]:
 @app.get("/health/deps")
 async def health_check_dependencies() -> Dict[str, Any]:
     """
-    Comprehensive dependency health check for all critical services.
+    Comprehensive dependency health check for all critical services with caching.
     Returns ok/fail status for: Milvus, Etcd, Minio, Redis, Ollama, Embeddings, Backend
+    
+    Cached for 10 seconds to reduce load (health badge polls every 15s).
     """
+    # Check cache first
+    with _health_cache_lock:
+        if _health_cache["data"] and time.time() - _health_cache["timestamp"] < HEALTH_CACHE_TTL:
+            return _health_cache["data"]
+    
+    # Cache miss - perform health checks
     results = {
         "backend": "ok",
         "milvus": "fail",
@@ -227,31 +406,41 @@ async def health_check_dependencies() -> Dict[str, Any]:
         logger.warning(f"Milvus health check failed: {e}")
         results["milvus"] = "fail"
     
-    # Check Etcd (Milvus dependency)
-    try:
-        import httpx
-        etcd_host = os.getenv("ETCD_HOST", "etcd")
-        etcd_port = os.getenv("ETCD_PORT", "2379")
-        with httpx.Client(timeout=2.0) as client:
-            resp = client.get(f"http://{etcd_host}:{etcd_port}/health")
-            if resp.status_code == 200:
-                results["etcd"] = "ok"
-    except Exception as e:
-        logger.warning(f"Etcd health check failed: {e}")
-        results["etcd"] = "fail"
+    # Check Etcd (Milvus dependency) - Skip if using embedded Etcd (local/standalone mode)
+    etcd_embedded = os.getenv("ETCD_USE_EMBED", "false").lower() == "true"
+    if not etcd_embedded:
+        try:
+            import httpx
+            etcd_host = os.getenv("ETCD_HOST", "etcd")
+            etcd_port = os.getenv("ETCD_PORT", "2379")
+            with httpx.Client(timeout=2.0) as client:
+                resp = client.get(f"http://{etcd_host}:{etcd_port}/health")
+                if resp.status_code == 200:
+                    results["etcd"] = "ok"
+        except Exception as e:
+            logger.warning(f"Etcd health check failed: {e}")
+            results["etcd"] = "fail"
+    else:
+        # Embedded Etcd - mark as ok if Milvus is ok
+        results["etcd"] = "ok" if results["milvus"] == "ok" else "fail"
     
-    # Check Minio (Milvus storage)
-    try:
-        import httpx
-        minio_host = os.getenv("MINIO_HOST", "minio")
-        minio_port = os.getenv("MINIO_PORT", "9000")
-        with httpx.Client(timeout=2.0) as client:
-            resp = client.get(f"http://{minio_host}:{minio_port}/minio/health/live")
-            if resp.status_code == 200:
-                results["minio"] = "ok"
-    except Exception as e:
-        logger.warning(f"Minio health check failed: {e}")
-        results["minio"] = "fail"
+    # Check Minio (Milvus storage) - Skip if using local storage (standalone mode)
+    storage_type = os.getenv("COMMON_STORAGETYPE", "minio").lower()
+    if storage_type != "local":
+        try:
+            import httpx
+            minio_host = os.getenv("MINIO_HOST", "minio")
+            minio_port = os.getenv("MINIO_PORT", "9000")
+            with httpx.Client(timeout=2.0) as client:
+                resp = client.get(f"http://{minio_host}:{minio_port}/minio/health/live")
+                if resp.status_code == 200:
+                    results["minio"] = "ok"
+        except Exception as e:
+            logger.warning(f"Minio health check failed: {e}")
+            results["minio"] = "fail"
+    else:
+        # Local storage - mark as ok if Milvus is ok
+        results["minio"] = "ok" if results["milvus"] == "ok" else "fail"
     
     # Check Ollama (try multiple endpoints with fallback)
     llm_host = os.getenv("LLM_HOST", "ollama")
@@ -296,20 +485,60 @@ async def health_check_dependencies() -> Dict[str, Any]:
     else:
         results["redis"] = "unavailable"
     
-    # Check Embeddings model
+    # Check Embeddings model with actual embedding test
     try:
         if rag_pipeline and hasattr(rag_pipeline, 'embedding_model'):
-            # Try a simple embedding to verify it's working
-            test_result = rag_pipeline.embedding_model.embed_query("test")
+            # Test actual embedding generation to verify model is working
+            test_result = rag_pipeline.embedding_model.embed_query("health check test")
             if test_result is not None and len(test_result) > 0:
                 results["embeddings"] = "ok"
+            else:
+                results["embeddings"] = "fail"
         else:
             results["embeddings"] = "not_loaded"
     except Exception as e:
         logger.warning(f"Embeddings health check failed: {e}")
         results["embeddings"] = "fail"
     
+    # Update cache
+    with _health_cache_lock:
+        _health_cache["data"] = results
+        _health_cache["timestamp"] = time.time()
+    
     return results
+
+
+@app.get("/health/stream")
+async def health_stream():
+    """
+    Server-Sent Events (SSE) endpoint for real-time health updates.
+    Pushes health status every 15 seconds instead of client polling.
+    """
+    async def event_generator():
+        try:
+            while True:
+                # Get health status (uses cache)
+                health_data = await health_check_dependencies()
+                
+                # Send as SSE event
+                yield f"data: {json.dumps(health_data)}\n\n"
+                
+                # Wait 15 seconds before next update
+                await asyncio.sleep(15)
+                
+        except asyncio.CancelledError:
+            logger.info("Health stream connection closed by client")
+            raise
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"  # Disable nginx buffering
+        }
+    )
 
 
 @app.get("/llm/health")
@@ -376,20 +605,78 @@ async def llm_health_check() -> Dict[str, Any]:
     return result
 
 
+def needs_conversation_context(query: str, has_history: bool) -> bool:
+    """
+    Smart detection: Does this query need conversation history?
+    
+    Returns True if query appears to reference previous context.
+    Returns False for standalone questions.
+    
+    This improves performance by avoiding unnecessary context for new topics.
+    """
+    if not has_history:
+        return False  # No history to use
+    
+    query_lower = query.lower().strip()
+    
+    # Very short queries are often follow-ups
+    if len(query_lower.split()) <= 3:
+        return True
+    
+    # Check for referential pronouns and follow-up indicators
+    follow_up_indicators = [
+        # Pronouns
+        'it', 'its', 'that', 'this', 'these', 'those', 'they', 'them',
+        # Follow-up requests
+        'more', 'explain', 'elaborate', 'detail', 'expand', 'clarify',
+        'continue', 'further', 'additionally', 'also',
+        # Questions about previous content
+        'what about', 'how about', 'what do you mean', 'you said', 'you mentioned',
+        # Comparisons and references
+        'same', 'similar', 'different', 'compare', 'versus', 'vs',
+        # Direct references
+        'above', 'previous', 'earlier', 'before', 'mentioned'
+    ]
+    
+    # Check if query starts with follow-up words (strong signal)
+    first_words = ' '.join(query_lower.split()[:3])
+    for indicator in ['can you', 'could you', 'please', 'more', 'explain', 'what about']:
+        if first_words.startswith(indicator):
+            return True
+    
+    # Check if query contains any follow-up indicators
+    for indicator in follow_up_indicators:
+        if indicator in query_lower:
+            return True
+    
+    # Standalone questions typically start with question words
+    standalone_starters = [
+        'what is', 'what are', 'who is', 'who are', 'where is', 'where are',
+        'when is', 'when are', 'why is', 'why are', 'how does', 'how do',
+        'tell me about', 'explain the', 'describe', 'list', 'show me'
+    ]
+    
+    for starter in standalone_starters:
+        if query_lower.startswith(starter):
+            return False  # Likely a new topic
+    
+    # Default: use context if we have history (conservative approach)
+    return True
+
+
 @app.post("/ask", response_model=QueryResponse)
-async def ask_question(request: QueryRequest) -> QueryResponse:
+async def ask_question(query_req: QueryRequest, request: Request) -> QueryResponse:
     """
     Process a user query through the RAG pipeline with conversational memory
     """
     if not rag_pipeline:
         raise HTTPException(status_code=503, detail="RAG pipeline not initialized")
     
-    if not request.query or not request.query.strip():
+    if not query_req.query or not query_req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     
     # Generate session ID if not provided
-    import uuid
-    session_id = request.session_id or str(uuid.uuid4())
+    session_id = query_req.session_id or str(uuid.uuid4())
     
     # Get conversation history for this session
     history = chat_sessions.get(session_id, [])
@@ -397,13 +684,70 @@ async def ask_question(request: QueryRequest) -> QueryResponse:
     # Measure latency
     start_time = time.perf_counter()
     
+    # We'll capture thread_id inside the executor thread
+    thread_id_holder = {'id': None}
+    
     try:
-        # Process query with conversation context
-        if history:
-            result = rag_pipeline.generate_with_context(request.query, history)
-        else:
-            # First message in conversation - use standard query
-            result = rag_pipeline.query(request.query)
+        # Check if client is still connected before processing
+        if await request.is_disconnected():
+            logger.info(f"Client disconnected before processing (session: {session_id[:8]}...)")
+            raise HTTPException(status_code=499, detail="Client disconnected")
+        
+        # Start background task to monitor disconnection and update cancellation flag
+        async def monitor_disconnection():
+            try:
+                # Wait a bit for thread_id to be captured
+                await asyncio.sleep(0.1)
+                while True:
+                    await asyncio.sleep(0.5)  # Check every 500ms
+                    if await request.is_disconnected():
+                        # Mark this thread's request as cancelled
+                        thread_id = thread_id_holder['id']
+                        if thread_id:
+                            with LLMClient._requests_lock:
+                                if thread_id in LLMClient._active_requests:
+                                    LLMClient._active_requests[thread_id] = False
+                                    logger.info(f"Client disconnected during processing - marked for cancellation (session: {session_id[:8]}...)")
+                        break
+            except Exception as e:
+                logger.debug(f"Disconnection monitor error (expected on completion): {e}")
+        
+        # Start monitoring task
+        monitor_task = asyncio.create_task(monitor_disconnection())
+        
+        try:
+            # Wrapper to run RAG pipeline in thread and capture thread_id
+            def run_rag_query():
+                # Capture thread ID in the executor thread
+                thread_id_holder['id'] = threading.get_ident()
+                
+                # Smart context detection: Only use history if query needs it
+                use_context = needs_conversation_context(query_req.query, bool(history))
+                
+                if use_context and history:
+                    logger.info(f"📚 Using conversation context (detected follow-up query)")
+                    return rag_pipeline.generate_with_context(query_req.query, history)
+                else:
+                    if history:
+                        logger.info(f"🆕 Treating as new topic (standalone query)")
+                    # First message or standalone question - use standard query (faster)
+                    return rag_pipeline.query(query_req.query)
+            
+            # Run synchronous RAG pipeline in thread pool to avoid blocking event loop
+            result = await asyncio.to_thread(run_rag_query)
+            
+            # Check again after generation (in case it took long)
+            if await request.is_disconnected():
+                logger.info(f"Client disconnected after generation (session: {session_id[:8]}...)")
+                raise HTTPException(status_code=499, detail="Client disconnected")
+        finally:
+            # Always cancel monitoring task to prevent resource leak
+            monitor_task.cancel()
+            try:
+                await monitor_task
+            except asyncio.CancelledError:
+                # Expected exception when cancelling task; safe to ignore
+                pass
         
         # Calculate latency
         end_time = time.perf_counter()
@@ -415,7 +759,7 @@ async def ask_question(request: QueryRequest) -> QueryResponse:
         
         chat_sessions[session_id].append({
             "role": "user",
-            "content": request.query
+            "content": query_req.query
         })
         chat_sessions[session_id].append({
             "role": "assistant",
@@ -435,9 +779,17 @@ async def ask_question(request: QueryRequest) -> QueryResponse:
             session_id=session_id
         )
     
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 499 for disconnection)
+        raise
     except Exception as e:
         logger.error(f"Error processing query: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        # LLM client already returns user-friendly messages for common errors
+        # This handler only catches unexpected exceptions
+        raise HTTPException(
+            status_code=500,
+            detail="I encountered an unexpected error while processing your request. Please try again."
+        )
 
 
 @app.post("/api/ingest/upload", response_model=IngestionJobResponse)
@@ -503,6 +855,49 @@ async def upload_document(file: UploadFile = File(...)):
         raise
     except Exception as e:
         logger.error(f"Error uploading document: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/ingest/confluence")
+async def ingest_confluence(payload: Dict[str, str] = None):
+    """
+    Trigger Confluence ingestion (local or api mode).
+
+    This endpoint is used by the local startup script to force-loading
+    sample Confluence documents into the RAG pipeline when Milvus is empty.
+
+    Payload (optional): {"mode": "local"} or {"mode": "api"}
+    """
+    mode = None
+    try:
+        if payload and isinstance(payload, dict):
+            mode = payload.get("mode")
+    except Exception:
+        mode = None
+
+    mode = mode or os.getenv("CONFLUENCE_MODE", "local")
+
+    try:
+        ingestor = ConfluenceIngestor(mode=mode)
+        docs = ingestor.get_documents()
+        logger.info(f"/ingest/confluence: fetched {len(docs)} documents (mode={mode})")
+
+        # If RAG pipeline is initialized, load these documents into Milvus
+        if rag_pipeline:
+            try:
+                # Update confluence_docs and perform initial load synchronously
+                rag_pipeline.confluence_docs = docs
+                rag_pipeline._load_initial_data()
+                rag_pipeline._extract_document_topics()
+                return {"status": "success", "loaded": len(docs), "message": "Documents loaded into Milvus"}
+            except Exception as e:
+                logger.error(f"Error loading documents into RAG pipeline: {e}", exc_info=True)
+                return {"status": "partial", "loaded": 0, "message": str(e)}
+
+        return {"status": "fetched", "count": len(docs), "message": "Documents fetched; backend not ready to load into Milvus"}
+
+    except Exception as e:
+        logger.error(f"/ingest/confluence failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -602,16 +997,21 @@ async def cancel_job(job_id: str):
 
 
 @app.post("/api/webhook/confluence", response_model=WebhookResponse)
-async def confluence_webhook(payload: ConfluenceWebhookPayload):
+async def confluence_webhook(
+    request: Request,
+    payload: ConfluenceWebhookPayload,
+    background_tasks: BackgroundTasks,
+    x_atlassian_webhook_signature: Optional[str] = Header(None)
+):
     """
-    Receive Confluence webhook events and enqueue ingestion jobs
+    Receive Confluence webhook events and trigger automatic document sync
     
-    Confluence sends webhooks when pages are created or updated.
-    This endpoint extracts the page information and queues it for ingestion.
+    Confluence sends webhooks when pages are created, updated, or deleted.
+    This endpoint validates the signature, then processes updates asynchronously.
     
     Expected payload structure:
     {
-        "event": "page_created" or "page_updated",
+        "event": "page_created" or "page_updated" or "page_removed",
         "page": {
             "id": "12345",
             "title": "Page Title",
@@ -622,25 +1022,34 @@ async def confluence_webhook(payload: ConfluenceWebhookPayload):
     }
     
     Args:
+        request: FastAPI request object (for signature validation)
         payload: Confluence webhook payload
+        background_tasks: FastAPI background tasks manager
+        x_atlassian_webhook_signature: Webhook signature header
         
     Returns:
-        Webhook processing status and job ID
+        Webhook processing status (immediately, actual processing happens in background)
     """
-    if not REDIS_AVAILABLE or redis_conn is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Ingestion service not available - Redis not connected"
-        )
-    
     try:
-        # Validate webhook secret if configured
+        # 🔒 PRIORITY 1: Signature Validation
         webhook_secret = os.getenv("CONFLUENCE_WEBHOOK_SECRET", "")
         if webhook_secret:
-            # In production, validate the webhook signature
-            # For now, we'll just check if it's present in headers
-            # Confluence typically sends X-Atlassian-Webhook-Signature header
-            pass
+            # Read raw body for signature validation
+            body = await request.body()
+            
+            if not validate_atlassian_webhook_signature(
+                body, 
+                x_atlassian_webhook_signature or "", 
+                webhook_secret
+            ):
+                logger.warning("⚠️  Webhook signature validation failed")
+                raise HTTPException(
+                    status_code=401,
+                    detail="Invalid webhook signature"
+                )
+            logger.info("✅ Webhook signature validated")
+        else:
+            logger.warning("⚠️  Webhook secret not configured - signature validation skipped")
         
         # Extract page information
         event_type = payload.event
@@ -650,43 +1059,298 @@ async def confluence_webhook(payload: ConfluenceWebhookPayload):
         page_url = page_info.get("url", "")
         
         # Validate required fields
-        if not page_url:
+        if not page_id or page_id == "unknown":
             raise HTTPException(
                 status_code=400,
-                detail="Missing required field: page.url"
+                detail="Missing required field: page.id"
             )
         
-        logger.info(f" Confluence webhook received: {event_type}")
+        logger.info(f"📡 Confluence webhook received: {event_type}")
         logger.info(f"   Page ID: {page_id}")
         logger.info(f"   Title: {page_title}")
         logger.info(f"   URL: {page_url}")
         
-        # Enqueue URL ingestion job
-        # We'll pass a special marker to indicate this is a URL-based job
-        job = ingestion_queue.enqueue(
-            'ingestion.pipeline.ingest_url_job',
-            page_url,
+        # Generate unique job ID
+        job_id = f"webhook_{event_type}_{page_id}_{int(time.time())}"
+        
+        # 🚀 PRIORITY 1: Async Background Processing
+        # Schedule processing in background to prevent timeout
+        background_tasks.add_task(
+            process_webhook_with_retry,
+            event_type,
+            page_id,
             page_title,
-            job_timeout='10m',
-            result_ttl=86400,
-            failure_ttl=604800
+            page_url,
+            job_id
         )
         
-        logger.info(f" Confluence webhook processed → Enqueued job {job.id}")
-        
+        # Return immediately
+        logger.info(f"✅ Webhook queued for background processing: {job_id}")
         return WebhookResponse(
-            status="success",
-            message=f"Confluence page '{page_title}' queued for ingestion",
-            job_id=job.id
+            status="queued",
+            message=f"Webhook for page '{page_title}' queued for processing",
+            job_id=job_id
         )
     
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error processing Confluence webhook: {e}", exc_info=True)
+        logger.error(f"❌ Error processing Confluence webhook: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Error processing webhook: {str(e)}"
+        )
+
+
+async def process_webhook_with_retry(
+    event_type: str,
+    page_id: str,
+    page_title: str,
+    page_url: str,
+    job_id: str,
+    max_retries: int = 3
+):
+    """
+    🔄 PRIORITY 1: Process webhook with retry logic
+    
+    Handles transient failures with exponential backoff.
+    
+    Args:
+        event_type: Type of webhook event (page_created, page_updated, page_removed)
+        page_id: Confluence page ID
+        page_title: Page title
+        page_url: Page URL
+        job_id: Unique job identifier
+        max_retries: Maximum retry attempts (default: 3)
+    """
+    attempt = 0
+    last_error = None
+    
+    while attempt < max_retries:
+        try:
+            attempt += 1
+            logger.info(f"🔄 Processing webhook job {job_id} (attempt {attempt}/{max_retries})")
+            
+            # Handle different event types
+            if event_type in ["page_created", "page_updated"]:
+                # Fetch the latest page content from Confluence API
+                from confluence_ingest import ConfluenceIngestor
+                ingestor = ConfluenceIngestor(mode='api')
+                page_data = ingestor.fetch_page_by_id(page_id)
+                
+                if not page_data:
+                    raise Exception(f"Could not fetch page {page_id} from Confluence")
+                
+                # Update document in Milvus (delete old + insert new)
+                success = rag_pipeline.update_single_document(page_id, page_data)
+                
+                if success:
+                    logger.info(f"✅ Webhook job {job_id} completed: {page_title}")
+                    return  # Success - exit retry loop
+                else:
+                    raise Exception(f"Failed to update document {page_id}")
+            
+            elif event_type == "page_removed":
+                # Delete document from Milvus
+                success = rag_pipeline.delete_single_document(page_id)
+                
+                if success:
+                    logger.info(f"✅ Webhook job {job_id} completed: Page {page_id} deleted")
+                    return  # Success - exit retry loop
+                else:
+                    logger.warning(f"⚠️  Page {page_id} not found in RAG system (may not have been indexed)")
+                    return  # Not an error - page wasn't indexed
+            
+            else:
+                logger.warning(f"⚠️  Unknown event type: {event_type}")
+                return  # Don't retry for unknown events
+        
+        except Exception as e:
+            last_error = e
+            logger.error(f"❌ Attempt {attempt}/{max_retries} failed for job {job_id}: {e}")
+            
+            # Don't retry on last attempt
+            if attempt >= max_retries:
+                logger.error(f"💥 Job {job_id} failed after {max_retries} attempts: {last_error}")
+                break
+            
+            # Exponential backoff: 2^attempt seconds (2s, 4s, 8s, ...)
+            backoff_time = 2 ** attempt
+            logger.info(f"⏳ Retrying in {backoff_time} seconds...")
+            await asyncio.sleep(backoff_time)
+    
+    # If we reach here, all retries failed
+    logger.error(f"💥 Webhook job {job_id} permanently failed after {max_retries} attempts")
+    logger.error(f"   Last error: {last_error}")
+
+
+@app.post("/api/confluence/sync-now")
+async def trigger_confluence_sync():
+    """
+    Manually trigger an immediate Confluence sync check
+    
+    Detects new, updated, and deleted pages from Confluence.
+    
+    Returns:
+        Sync status and summary of changes
+    """
+    global confluence_last_versions
+    
+    try:
+        logger.info("🔄 Manual Confluence sync triggered via API")
+        
+        # DEBUG: Show current cache state
+        logger.info(f"   📦 Cache currently has {len(confluence_last_versions)} pages tracked")
+        if confluence_last_versions:
+            sample_ids = list(confluence_last_versions.keys())[:3]
+            for sample_id in sample_ids:
+                logger.debug(f"      Sample: ID {sample_id} → v{confluence_last_versions[sample_id]}")
+        
+        # Fetch all pages from Confluence
+        from confluence_ingest import ConfluenceIngestor
+        ingestor = ConfluenceIngestor(mode='api')
+        pages = ingestor.get_documents()
+        
+        if not pages:
+            return {
+                "status": "error",
+                "message": "No pages fetched from Confluence",
+                "new": 0,
+                "updated": 0,
+                "deleted": 0,
+                "unchanged": 0
+            }
+        
+        # Track changes
+        new_count = 0
+        updated_count = 0
+        unchanged_count = 0
+        deleted_count = 0
+        
+        # Get current page IDs from Confluence
+        current_page_ids = {page.get("id") for page in pages}
+        
+        # Check for deleted pages (in our cache but not in Confluence anymore)
+        deleted_page_ids = set(confluence_last_versions.keys()) - current_page_ids
+        
+        for deleted_page_id in deleted_page_ids:
+            logger.info(f"   🗑️  Deleted page: ID {deleted_page_id}")
+            success = rag_pipeline.delete_single_document(deleted_page_id)
+            if success:
+                del confluence_last_versions[deleted_page_id]
+                deleted_count += 1
+                logger.info(f"   ✅ Removed from RAG system")
+        
+        # Process existing/new/updated pages
+        for page in pages:
+            page_id = page.get("id")
+            page_title = page.get("title", "Untitled")
+            page_version = page.get("version", 1)
+            
+            # DEBUG: Log version comparison for every page
+            cached_version = confluence_last_versions.get(page_id, "NOT_IN_CACHE")
+            logger.debug(f"   🔍 Page '{page_title}' (ID: {page_id}): cached={cached_version}, current={page_version}")
+            
+            # Check if this is a new or updated page
+            if page_id not in confluence_last_versions:
+                # New page - add it
+                logger.info(f"   📄 New page: {page_title} (ID: {page_id})")
+                success = rag_pipeline.update_single_document(page_id, page)
+                if success:
+                    confluence_last_versions[page_id] = page_version
+                    new_count += 1
+            elif confluence_last_versions[page_id] < page_version:
+                # Page updated - sync it
+                old_version = confluence_last_versions[page_id]
+                logger.info(f"   🔄 Updated page: {page_title} (ID: {page_id}, v{old_version} → v{page_version})")
+                success = rag_pipeline.update_single_document(page_id, page)
+                if success:
+                    confluence_last_versions[page_id] = page_version
+                    updated_count += 1
+            else:
+                # No changes
+                logger.debug(f"   ⏭️  Unchanged: {page_title} (ID: {page_id}, v{page_version})")
+                unchanged_count += 1
+        
+        # Summary
+        message = f"Sync complete: {new_count} new, {updated_count} updated, {deleted_count} deleted, {unchanged_count} unchanged"
+        logger.info(f"✅ {message}")
+        
+        return {
+            "status": "success",
+            "message": message,
+            "new": new_count,
+            "updated": updated_count,
+            "deleted": deleted_count,
+            "unchanged": unchanged_count,
+            "total": len(pages) + deleted_count
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Manual sync failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Sync failed: {str(e)}"
+        )
+
+
+@app.get("/api/confluence/pages")
+async def list_confluence_pages():
+    """
+    List all tracked Confluence pages with hierarchy information
+    
+    Returns:
+        List of pages with their hierarchy details
+    """
+    try:
+        global confluence_last_versions
+        
+        if not confluence_last_versions:
+            return {
+                "status": "success",
+                "pages": [],
+                "total": 0,
+                "message": "No Confluence pages tracked yet"
+            }
+        
+        # Fetch current page details with hierarchy
+        from confluence_ingest import ConfluenceIngestor
+        ingestor = ConfluenceIngestor(mode='api')
+        pages = ingestor.get_documents()
+        
+        # Build page list with hierarchy info
+        page_list = []
+        for page in pages:
+            page_info = {
+                "id": page.get("id"),
+                "title": page.get("title"),
+                "version": page.get("version", 1),
+                "url": page.get("url"),
+                "depth": page.get("depth", 0),
+                "parent_id": page.get("parent_id"),
+                "parent_title": page.get("parent_title"),
+                "breadcrumb": page.get("breadcrumb", ""),
+                "has_hierarchy_context": "[Page Hierarchy:" in page.get("body", "")
+            }
+            page_list.append(page_info)
+        
+        # Sort by breadcrumb to show hierarchy visually
+        page_list.sort(key=lambda p: (p["breadcrumb"], p["title"]))
+        
+        return {
+            "status": "success",
+            "pages": page_list,
+            "total": len(page_list),
+            "root_pages": len([p for p in page_list if p["depth"] == 0]),
+            "nested_pages": len([p for p in page_list if p["depth"] > 0]),
+            "max_depth": max([p["depth"] for p in page_list]) if page_list else 0
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to list pages: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to list pages: {str(e)}"
         )
 
 
