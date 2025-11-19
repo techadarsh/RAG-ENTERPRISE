@@ -5,6 +5,7 @@ import logging
 import os
 import glob
 import time
+import re
 import numpy as np
 from typing import Dict, Any, List
 from embeddings import EmbeddingModel
@@ -77,6 +78,133 @@ class RAGPipeline:
             self._extract_document_topics()
             self.needs_data_loading = False
             logger.info(" Background data loading complete")
+    
+    def _is_valid_query(self, query: str) -> tuple[bool, str]:
+        """
+        Validate if query is meaningful and not gibberish.
+        
+        Args:
+            query: User query string
+            
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        query = query.strip()
+        
+        # Check minimum length
+        if len(query) < 3:
+            return False, "Your question seems too short. Could you please provide more details?"
+        
+        # Check if query contains mostly non-alphabetic characters
+        alpha_chars = sum(c.isalpha() for c in query)
+        total_chars = len(query.replace(" ", ""))
+        
+        if total_chars > 0 and (alpha_chars / total_chars) < 0.5:
+            return False, "I couldn't understand your question. Please use clear words and complete sentences."
+        
+        # Check for repeated patterns (like "dfgdfg" or "abcabc")
+        # Remove spaces and check for any repeating pattern
+        no_spaces = query.replace(" ", "").lower()
+        if len(no_spaces) > 5:
+            # Check for patterns of 2-5 characters repeated
+            for pattern_len in range(2, 6):
+                if len(no_spaces) >= pattern_len * 2:
+                    for i in range(len(no_spaces) - pattern_len * 2 + 1):
+                        pattern = no_spaces[i:i + pattern_len]
+                        # Check if this pattern repeats immediately
+                        remaining = no_spaces[i + pattern_len:]
+                        if remaining.startswith(pattern):
+                            return False, "Your input appears to be gibberish. Please ask a clear question about our documentation."
+        
+        # Check if query has at least one recognizable word (4+ letters from common words)
+        words = re.findall(r'\b[a-zA-Z]{4,}\b', query.lower())
+        
+        # Common English words that should appear in questions
+        common_question_words = ['what', 'how', 'why', 'when', 'where', 'who', 'which', 'can', 'could', 'would', 'should', 'does', 'is', 'are', 'the', 'this', 'that', 'about', 'our', 'your', 'policy', 'process', 'procedure']
+        
+        # Check if query has at least some recognizable pattern
+        has_common_word = any(word in query.lower() for word in common_question_words)
+        has_long_word = len(words) > 0
+        
+        # If no common words and only short words, likely gibberish
+        short_words = re.findall(r'\b[a-zA-Z]{1,3}\b', query.lower())
+        if len(short_words) > 3 and not has_common_word and not has_long_word:
+            return False, "I couldn't find any recognizable words in your question. Please try again with a proper question."
+        
+        # Check if words are mostly single/double letters (like "d f gd fg")
+        very_short_words = [w for w in query.split() if len(w) <= 3 and w.isalpha()]
+        if len(very_short_words) >= len(query.split()) * 0.7 and len(query.split()) >= 3:
+            return False, "Your question doesn't appear to be properly formatted. Please use complete words and sentences."
+        
+        return True, ""
+    
+    def _format_out_of_scope_response(self, reason: str = "no_match") -> str:
+        """
+        Format a structured out-of-scope response.
+        
+        Args:
+            reason: Reason for out of scope (no_match, low_relevance, invalid_query)
+            
+        Returns:
+            Formatted response string
+        """
+        # Format topics as bulleted list
+        if self.document_topics:
+            topics_list = '\n'.join([f"• {topic}" for topic in self.document_topics])
+        else:
+            topics_list = "• Company documentation"
+        
+        if reason == "no_match":
+            return f"""I couldn't find any relevant information in our knowledge base to answer your question.
+
+What I can help with:
+I have access to documentation about the following topics:
+
+{topics_list}
+
+Suggestions:
+• Try rephrasing your question
+• Make sure your question relates to our available documentation
+• Check if you're asking about a topic we cover
+
+Need help? Ask me about any of the topics mentioned above."""
+        
+        elif reason == "low_relevance":
+            # Show only top 10 topics for low relevance to keep it concise
+            if len(self.document_topics) > 10:
+                topics_preview = '\n'.join([f"• {topic}" for topic in self.document_topics[:10]])
+                topics_preview += f"\n• ... and {len(self.document_topics) - 10} more topics"
+            else:
+                topics_preview = topics_list
+            
+            return f"""Your question doesn't closely match any content in our knowledge base.
+
+What I can help with:
+I specialize in answering questions about:
+
+{topics_preview}
+
+Please note:
+• I can only answer questions based on our documentation
+• Questions outside these topics may not receive accurate answers
+
+Try asking about:
+Any of the topics listed above, using clear and specific questions."""
+        
+        else:  # invalid_query
+            return """I'm having trouble understanding your question.
+
+For better results:
+• Use complete sentences
+• Ask clear, specific questions
+• Make sure your question is properly formatted
+
+Example questions:
+• "What is our PTO policy?"
+• "How do I access the VPN?"
+• "What are the security guidelines?"
+
+Please try asking your question again using clear language."""
     
     def _clean_title_for_display(self, title: str) -> str:
         """
@@ -275,6 +403,16 @@ class RAGPipeline:
         
         logger.info(f"Processing query: {query}")
         
+        # 0. Validate query first - reject gibberish
+        is_valid, error_message = self._is_valid_query(query)
+        if not is_valid:
+            logger.info(f"Invalid query rejected: {query[:50]}... Reason: {error_message[:100]}")
+            return {
+                "answer": self._format_out_of_scope_response("invalid_query"),
+                "sources": [],
+                "context": ""
+            }
+        
         # 1. Embed query
         query_vector = self.embedding_model.embed_query(query)
         
@@ -282,8 +420,9 @@ class RAGPipeline:
         results = self.milvus_client.search(query_vector, top_k=top_k)
         
         if not results:
+            logger.info(f"No search results found for query: {query[:50]}...")
             return {
-                "answer": "I don't have information about that in my knowledge base. Please try rephrasing your question or ask about our available documentation.",
+                "answer": self._format_out_of_scope_response("no_match"),
                 "sources": [],
                 "context": ""
             }
@@ -294,9 +433,8 @@ class RAGPipeline:
         
         if top_score < RELEVANCE_THRESHOLD:
             logger.info(f"Query relevance too low (score: {top_score:.4f}). Rejecting out-of-scope question.")
-            scope = self.get_scope_description()
             return {
-                "answer": f"I can only answer questions about {scope}. Please ask about topics covered in our documentation.",
+                "answer": self._format_out_of_scope_response("low_relevance"),
                 "sources": [],
                 "context": ""
             }
@@ -334,13 +472,10 @@ class RAGPipeline:
             source_obj = {
                 "title": display_title,
                 "text": result['text'][:200] + "..." if len(result['text']) > 200 else result['text'],
-                "score": f"{float(result['score']) * 100:.2f}%"
+                "score": f"{float(result['score']) * 100:.2f}%",
+                "source_type": result.get('source_type', 'confluence'),
+                "source_url": result.get('source_url', '')
             }
-            
-            # Add Confluence URL if available
-            if result.get('source_url'):
-                source_obj['source_url'] = result['source_url']
-                source_obj['source_type'] = result.get('source_type', 'confluence')
             
             sources.append(source_obj)
             
@@ -382,6 +517,16 @@ class RAGPipeline:
         
         logger.info(f"Processing query with conversation context: {query}")
         
+        # 0. Validate query first - reject gibberish
+        is_valid, error_message = self._is_valid_query(query)
+        if not is_valid:
+            logger.info(f"Invalid query rejected: {query[:50]}... Reason: {error_message[:100]}")
+            return {
+                "answer": self._format_out_of_scope_response("invalid_query"),
+                "sources": [],
+                "context": ""
+            }
+        
         # 1. Embed query
         query_vector = self.embedding_model.embed_query(query)
         
@@ -389,8 +534,9 @@ class RAGPipeline:
         results = self.milvus_client.search(query_vector, top_k=top_k)
         
         if not results:
+            logger.info(f"No search results found for query: {query[:50]}...")
             return {
-                "answer": "I don't have information about that in my knowledge base. Please try rephrasing your question or ask about our available documentation.",
+                "answer": self._format_out_of_scope_response("no_match"),
                 "sources": [],
                 "context": ""
             }
@@ -401,9 +547,8 @@ class RAGPipeline:
         
         if top_score < RELEVANCE_THRESHOLD:
             logger.info(f"Query relevance too low (score: {top_score:.4f}). Rejecting out-of-scope question.")
-            scope = self.get_scope_description()
             return {
-                "answer": f"I can only answer questions about {scope}. Please ask about topics covered in our documentation.",
+                "answer": self._format_out_of_scope_response("low_relevance"),
                 "sources": [],
                 "context": ""
             }
@@ -423,7 +568,9 @@ class RAGPipeline:
                 sources_for_display.append({
                     "title": display_title,
                     "text": result['text'][:200] + "..." if len(result['text']) > 200 else result['text'],
-                    "score": f"{float(result['score']) * 100:.2f}%"
+                    "score": f"{float(result['score']) * 100:.2f}%",
+                    "source_type": result.get('source_type', 'confluence'),
+                    "source_url": result.get('source_url', '')
                 })
         
         context = "\n\n".join(context_parts)
