@@ -220,7 +220,7 @@ CONFLUENCE_SPACE_KEY=BITSWILP
 
 # Confluence Auto-Sync (polls Confluence for changes)
 CONFLUENCE_AUTO_SYNC=true                               # Enable automatic sync
-CONFLUENCE_SYNC_INTERVAL=300                            # Check every 300 seconds (5 minutes)
+CONFLUENCE_SYNC_INTERVAL=3600                           # Check every 3600 seconds (1 hour)
 
 # Confluence Webhook (for real-time updates from Confluence)
 export CONFLUENCE_WEBHOOK_SECRET="test-secret-key-12345"

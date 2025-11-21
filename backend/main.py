@@ -1318,12 +1318,17 @@ async def list_confluence_pages():
         ingestor = ConfluenceIngestor(mode='api')
         pages = ingestor.get_documents()
         
-        # Build page list with hierarchy info
+        # Build page list with hierarchy info (exclude pages with "BITS" in title)
         page_list = []
         for page in pages:
+            title = page.get("title", "")
+            # Skip pages that contain "BITS" in the title
+            if "BITS" in title:
+                continue
+                
             page_info = {
                 "id": page.get("id"),
-                "title": page.get("title"),
+                "title": title,
                 "version": page.get("version", 1),
                 "url": page.get("url"),
                 "depth": page.get("depth", 0),
@@ -1337,7 +1342,7 @@ async def list_confluence_pages():
         # Sort by breadcrumb to show hierarchy visually
         page_list.sort(key=lambda p: (p["breadcrumb"], p["title"]))
         
-        return {
+        response_data = {
             "status": "success",
             "pages": page_list,
             "total": len(page_list),
@@ -1345,6 +1350,16 @@ async def list_confluence_pages():
             "nested_pages": len([p for p in page_list if p["depth"] > 0]),
             "max_depth": max([p["depth"] for p in page_list]) if page_list else 0
         }
+        
+        # Log response details
+        logger.info(f"📄 /api/confluence/pages response:")
+        logger.info(f"   Total pages: {response_data['total']}")
+        logger.info(f"   Root pages: {response_data['root_pages']}")
+        logger.info(f"   Nested pages: {response_data['nested_pages']}")
+        logger.info(f"   Max depth: {response_data['max_depth']}")
+        logger.info(f"   Page titles: {[p['title'] for p in page_list]}")
+        
+        return response_data
         
     except Exception as e:
         logger.error(f"❌ Failed to list pages: {e}", exc_info=True)

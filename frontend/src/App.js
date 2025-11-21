@@ -82,7 +82,7 @@ function App() {
         const titles = response.data.pages
           .map(page => page.title)
           .filter((title, index, self) => self.indexOf(title) === index) // Remove duplicates
-          .slice(0, 12); // Limit to 12 topics
+          .slice(0, 10); // Limit to 10 topics
         
         setAvailableTopics(titles);
       }
