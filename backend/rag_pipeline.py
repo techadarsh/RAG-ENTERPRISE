@@ -428,7 +428,7 @@ Please try asking your question again using clear language."""
             }
         
         # 3. Check relevance - if top result has very low score, question is likely out of scope
-        RELEVANCE_THRESHOLD = int(os.getenv("RETRIEVAL_MIN_SCORE", "3"))  # 80% threshold for stricter quality control
+        RELEVANCE_THRESHOLD = float(os.getenv("RETRIEVAL_MIN_SCORE", "0.8"))  # 80% threshold for stricter quality control
         top_score = float(results[0]['score'])
         
         if top_score < RELEVANCE_THRESHOLD:
